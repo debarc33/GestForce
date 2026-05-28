@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "PowerShell(Get-Content \"C:\\\\Users\\\\usuario\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-usuario-GestForce1\\\\5cd2bf73-59f5-4fc9-88f2-c1ee689f665d\\\\tasks\\\\bo42h9c8a.output\" -Wait -Tail 20)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\src\\\\app\" -Directory -Recurse)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(xargs wc -l)",
+      "Bash(xargs grep -l \"inventory\\\\|supplier\\\\|vendor\\\\|table\")",
+      "Bash(xargs grep -l \"useCompanyStore\\\\|activeCompanyId\\\\|CompanyStore\")",
+      "WebSearch"
+    ]
+  }
+}
