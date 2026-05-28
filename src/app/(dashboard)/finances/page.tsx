@@ -1,70 +1,35 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   TrendingUp, TrendingDown, Scale, ReceiptText, Truck,
   FileSpreadsheet, Info,
 } from 'lucide-react'
-import {
-  flexRender, getCoreRowModel, useReactTable, type ColumnDef,
-} from '@tanstack/react-table'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import {
-  usePanelSummary, useMonthlyBars, useCartera, useObligaciones, useTaxReport,
+  usePanelSummary, useMonthlyBars, useTaxReport,
   defaultPeriod,
-  type FinancePeriod, type CarteraRow, type ObligacionRow,
+  type FinancePeriod,
 } from '@/modules/finances/queries'
 
 // ─── Tipos y constantes ───────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'panel',        label: 'Panel'        },
-  { id: 'cartera',      label: 'Cartera'      },
-  { id: 'obligaciones', label: 'Obligaciones' },
-  { id: 'impuestos',    label: 'Impuestos'    },
+  { id: 'panel',     label: 'Panel'     },
+  { id: 'impuestos', label: 'Impuestos' },
 ] as const
 type TabId = typeof TABS[number]['id']
-
-const AGING_FILTERS = [
-  { value: 'all',  label: 'Todas'        },
-  { value: '0',    label: 'Al día'       },
-  { value: '30',   label: '1-30 días'    },
-  { value: '60',   label: '31-60 días'   },
-  { value: '90',   label: '61-90 días'   },
-  { value: '91',   label: '+90 días'     },
-]
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 
 const fmtCOP = (n: number) =>
-  '$ ' + Math.round(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+  '$ ' + Math.round(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 const fmtDate = (d: string | null) =>
   d ? new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
-
-function agingBand(dias: number) {
-  if (dias === 0) return { cls: 'bg-green-100 text-green-700',   label: 'Al día'    }
-  if (dias <= 30) return { cls: 'bg-green-100 text-green-700',   label: `${dias}d`  }
-  if (dias <= 60) return { cls: 'bg-yellow-100 text-yellow-700', label: `${dias}d`  }
-  if (dias <= 90) return { cls: 'bg-orange-100 text-orange-700', label: `${dias}d`  }
-  return              { cls: 'bg-red-100 text-red-700',          label: `${dias}d`  }
-}
-
-function filterByAging<T extends { dias_vencido: number }>(
-  rows: T[], filter: string
-): T[] {
-  if (filter === 'all') return rows
-  if (filter === '0')  return rows.filter(r => r.dias_vencido === 0)
-  if (filter === '30') return rows.filter(r => r.dias_vencido > 0  && r.dias_vencido <= 30)
-  if (filter === '60') return rows.filter(r => r.dias_vencido > 30 && r.dias_vencido <= 60)
-  if (filter === '90') return rows.filter(r => r.dias_vencido > 60 && r.dias_vencido <= 90)
-  if (filter === '91') return rows.filter(r => r.dias_vencido > 90)
-  return rows
-}
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
@@ -72,69 +37,19 @@ export default function FinancesPage() {
   const router = useRouter()
   const { activeCompanyId } = useCompanyStore()
 
-  const [activeTab, setActiveTab]     = useState<TabId>('panel')
-  const [period, setPeriod]           = useState<FinancePeriod>(defaultPeriod())
-  const [agingFilter, setAgingFilter] = useState('all')
-  const [search, setSearch]           = useState('')
+  const [activeTab, setActiveTab] = useState<TabId>('panel')
+  const [period, setPeriod]       = useState<FinancePeriod>(defaultPeriod())
 
   useEffect(() => {
     if (!activeCompanyId) router.replace('/select-company')
   }, [activeCompanyId, router])
 
-  const cid = activeCompanyId ?? undefined
+  const cid  = activeCompanyId ?? undefined
   const year = new Date(period.from).getFullYear()
 
-  const { data: panel,  isLoading: loadingPanel  } = usePanelSummary(cid, period)
-  const { data: bars   = []                       } = useMonthlyBars(cid, year)
-  const { data: cartera = [], isLoading: loadingAR} = useCartera(cid)
-  const { data: oblig  = [], isLoading: loadingAP } = useObligaciones(cid)
-  const { data: tax,    isLoading: loadingTax     } = useTaxReport(cid, period)
-
-  // ── Filtros ──────────────────────────────────────────────────────────────
-  const filteredCartera = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    let rows = cartera
-    if (q) rows = rows.filter(r =>
-      r.customer.toLowerCase().includes(q) || r.invoice_number.toLowerCase().includes(q)
-    )
-    return filterByAging(rows, agingFilter)
-  }, [cartera, search, agingFilter])
-
-  const filteredOblig = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    let rows = oblig
-    if (q) rows = rows.filter(r =>
-      r.supplier.toLowerCase().includes(q) || r.invoice_number.toLowerCase().includes(q)
-    )
-    return filterByAging(rows, agingFilter)
-  }, [oblig, search, agingFilter])
-
-  // ── Exportar ──────────────────────────────────────────────────────────────
-  const exportCartera = () => {
-    const cols: ExcelColumn<CarteraRow>[] = [
-      { header: 'Cliente',       key: 'customer',       width: 28 },
-      { header: 'Factura #',     key: 'invoice_number', width: 14 },
-      { header: 'Emisión',       key: r => fmtDate(r.issue_date), width: 14 },
-      { header: 'Vencimiento',   key: r => fmtDate(r.due_date),   width: 14 },
-      { header: 'Total',         key: 'total',          width: 14 },
-      { header: 'Saldo',         key: 'balance_due',    width: 14 },
-      { header: 'Días vencido',  key: 'dias_vencido',   width: 12 },
-    ]
-    exportToExcel(filteredCartera, cols, `cartera_${period.from}_${period.to}`)
-  }
-
-  const exportObligaciones = () => {
-    const cols: ExcelColumn<ObligacionRow>[] = [
-      { header: 'Proveedor',     key: 'supplier',       width: 28 },
-      { header: 'Factura #',     key: 'invoice_number', width: 14 },
-      { header: 'Emisión',       key: r => fmtDate(r.issue_date), width: 14 },
-      { header: 'Vencimiento',   key: r => fmtDate(r.due_date),   width: 14 },
-      { header: 'Total',         key: 'total',          width: 14 },
-      { header: 'Saldo',         key: 'balance_due',    width: 14 },
-      { header: 'Días vencido',  key: 'dias_vencido',   width: 12 },
-    ]
-    exportToExcel(filteredOblig, cols, `obligaciones_${period.from}_${period.to}`)
-  }
+  const { data: panel, isLoading: loadingPanel } = usePanelSummary(cid, period)
+  const { data: bars = []                       } = useMonthlyBars(cid, year)
+  const { data: tax,  isLoading: loadingTax     } = useTaxReport(cid, period)
 
   type TaxRow = { concepto: string; valor: string }
 
@@ -145,17 +60,17 @@ export default function FinancesPage() {
       { header: 'Valor',    key: 'valor',    width: 18 },
     ]
     const rows: TaxRow[] = [
-      { concepto: 'IVA cobrado en ventas',          valor: fmtCOP(tax.ivaCobrado)     },
-      { concepto: 'IVA pagado en compras',           valor: fmtCOP(tax.ivaDescontable) },
-      { concepto: 'Saldo neto IVA',                  valor: fmtCOP(tax.ivaNeto)        },
-      { concepto: '',                                 valor: ''                         },
-      { concepto: 'Retenciones practicadas (compras)',valor: fmtCOP(tax.retePracticada) },
-      { concepto: 'Retenciones recibidas (ventas)',   valor: fmtCOP(tax.reteRecibida)   },
-      { concepto: 'ReteIVA recibida',                 valor: fmtCOP(tax.reteIvaRecibida)},
-      { concepto: '',                                 valor: ''                         },
-      { concepto: 'Base gravable ICA',                valor: fmtCOP(tax.baseIca)        },
-      { concepto: `Tasa ICA (${(tax.icaRate * 100).toFixed(3)}%)`, valor: '' },
-      { concepto: 'ICA estimado a pagar',             valor: fmtCOP(tax.icaCalculado)   },
+      { concepto: 'IVA cobrado en ventas',           valor: fmtCOP(tax.ivaCobrado)      },
+      { concepto: 'IVA pagado en compras',            valor: fmtCOP(tax.ivaDescontable)  },
+      { concepto: 'Saldo neto IVA',                   valor: fmtCOP(tax.ivaNeto)         },
+      { concepto: '',                                  valor: ''                          },
+      { concepto: 'Retenciones practicadas (compras)',valor: fmtCOP(tax.retePracticada)  },
+      { concepto: 'Retenciones recibidas (ventas)',   valor: fmtCOP(tax.reteRecibida)    },
+      { concepto: 'ReteIVA recibida',                 valor: fmtCOP(tax.reteIvaRecibida) },
+      { concepto: '',                                  valor: ''                          },
+      { concepto: 'Base gravable ICA',                valor: fmtCOP(tax.baseIca)         },
+      { concepto: `Tasa ICA (${(tax.icaRate * 100).toFixed(3)}%)`, valor: ''             },
+      { concepto: 'ICA estimado a pagar',             valor: fmtCOP(tax.icaCalculado)    },
     ]
     exportToExcel(rows, cols, `impuestos_${period.from}_${period.to}`)
   }
@@ -194,7 +109,7 @@ export default function FinancesPage() {
       <div className="flex gap-0.5 border-b border-zinc-200">
         {TABS.map(tab => (
           <button key={tab.id} type="button"
-            onClick={() => { setActiveTab(tab.id); setSearch(''); setAgingFilter('all') }}
+            onClick={() => setActiveTab(tab.id)}
             className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.id ? 'text-blue-600' : 'text-zinc-500 hover:text-zinc-700'
             }`}>
@@ -262,7 +177,7 @@ export default function FinancesPage() {
                 )
               })()}
 
-              {/* Cartera */}
+              {/* Cartera (resumen — detalle en Ventas → CxC) */}
               <div className={`rounded-xl border p-4 shadow-sm col-span-1 ${(panel?.cartera ?? 0) > 0 ? 'border-amber-200 bg-amber-50/30' : 'border-zinc-200 bg-white'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
@@ -271,10 +186,12 @@ export default function FinancesPage() {
                   <p className="text-xs font-medium text-zinc-500">Por cobrar</p>
                 </div>
                 <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(panel?.cartera ?? 0)}</p>
-                <p className="text-xs text-zinc-400 mt-0.5">Saldo pendiente de clientes</p>
+                <Link href="/sales/cxc" className="text-xs text-blue-500 hover:underline mt-0.5 block">
+                  Ver detalle CxC →
+                </Link>
               </div>
 
-              {/* Obligaciones */}
+              {/* Obligaciones (resumen — detalle en Compras → CxP) */}
               <div className={`rounded-xl border p-4 shadow-sm col-span-1 ${(panel?.obligaciones ?? 0) > 0 ? 'border-red-200 bg-red-50/30' : 'border-zinc-200 bg-white'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
@@ -283,7 +200,9 @@ export default function FinancesPage() {
                   <p className="text-xs font-medium text-zinc-500">Por pagar</p>
                 </div>
                 <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(panel?.obligaciones ?? 0)}</p>
-                <p className="text-xs text-zinc-400 mt-0.5">Saldo pendiente a proveedores</p>
+                <Link href="/purchases/cxp" className="text-xs text-blue-500 hover:underline mt-0.5 block">
+                  Ver detalle CxP →
+                </Link>
               </div>
             </div>
           )}
@@ -325,40 +244,6 @@ export default function FinancesPage() {
             })()}
           </div>
         </div>
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* TAB: CARTERA                                                      */}
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'cartera' && (
-        <CarteraTab
-          rows={filteredCartera}
-          isLoading={loadingAR}
-          search={search}
-          onSearchChange={setSearch}
-          agingFilter={agingFilter}
-          onAgingChange={setAgingFilter}
-          onExport={exportCartera}
-          totalCartera={cartera.reduce((s, r) => s + r.balance_due, 0)}
-          overdueCount={cartera.filter(r => r.dias_vencido > 0).length}
-        />
-      )}
-
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {/* TAB: OBLIGACIONES                                                 */}
-      {/* ══════════════════════════════════════════════════════════════════ */}
-      {activeTab === 'obligaciones' && (
-        <ObligacionesTab
-          rows={filteredOblig}
-          isLoading={loadingAP}
-          search={search}
-          onSearchChange={setSearch}
-          agingFilter={agingFilter}
-          onAgingChange={setAgingFilter}
-          onExport={exportObligaciones}
-          totalOblig={oblig.reduce((s, r) => s + r.balance_due, 0)}
-          overdueCount={oblig.filter(r => r.dias_vencido > 0).length}
-        />
       )}
 
       {/* ══════════════════════════════════════════════════════════════════ */}
@@ -474,310 +359,6 @@ function TaxLine({ label, value, bold }: { label: string; value: number; bold?: 
       <span className={`text-sm tabular-nums ${bold ? 'font-bold text-zinc-900' : 'font-medium text-zinc-700'} ${neg ? 'text-red-600' : ''}`}>
         {neg ? `-${fmtCOP(Math.abs(value))}` : fmtCOP(value)}
       </span>
-    </div>
-  )
-}
-
-// ─── Tab Cartera ──────────────────────────────────────────────────────────────
-
-function CarteraTab({
-  rows, isLoading, search, onSearchChange,
-  agingFilter, onAgingChange, onExport,
-  totalCartera, overdueCount,
-}: {
-  rows: CarteraRow[]
-  isLoading: boolean
-  search: string
-  onSearchChange: (v: string) => void
-  agingFilter: string
-  onAgingChange: (v: string) => void
-  onExport: () => void
-  totalCartera: number
-  overdueCount: number
-}) {
-  const columns: ColumnDef<CarteraRow>[] = [
-    {
-      id: 'customer',
-      header: 'Cliente',
-      cell: ({ row }) => <span className="font-medium text-zinc-800">{row.original.customer}</span>,
-    },
-    {
-      id: 'invoice_number',
-      header: 'Factura #',
-      cell: ({ row }) => (
-        <Link
-          href={`/sales/invoices/${row.original.id}`}
-          className="font-mono text-blue-600 hover:underline text-sm"
-        >
-          {row.original.invoice_number}
-        </Link>
-      ),
-    },
-    {
-      id: 'issue_date',
-      header: 'Emisión',
-      cell: ({ row }) => <span className="text-sm text-zinc-500">{fmtDate(row.original.issue_date)}</span>,
-    },
-    {
-      id: 'due_date',
-      header: 'Vencimiento',
-      cell: ({ row }) => <span className="text-sm text-zinc-500">{fmtDate(row.original.due_date)}</span>,
-    },
-    {
-      id: 'total',
-      header: 'Total',
-      cell: ({ row }) => <span className="text-sm tabular-nums text-zinc-700">{fmtCOP(row.original.total)}</span>,
-    },
-    {
-      id: 'balance_due',
-      header: 'Saldo',
-      cell: ({ row }) => <span className="text-sm font-semibold tabular-nums text-zinc-900">{fmtCOP(row.original.balance_due)}</span>,
-    },
-    {
-      id: 'payment_status',
-      header: 'Estado',
-      cell: ({ row }) => (
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-          row.original.payment_status === 'partial'
-            ? 'bg-blue-100 text-blue-700'
-            : 'bg-zinc-100 text-zinc-600'
-        }`}>
-          {row.original.payment_status === 'partial' ? 'Parcial' : 'Pendiente'}
-        </span>
-      ),
-    },
-    {
-      id: 'aging',
-      header: 'Vencido',
-      cell: ({ row }) => {
-        const band = agingBand(row.original.dias_vencido)
-        return (
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
-            {band.label}
-          </span>
-        )
-      },
-    },
-  ]
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
-  return (
-    <div className="space-y-4">
-      {/* Resumen + toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-xs text-zinc-500">Total cartera</p>
-            <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(totalCartera)}</p>
-          </div>
-          {overdueCount > 0 && (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-3 py-1.5">
-              <p className="text-xs text-red-600 font-medium">{overdueCount} factura{overdueCount !== 1 ? 's' : ''} vencida{overdueCount !== 1 ? 's' : ''}</p>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="search"
-            placeholder="Buscar cliente o factura..."
-            value={search}
-            onChange={e => onSearchChange(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 w-56"
-          />
-          <select
-            value={agingFilter}
-            onChange={e => onAgingChange(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-            {AGING_FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-          <button onClick={onExport}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
-            <FileSpreadsheet className="h-4 w-4 text-green-600" />
-            Exportar
-          </button>
-        </div>
-      </div>
-
-      <AgingTable table={table} colSpan={columns.length} isLoading={isLoading} emptyMsg="No hay facturas pendientes de cobro." />
-    </div>
-  )
-}
-
-// ─── Tab Obligaciones ─────────────────────────────────────────────────────────
-
-function ObligacionesTab({
-  rows, isLoading, search, onSearchChange,
-  agingFilter, onAgingChange, onExport,
-  totalOblig, overdueCount,
-}: {
-  rows: ObligacionRow[]
-  isLoading: boolean
-  search: string
-  onSearchChange: (v: string) => void
-  agingFilter: string
-  onAgingChange: (v: string) => void
-  onExport: () => void
-  totalOblig: number
-  overdueCount: number
-}) {
-  const columns: ColumnDef<ObligacionRow>[] = [
-    {
-      id: 'supplier',
-      header: 'Proveedor',
-      cell: ({ row }) => <span className="font-medium text-zinc-800">{row.original.supplier}</span>,
-    },
-    {
-      id: 'invoice_number',
-      header: 'Factura #',
-      cell: ({ row }) => (
-        <Link
-          href={`/purchases/invoices/${row.original.id}`}
-          className="font-mono text-blue-600 hover:underline text-sm"
-        >
-          {row.original.invoice_number}
-        </Link>
-      ),
-    },
-    {
-      id: 'issue_date',
-      header: 'Emisión',
-      cell: ({ row }) => <span className="text-sm text-zinc-500">{fmtDate(row.original.issue_date)}</span>,
-    },
-    {
-      id: 'due_date',
-      header: 'Vencimiento',
-      cell: ({ row }) => <span className="text-sm text-zinc-500">{fmtDate(row.original.due_date)}</span>,
-    },
-    {
-      id: 'total',
-      header: 'Total',
-      cell: ({ row }) => <span className="text-sm tabular-nums text-zinc-700">{fmtCOP(row.original.total)}</span>,
-    },
-    {
-      id: 'balance_due',
-      header: 'Saldo',
-      cell: ({ row }) => <span className="text-sm font-semibold tabular-nums text-zinc-900">{fmtCOP(row.original.balance_due)}</span>,
-    },
-    {
-      id: 'status',
-      header: 'Estado',
-      cell: ({ row }) => (
-        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-          row.original.status === 'partial'
-            ? 'bg-blue-100 text-blue-700'
-            : 'bg-zinc-100 text-zinc-600'
-        }`}>
-          {row.original.status === 'partial' ? 'Parcial' : 'Pendiente'}
-        </span>
-      ),
-    },
-    {
-      id: 'aging',
-      header: 'Vencido',
-      cell: ({ row }) => {
-        const band = agingBand(row.original.dias_vencido)
-        return (
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
-            {band.label}
-          </span>
-        )
-      },
-    },
-  ]
-
-  const table = useReactTable({
-    data: rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  })
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-xs text-zinc-500">Total obligaciones</p>
-            <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(totalOblig)}</p>
-          </div>
-          {overdueCount > 0 && (
-            <div className="rounded-lg bg-red-50 border border-red-100 px-3 py-1.5">
-              <p className="text-xs text-red-600 font-medium">{overdueCount} factura{overdueCount !== 1 ? 's' : ''} vencida{overdueCount !== 1 ? 's' : ''}</p>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="search"
-            placeholder="Buscar proveedor o factura..."
-            value={search}
-            onChange={e => onSearchChange(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 w-56"
-          />
-          <select
-            value={agingFilter}
-            onChange={e => onAgingChange(e.target.value)}
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none">
-            {AGING_FILTERS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-          <button onClick={onExport}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors">
-            <FileSpreadsheet className="h-4 w-4 text-green-600" />
-            Exportar
-          </button>
-        </div>
-      </div>
-
-      <AgingTable table={table} colSpan={columns.length} isLoading={isLoading} emptyMsg="No hay facturas pendientes de pago." />
-    </div>
-  )
-}
-
-// ─── Tabla genérica con aging ──────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function AgingTable({ table, colSpan, isLoading, emptyMsg }: { table: any; colSpan: number; isLoading: boolean; emptyMsg: string }) {
-  if (isLoading) {
-    return <div className="h-48 animate-pulse rounded-xl bg-zinc-100" />
-  }
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-      <Table>
-        <TableHeader className="bg-zinc-50/50">
-          {table.getHeaderGroups().map((hg: any) => (
-            <TableRow key={hg.id} className="border-zinc-200">
-              {hg.headers.map((h: any) => (
-                <TableHead key={h.id} className="py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                  {flexRender(h.column.columnDef.header, h.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row: any) => (
-              <TableRow key={row.id} className="border-zinc-100 hover:bg-zinc-50/60 transition-colors">
-                {row.getVisibleCells().map((cell: any) => (
-                  <TableCell key={cell.id} className="py-3">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={colSpan} className="h-32 text-center text-sm text-zinc-400">
-                {emptyMsg}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
     </div>
   )
 }

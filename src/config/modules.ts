@@ -3,7 +3,7 @@
  *
  * Fuente de verdad única para todos los módulos del sistema.
  * Importar desde aquí en:
- *   - src/components/layout/sidebar.tsx        (navegación dinámica)
+ *   - src/components/layout/sidebar.tsx        (navegación dinámica con grupos)
  *   - src/components/layout/module-guard.tsx   (protección de rutas)
  *   - src/app/(superadmin)/...                 (Panel Superadmin: toggles)
  *   - src/modules/company/module-queries.ts    (filtrado de módulos habilitados)
@@ -11,15 +11,12 @@
 
 import {
   LayoutDashboard,
-  Users,
-  Package,
   ShoppingCart,
   Truck,
   Boxes,
   CircleDollarSign,
   BookOpen,
   Users2,
-  BarChart3,
   Settings,
   type LucideIcon,
 } from 'lucide-react'
@@ -28,24 +25,32 @@ import {
 
 export type ModuleId =
   | 'dashboard'
-  | 'customers'
-  | 'products'
-  | 'sales'
-  | 'purchases'
-  | 'inventory'
-  | 'finances'
-  | 'accounting'
-  | 'payroll'
-  | 'reports'
+  | 'ventas'
+  | 'compras'
+  | 'inventario'
+  | 'nomina'
+  | 'contabilidad'
+  | 'finanzas'
   | 'settings'
+
+/** Elemento de sub-navegación dentro de un módulo agrupado. */
+export interface SubNavItem {
+  /** Etiqueta visible en el sidebar. */
+  label: string
+  /** Href de Next.js para este ítem (puede incluir ?tab=...). */
+  href: string
+}
 
 export interface ModuleDefinition {
   /** Identificador único. Coincide con el campo `module_id` en la tabla `company_modules`. */
   id: ModuleId
   /** Nombre a mostrar en el sidebar y en el Panel Superadmin. */
   name: string
-  /** Ruta base de Next.js (href del sidebar). */
-  href: string
+  /**
+   * Ruta base. Requerida para módulos de enlace único (sin children).
+   * Opcional para módulos agrupados (con children).
+   */
+  href?: string
   /** Ícono de Lucide React. */
   icon: LucideIcon
   /**
@@ -55,6 +60,12 @@ export interface ModuleDefinition {
   alwaysOn: boolean
   /** Descripción corta para el Panel Superadmin (toggles). */
   description: string
+  /**
+   * Sub-ítems de navegación. Cuando está presente, el sidebar renderiza el módulo
+   * como una sección colapsable con enlaces indentados.
+   * Cuando está ausente, el módulo se renderiza como un enlace directo.
+   */
+  children?: SubNavItem[]
 }
 
 // ─── Registro ─────────────────────────────────────────────────────────────────
@@ -69,55 +80,52 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
     description: 'Panel principal con resumen de la empresa',
   },
   {
-    id: 'customers',
-    name: 'Clientes',
-    href: '/customers',
-    icon: Users,
-    alwaysOn: false,
-    description: 'Gestión de clientes y contactos comerciales',
-  },
-  {
-    id: 'products',
-    name: 'Productos',
-    href: '/products',
-    icon: Package,
-    alwaysOn: false,
-    description: 'Catálogo de productos y servicios con precios e impuestos',
-  },
-  {
-    id: 'sales',
+    id: 'ventas',
     name: 'Ventas',
-    href: '/sales',
     icon: ShoppingCart,
     alwaysOn: false,
-    description: 'Cotizaciones, facturas electrónicas y recibos de caja',
+    description: 'Clientes, cotizaciones, facturación y cartera por cobrar',
+    children: [
+      { label: 'Clientes',           href: '/customers'         },
+      { label: 'Cotizaciones',       href: '/sales?tab=quotes'  },
+      { label: 'Facturas y Recibos', href: '/sales?tab=invoices'},
+      { label: 'CxC',                href: '/sales/cxc'         },
+    ],
   },
   {
-    id: 'purchases',
+    id: 'compras',
     name: 'Compras',
-    href: '/purchases',
     icon: Truck,
     alwaysOn: false,
-    description: 'Órdenes de compra y facturas de proveedor',
+    description: 'Proveedores, órdenes de compra y cuentas por pagar',
+    children: [
+      { label: 'Proveedores',        href: '/suppliers'              },
+      { label: 'Órdenes de Compra',  href: '/purchases?tab=orders'  },
+      { label: 'Facturas Proveedor', href: '/purchases?tab=invoices' },
+      { label: 'CxP',                href: '/purchases/cxp'         },
+    ],
   },
   {
-    id: 'inventory',
+    id: 'inventario',
     name: 'Inventario',
-    href: '/inventory',
     icon: Boxes,
     alwaysOn: false,
-    description: 'Movimientos de stock, Kardex y ajustes de inventario',
+    description: 'Productos, catálogo y movimientos de stock',
+    children: [
+      { label: 'Productos',            href: '/products'  },
+      { label: 'Movimientos de Stock', href: '/inventory' },
+    ],
   },
   {
-    id: 'finances',
-    name: 'Finanzas',
-    href: '/finances',
-    icon: CircleDollarSign,
+    id: 'nomina',
+    name: 'Nómina',
+    href: '/payroll',
+    icon: Users2,
     alwaysOn: false,
-    description: 'Cartera de clientes, obligaciones con proveedores e impuestos',
+    description: 'Empleados, liquidación de nómina y aportes PILA',
   },
   {
-    id: 'accounting',
+    id: 'contabilidad',
     name: 'Contabilidad',
     href: '/accounting',
     icon: BookOpen,
@@ -125,24 +133,16 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
     description: 'Plan de cuentas, comprobantes contables e informes',
   },
   {
-    id: 'payroll',
-    name: 'Nomina',
-    href: '/payroll',
-    icon: Users2,
+    id: 'finanzas',
+    name: 'Finanzas',
+    href: '/finances',
+    icon: CircleDollarSign,
     alwaysOn: false,
-    description: 'Empleados, liquidación de nómina y aportes PILA',
-  },
-  {
-    id: 'reports',
-    name: 'Reportes',
-    href: '/reports',
-    icon: BarChart3,
-    alwaysOn: false,
-    description: 'Reportes y análisis de datos del negocio',
+    description: 'Flujo de caja, panel financiero e informe de impuestos',
   },
   {
     id: 'settings',
-    name: 'Configuracion',
+    name: 'Configuración',
     href: '/settings',
     icon: Settings,
     alwaysOn: true,
@@ -153,20 +153,37 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
+ * Mapa estático de prefijos de ruta → ModuleId.
+ * Usar en lugar de iterar MODULE_REGISTRY para soportar módulos agrupados
+ * que no tienen un href propio.
+ */
+const PATH_TO_MODULE: Array<[prefix: string, moduleId: ModuleId]> = [
+  ['/customers',  'ventas'      ],
+  ['/sales',      'ventas'      ],
+  ['/suppliers',  'compras'     ],
+  ['/purchases',  'compras'     ],
+  ['/products',   'inventario'  ],
+  ['/inventory',  'inventario'  ],
+  ['/payroll',    'nomina'      ],
+  ['/accounting', 'contabilidad'],
+  ['/finances',   'finanzas'    ],
+  ['/settings',   'settings'   ],
+]
+
+/**
  * Dado un pathname de Next.js, devuelve el ModuleId correspondiente.
- * Retorna `null` si no coincide ningún módulo (ej: rutas de API).
+ * Retorna `null` si no coincide ningún módulo (ej: rutas de API, superadmin).
  *
  * @example
- * getModuleIdFromPath('/sales/invoices/abc-123') // → 'sales'
- * getModuleIdFromPath('/') // → 'dashboard'
- * getModuleIdFromPath('/superadmin') // → null
+ * getModuleIdFromPath('/sales/invoices/abc-123') // → 'ventas'
+ * getModuleIdFromPath('/customers')              // → 'ventas'
+ * getModuleIdFromPath('/')                       // → 'dashboard'
+ * getModuleIdFromPath('/superadmin')             // → null
  */
 export function getModuleIdFromPath(pathname: string): ModuleId | null {
   if (pathname === '/') return 'dashboard'
-  const match = MODULE_REGISTRY.find(
-    (m) => m.href !== '/' && pathname.startsWith(m.href)
-  )
-  return match?.id ?? null
+  const entry = PATH_TO_MODULE.find(([prefix]) => pathname.startsWith(prefix))
+  return entry ? entry[1] : null
 }
 
 /**
