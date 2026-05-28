@@ -9,7 +9,8 @@
       "Bash(xargs wc -l)",
       "Bash(xargs grep -l \"inventory\\\\|supplier\\\\|vendor\\\\|table\")",
       "Bash(xargs grep -l \"useCompanyStore\\\\|activeCompanyId\\\\|CompanyStore\")",
-      "WebSearch"
+      "WebSearch",
+      "Bash(dir /B \"C:\\\\\\\\Users\\\\\\\\usuario\\\\\\\\GestForce1\")"
     ]
   }
 }
