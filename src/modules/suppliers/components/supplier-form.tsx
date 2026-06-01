@@ -157,8 +157,8 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
       {activeTab === 'general' && (
         <div className="space-y-3">
 
-          {/* Tipo doc + Número */}
-          <div className="grid grid-cols-[150px_1fr] gap-3">
+          {/* Fila 1: Tipo doc + Número + Razón social */}
+          <div className="grid grid-cols-[140px_180px_1fr] gap-3">
             <div>
               <label className={lbl}>Tipo de documento</label>
               <select {...form.register('doc_type')} className={inp}>
@@ -169,27 +169,25 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
             </div>
             <div>
               <label className={lbl}>Número de documento</label>
-              <input {...form.register('doc_number')} className={inp} placeholder="Ej. 900123456-7" />
+              <input {...form.register('doc_number')} className={inp} placeholder="900123456-7" />
+            </div>
+            <div>
+              <label className={lbl}>
+                Razón social / Nombre <span className="text-red-500">*</span>
+              </label>
+              <input {...form.register('name')} className={inp}
+                placeholder="Ej. Suministros Industriales S.A.S." />
+              {form.formState.errors.name && (
+                <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.name.message}</p>
+              )}
             </div>
           </div>
 
-          {/* Razón social */}
-          <div>
-            <label className={lbl}>
-              Razón social / Nombre <span className="text-red-500">*</span>
-            </label>
-            <input {...form.register('name')} className={inp}
-              placeholder="Ej. Suministros Industriales S.A.S." />
-            {form.formState.errors.name && (
-              <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Contacto + Teléfono/WhatsApp */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Fila 2: Contacto + Teléfono + Email */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className={lbl}>Nombre del contacto</label>
-              <input {...form.register('contact_name')} className={inp} placeholder="Ej. Juan Pérez" />
+              <input {...form.register('contact_name')} className={inp} placeholder="Juan Pérez" />
             </div>
             <div>
               <label className={lbl}>
@@ -201,10 +199,6 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
               <input {...form.register('phone')} type="tel" className={inp}
                 placeholder="+57 300 123 4567" />
             </div>
-          </div>
-
-          {/* Email + Ciudad */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={lbl}>Email</label>
               <input {...form.register('email')} type="email" className={inp}
@@ -213,14 +207,14 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                 <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.email.message}</p>
               )}
             </div>
+          </div>
+
+          {/* Fila 3: Ciudad + Departamento + Dirección */}
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className={lbl}>Ciudad</label>
               <input {...form.register('city')} className={inp} placeholder="Bogotá" />
             </div>
-          </div>
-
-          {/* Departamento + Dirección (opcional) */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={lbl}>Departamento</label>
               <input {...form.register('department')} className={inp} placeholder="Cundinamarca" />
@@ -231,7 +225,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
             </div>
           </div>
 
-          {/* Régimen + Días pago */}
+          {/* Fila 4: Régimen + Días pago */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={lbl}>Régimen fiscal</label>
@@ -248,7 +242,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
             </div>
           </div>
 
-          {/* Notas */}
+          {/* Fila 5: Notas */}
           <div>
             <label className={lbl}>Notas internas <span className="text-zinc-400 font-normal">(opcional)</span></label>
             <textarea {...form.register('notes')} rows={2}

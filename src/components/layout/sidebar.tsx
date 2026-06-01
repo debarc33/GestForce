@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
@@ -8,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { useEnabledModules } from '@/modules/company/module-queries'
-import { MODULE_REGISTRY, type ModuleDefinition } from '@/config/modules'
+import { MODULE_REGISTRY } from '@/config/modules'
 
 export function Sidebar() {
   const pathname = usePathname()
@@ -16,53 +15,12 @@ export function Sidebar() {
   const { isCollapsed: collapsed, setSidebar } = useSidebarStore()
   const setCollapsed = (val: boolean) => setSidebar(val)
 
-  // Cargar módulos habilitados para la empresa activa
   const { data: enabledModules } = useEnabledModules(activeCompanyId)
 
-  // Estado de expansión de grupos (todos expandidos por defecto)
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    () => new Set(MODULE_REGISTRY.filter(m => m.children).map(m => m.id))
-  )
-
-  const toggleGroup = (id: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  // Filtrar módulos visibles:
-  // - Si enabledModules aún no cargó (undefined) → mostrar todos (sin parpadeo)
-  // - Si ya cargó → mostrar solo los habilitados
+  // Mostrar todos mientras carga; filtrar por habilitados una vez disponibles
   const visibleModules = MODULE_REGISTRY.filter(
     (m) => !enabledModules || enabledModules.has(m.id)
   )
-
-  // ── Helpers de estado activo ───────────────────────────────────────────────
-
-  /** Un grupo está activo si alguno de sus hijos coincide con el pathname actual */
-  function isGroupActive(module: ModuleDefinition): boolean {
-    if (!module.children) return false
-    return module.children.some(child => {
-      const childPath = child.href.split('?')[0]
-      return pathname.startsWith(childPath)
-    })
-  }
-
-  /** Un hijo está activo según su href (con o sin query string) */
-  function isChildActive(href: string): boolean {
-    const [childPath, childQuery] = href.split('?')
-    if (childQuery) {
-      // Para hrefs con tab: /sales?tab=quotes → activo solo si el path Y el tab coinciden
-      const tabParam = new URLSearchParams('?' + childQuery).get('tab')
-      const currentTab = typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('tab')
-        : null
-      return pathname === childPath && currentTab === tabParam
-    }
-    return pathname.startsWith(childPath)
-  }
 
   const initials = activeCompany?.name
     ? activeCompany.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
@@ -119,68 +77,6 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
         {visibleModules.map((item) => {
-
-          // ── MÓDULO AGRUPADO (tiene children) ────────────────────────────
-          if (item.children) {
-            const groupActive = isGroupActive(item)
-            const isExpanded  = expandedGroups.has(item.id)
-
-            return (
-              <div key={item.id}>
-                {/* Header del grupo */}
-                <button
-                  onClick={() => !collapsed && toggleGroup(item.id)}
-                  title={collapsed ? item.name : undefined}
-                  className={cn(
-                    'group flex w-full items-center gap-2.5 rounded-lg py-2 text-[13px] font-medium transition-all duration-100',
-                    collapsed ? 'justify-center px-0' : 'px-2.5',
-                    groupActive
-                      ? 'text-indigo-700'
-                      : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800'
-                  )}
-                >
-                  <item.icon className={cn(
-                    'h-[16px] w-[16px] shrink-0',
-                    groupActive ? 'text-indigo-600' : 'text-zinc-400 group-hover:text-zinc-600'
-                  )} />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 truncate text-left">{item.name}</span>
-                      <ChevronDown className={cn(
-                        'h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200',
-                        isExpanded && 'rotate-180'
-                      )} />
-                    </>
-                  )}
-                </button>
-
-                {/* Sub-ítems del grupo */}
-                {!collapsed && isExpanded && (
-                  <div className="mt-0.5 ml-5 space-y-0.5 border-l border-zinc-100 pl-2">
-                    {item.children.map(child => {
-                      const childActive = isChildActive(child.href)
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          className={cn(
-                            'flex items-center rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors',
-                            childActive
-                              ? 'bg-indigo-50 text-indigo-700'
-                              : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800'
-                          )}
-                        >
-                          {child.label}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )
-          }
-
-          // ── MÓDULO SIMPLE (enlace directo) ───────────────────────────────
           const isActive =
             item.href === '/' ? pathname === '/' : pathname.startsWith(item.href!)
 
@@ -211,6 +107,7 @@ export function Sidebar() {
 
       {/* Empresa activa */}
       <div className="border-t border-zinc-100 px-2 py-2">
+        {/* Empresa activa */}
         {collapsed ? (
           <div className="flex justify-center py-1">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-100 text-[10px] font-bold text-indigo-700">

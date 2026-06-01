@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useState, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useEffect, useState, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Ban } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -20,6 +20,7 @@ import {
 } from '@/modules/suppliers/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export-excel'
+import { useObligaciones, type ObligacionRow } from '@/modules/finances/queries'
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ const TABS = [
   { id: 'orders',    label: 'Órdenes de Compra' },
   { id: 'invoices',  label: 'Facturas Proveedor' },
   { id: 'suppliers', label: 'Proveedores' },
+  { id: 'cxp',       label: 'CxP' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -53,14 +55,44 @@ const SUPPLIER_FILTERS = [
   { label: 'Gran Contrib.',  value: 'gran_contribuyente' },
 ]
 
+const CXP_AGING_FILTERS = [
+  { label: 'Todas',      value: 'all' },
+  { label: 'Al día',     value: '0'   },
+  { label: '1-30 días',  value: '30'  },
+  { label: '31-60 días', value: '60'  },
+  { label: '61-90 días', value: '90'  },
+  { label: '+90 días',   value: '91'  },
+]
+
+function cxpAgingBand(dias: number) {
+  if (dias === 0)  return { cls: 'bg-green-100 text-green-700',   label: 'Al día' }
+  if (dias <= 30)  return { cls: 'bg-yellow-100 text-yellow-700', label: `${dias}d` }
+  if (dias <= 60)  return { cls: 'bg-orange-100 text-orange-700', label: `${dias}d` }
+  if (dias <= 90)  return { cls: 'bg-red-100 text-red-700',       label: `${dias}d` }
+  return               { cls: 'bg-red-200 text-red-800',          label: `${dias}d` }
+}
+
+function filterObligByAging(rows: ObligacionRow[], f: string): ObligacionRow[] {
+  if (f === 'all') return rows
+  if (f === '0')   return rows.filter(r => r.dias_vencido === 0)
+  if (f === '30')  return rows.filter(r => r.dias_vencido > 0  && r.dias_vencido <= 30)
+  if (f === '60')  return rows.filter(r => r.dias_vencido > 30 && r.dias_vencido <= 60)
+  if (f === '90')  return rows.filter(r => r.dias_vencido > 60 && r.dias_vencido <= 90)
+  if (f === '91')  return rows.filter(r => r.dias_vencido > 90)
+  return rows
+}
+
 // ─── Página ───────────────────────────────────────────────────────────────
 
 function PurchasesPageInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState<TabId>('orders')
+  const tabParam = searchParams.get('tab') as TabId | null
+
+  const [activeTab, setActiveTab] = useState<TabId>(tabParam ?? 'orders')
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -76,11 +108,17 @@ function PurchasesPageInner() {
   const [supplierBlockedCount, setSupplierBlockedCount]             = useState(0)
 
   useEffect(() => {
+    if (tabParam && TABS.some(t => t.id === tabParam)) setActiveTab(tabParam)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (!activeCompanyId) router.replace('/select-company')
   }, [activeCompanyId, router])
 
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab)
+    router.push(`/purchases?tab=${tab}`)
     setSearch('')
     setFilter('all')
     setSelectedIds([])
@@ -88,12 +126,23 @@ function PurchasesPageInner() {
 
   const { data: orders    = [], isLoading: loadingO } = usePurchaseOrders(activeCompanyId ?? undefined)
   const { data: invoices  = [], isLoading: loadingI } = useSupplierInvoices(activeCompanyId ?? undefined)
-  const { data: suppliers = [], isLoading: loadingS } = useSuppliers(activeCompanyId ?? undefined)
+  const { data: suppliers    = [], isLoading: loadingS   } = useSuppliers(activeCompanyId ?? undefined)
+  const { data: obligaciones = [], isLoading: loadingCxP } = useObligaciones(activeCompanyId ?? undefined)
+
+  const obligFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    let rows = obligaciones
+    if (q) rows = rows.filter(r =>
+      r.supplier.toLowerCase().includes(q) || r.invoice_number.toLowerCase().includes(q)
+    )
+    return filterObligByAging(rows, filter)
+  }, [obligaciones, search, filter])
 
   const isLoading =
-    (activeTab === 'orders'    && loadingO) ||
-    (activeTab === 'invoices'  && loadingI) ||
-    (activeTab === 'suppliers' && loadingS)
+    (activeTab === 'orders'    && loadingO)   ||
+    (activeTab === 'invoices'  && loadingI)   ||
+    (activeTab === 'suppliers' && loadingS)   ||
+    (activeTab === 'cxp'       && loadingCxP)
 
   // ─── Eliminación ─────────────────────────────────────────────────────────
 
@@ -189,6 +238,17 @@ function PurchasesPageInner() {
       if (lq) data = data.filter(r => (r.supplier?.name ?? '').toLowerCase().includes(lq) || r.invoice_number.toLowerCase().includes(lq) || (r.supplier_invoice_no ?? '').toLowerCase().includes(lq))
       if (filter !== 'all') data = data.filter(r => r.status === filter)
       exportToExcel(data, invoiceColumns, `facturas_proveedor_${today}`)
+    } else if (activeTab === 'cxp') {
+      const cols: ExcelColumn<ObligacionRow>[] = [
+        { header: 'Proveedor',    key: 'supplier',                           width: 28 },
+        { header: 'Factura #',    key: 'invoice_number',                     width: 16 },
+        { header: 'Emisión',      key: r => fmtDate(r.issue_date),           width: 14 },
+        { header: 'Vencimiento',  key: r => fmtDate(r.due_date),             width: 14 },
+        { header: 'Total',        key: r => fmtMoney(r.total),               width: 14 },
+        { header: 'Saldo',        key: r => fmtMoney(r.balance_due),         width: 14 },
+        { header: 'Días vencido', key: r => String(r.dias_vencido),          width: 12 },
+      ]
+      exportToExcel(obligFiltered, cols, `cxp_${today}`)
     } else {
       let data = suppliers
       if (lq) data = data.filter(s => s.name.toLowerCase().includes(lq) || (s.email ?? '').toLowerCase().includes(lq) || (s.doc_number ?? '').toLowerCase().includes(lq))
@@ -221,12 +281,20 @@ function PurchasesPageInner() {
       filterOptions: SUPPLIER_FILTERS,
       searchPlaceholder: 'Buscar por nombre, NIT, email...',
     },
+    cxp: {
+      subtitle: 'Facturas de proveedor pendientes de pago.',
+      onAdd: undefined as (() => void) | undefined,
+      onDelete: undefined as (() => void) | undefined,
+      filterOptions: CXP_AGING_FILTERS,
+      searchPlaceholder: 'Buscar por proveedor o # factura...',
+    },
   }[activeTab]
 
   const tabCounts: Record<TabId, number> = {
     orders:    orders.length,
     invoices:  invoices.length,
     suppliers: suppliers.length,
+    cxp:       obligaciones.length,
   }
 
   return (
@@ -299,6 +367,57 @@ function PurchasesPageInner() {
               globalFilter={search}
             />
           )}
+          {activeTab === 'cxp' && (
+            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+              {obligFiltered.length === 0 ? (
+                <div className="py-16 text-center text-sm text-zinc-400">
+                  No hay facturas pendientes de pago.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50/50 border-b border-zinc-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Proveedor</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Factura #</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Emisión</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencimiento</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Total</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Saldo</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencido</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {obligFiltered.map(row => {
+                      const band = cxpAgingBand(row.dias_vencido)
+                      return (
+                        <tr key={row.id} className="hover:bg-zinc-50/60 transition-colors">
+                          <td className="px-4 py-3 font-medium text-zinc-800">{row.supplier}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-blue-600">{row.invoice_number}</td>
+                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.issue_date)}</td>
+                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.due_date)}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-zinc-700">{fmtMoney(row.total)}</td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">{fmtMoney(row.balance_due)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              row.status === 'partial' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-600'
+                            }`}>
+                              {row.status === 'partial' ? 'Parcial' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
+                              {band.label}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -357,7 +476,7 @@ function PurchasesPageInner() {
 
       {/* Nuevo proveedor */}
       <Dialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-3xl rounded-2xl shadow-xl border-zinc-100">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-zinc-900">Nuevo proveedor</DialogTitle>
           </DialogHeader>

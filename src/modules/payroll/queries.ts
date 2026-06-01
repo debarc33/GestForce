@@ -16,8 +16,9 @@ export type Employee = {
   position:            string | null
   department:          string | null
   hire_date:           string
-  contract_type:       'indefinido' | 'fijo' | 'obra_labor' | 'aprendizaje'
+  contract_type:       'indefinido' | 'fijo' | 'obra_labor' | 'aprendizaje' | 'comision'
   salary:              number
+  commission_rate:     number | null
   is_active:           boolean
   eps_name:            string | null
   afp_name:            string | null
@@ -28,6 +29,13 @@ export type Employee = {
   bank_account_number: string | null
   notes:               string | null
   created_at:          string
+}
+
+/** Agente de comisión — subconjunto ligero para selectores en facturas */
+export type CommissionAgent = {
+  id:              string
+  name:            string
+  commission_rate: number | null
 }
 
 export type PayrollPeriod = {
@@ -307,6 +315,7 @@ export async function createEmployee(data: EmployeeInsertValues): Promise<Employ
       hire_date:           data.hire_date,
       contract_type:       data.contract_type,
       salary:              data.salary,
+      commission_rate:     data.contract_type === 'comision' ? (data.commission_rate ?? null) : null,
       is_active:           data.is_active            ?? true,
       eps_name:            data.eps_name             || null,
       afp_name:            data.afp_name             || null,
@@ -340,6 +349,7 @@ export async function updateEmployee(id: string, data: Partial<EmployeeFormValue
       hire_date:           data.hire_date,
       contract_type:       data.contract_type,
       salary:              data.salary,
+      commission_rate:     data.contract_type === 'comision' ? (data.commission_rate ?? null) : null,
       is_active:           data.is_active,
       eps_name:            data.eps_name             || null,
       afp_name:            data.afp_name             || null,
@@ -355,6 +365,32 @@ export async function updateEmployee(id: string, data: Partial<EmployeeFormValue
     .single()
   if (error) throw new Error(error.message)
   return result as Employee
+}
+
+// ─── Agentes de comisión ──────────────────────────────────────────────────────
+
+/**
+ * Devuelve los empleados con contract_type = 'comision' y is_active = true.
+ * Se usa en el selector de agente en el detalle de factura.
+ */
+export function useCommissionAgents(companyId?: string) {
+  return useQuery({
+    queryKey: ['commission_agents', companyId],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, name, commission_rate')
+        .eq('company_id', companyId!)
+        .eq('contract_type', 'comision')
+        .eq('is_active', true)
+        .order('name')
+      if (error) throw new Error(error.message)
+      return (data ?? []) as CommissionAgent[]
+    },
+    enabled: !!companyId,
+    staleTime: 1000 * 60 * 5,
+  })
 }
 
 export async function deleteEmployees(ids: string[]) {

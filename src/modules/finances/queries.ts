@@ -11,11 +11,12 @@ export type FinancePeriod = {
 }
 
 export type PanelSummary = {
-  ingresos:     number
-  gastos:       number
-  ivaNeto:      number   // ivaCobrado - ivaDescontable (negativo = saldo a favor)
-  cartera:      number   // total balance_due de facturas pendientes/parciales
-  obligaciones: number   // total balance_due de facturas proveedor pendientes/parciales
+  ingresos:       number
+  gastos:         number  // supplier_invoices + gastos directos
+  gastosDirectos: number  // solo expenses (gastos fijos/variables)
+  ivaNeto:        number  // ivaCobrado - ivaDescontable (negativo = saldo a favor)
+  cartera:        number  // total balance_due de facturas pendientes/parciales
+  obligaciones:   number  // total balance_due de facturas proveedor pendientes/parciales
 }
 
 export type MonthlyBar = {
@@ -94,7 +95,7 @@ export function usePanelSummary(companyId?: string, period?: FinancePeriod) {
     queryFn: async (): Promise<PanelSummary> => {
       const supabase = createClient()
 
-      const [invRes, supInvRes, arRes, apRes] = await Promise.all([
+      const [invRes, supInvRes, arRes, apRes, expRes] = await Promise.all([
         // Facturas de venta emitidas en el período
         supabase
           .from('invoices')
@@ -127,20 +128,34 @@ export function usePanelSummary(companyId?: string, period?: FinancePeriod) {
           .select('balance_due')
           .eq('company_id', companyId!)
           .in('status', ['pending', 'partial']),
+
+        // Gastos directos pagados en el período
+        supabase
+          .from('expenses')
+          .select('amount')
+          .eq('company_id', companyId!)
+          .eq('status', 'pagado')
+          .gte('expense_date', period!.from)
+          .lte('expense_date', period!.to),
       ])
 
-      const invoices  = invRes.data    ?? []
-      const supInvs   = supInvRes.data ?? []
-      const arItems   = arRes.data     ?? []
-      const apItems   = apRes.data     ?? []
+      const invoices       = invRes.data    ?? []
+      const supInvs        = supInvRes.data ?? []
+      const arItems        = arRes.data     ?? []
+      const apItems        = apRes.data     ?? []
+      const expItems       = expRes.data    ?? []
+
+      const gastosFacturas = supInvs.reduce((s, r) => s + Number(r.total), 0)
+      const gastosDirectos = expItems.reduce((s, r) => s + Number(r.amount), 0)
 
       return {
-        ingresos:     invoices.reduce((s, r) => s + Number(r.total), 0),
-        gastos:       supInvs.reduce((s, r) => s + Number(r.total), 0),
-        ivaNeto:      invoices.reduce((s, r) => s + Number(r.tax), 0)
-                    - supInvs.reduce((s, r) => s + Number(r.tax), 0),
-        cartera:      arItems.reduce((s, r) => s + Number(r.balance_due), 0),
-        obligaciones: apItems.reduce((s, r) => s + Number(r.balance_due), 0),
+        ingresos:       invoices.reduce((s, r) => s + Number(r.total), 0),
+        gastos:         gastosFacturas + gastosDirectos,
+        gastosDirectos,
+        ivaNeto:        invoices.reduce((s, r) => s + Number(r.tax), 0)
+                      - supInvs.reduce((s, r) => s + Number(r.tax), 0),
+        cartera:        arItems.reduce((s, r) => s + Number(r.balance_due), 0),
+        obligaciones:   apItems.reduce((s, r) => s + Number(r.balance_due), 0),
       }
     },
     enabled: !!companyId && !!period,

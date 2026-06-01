@@ -108,7 +108,7 @@ export default function SuppliersPage() {
 
       {/* Modal: nuevo proveedor */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-3xl rounded-2xl shadow-xl border-zinc-100">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-zinc-900">Nuevo proveedor</DialogTitle>
           </DialogHeader>

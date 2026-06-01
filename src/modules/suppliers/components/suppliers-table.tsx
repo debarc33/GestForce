@@ -220,7 +220,7 @@ export function SuppliersTable({
 
       {/* Modal de edición */}
       <Dialog open={!!editingSupplier} onOpenChange={(v) => { if (!v) setEditingSupplier(null) }}>
-        <DialogContent className="max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-3xl rounded-2xl shadow-xl border-zinc-100">
           <DialogHeader>
             <DialogTitle>Editar proveedor</DialogTitle>
           </DialogHeader>

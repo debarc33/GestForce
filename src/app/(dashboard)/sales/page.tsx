@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, Suspense } from 'react'
+import React, { useEffect, useState, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Ban } from 'lucide-react'
@@ -21,6 +21,7 @@ import {
 } from '@/modules/customers/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export-excel'
+import { useCartera, type CarteraRow } from '@/modules/finances/queries'
 
 // ─── Configuración de tabs ─────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ const TABS = [
   { id: 'invoices',  label: 'Facturas' },
   { id: 'receipts',  label: 'Recibos' },
   { id: 'customers', label: 'Clientes' },
+  { id: 'cxc',       label: 'CxC' },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -61,6 +63,33 @@ const CUSTOMER_FILTERS = [
   { label: 'Contado',            value: 'contado' },
   { label: 'Crédito',            value: 'credito' },
 ]
+
+const CXC_AGING_FILTERS = [
+  { label: 'Todas',      value: 'all' },
+  { label: 'Al día',     value: '0'   },
+  { label: '1-30 días',  value: '30'  },
+  { label: '31-60 días', value: '60'  },
+  { label: '61-90 días', value: '90'  },
+  { label: '+90 días',   value: '91'  },
+]
+
+function cxcAgingBand(dias: number) {
+  if (dias === 0)  return { cls: 'bg-green-100 text-green-700',   label: 'Al día' }
+  if (dias <= 30)  return { cls: 'bg-yellow-100 text-yellow-700', label: `${dias}d` }
+  if (dias <= 60)  return { cls: 'bg-orange-100 text-orange-700', label: `${dias}d` }
+  if (dias <= 90)  return { cls: 'bg-red-100 text-red-700',       label: `${dias}d` }
+  return               { cls: 'bg-red-200 text-red-800',          label: `${dias}d` }
+}
+
+function filterCarteraByAging(rows: CarteraRow[], f: string): CarteraRow[] {
+  if (f === 'all') return rows
+  if (f === '0')   return rows.filter(r => r.dias_vencido === 0)
+  if (f === '30')  return rows.filter(r => r.dias_vencido > 0  && r.dias_vencido <= 30)
+  if (f === '60')  return rows.filter(r => r.dias_vencido > 30 && r.dias_vencido <= 60)
+  if (f === '90')  return rows.filter(r => r.dias_vencido > 60 && r.dias_vencido <= 90)
+  if (f === '91')  return rows.filter(r => r.dias_vencido > 90)
+  return rows
+}
 
 // ─── Componente principal ──────────────────────────────────────────────────
 
@@ -110,12 +139,23 @@ function SalesPageInner() {
   const { data: invoices  = [], isLoading: loadingI } = useInvoices(activeCompanyId ?? undefined)
   const { data: receipts  = [], isLoading: loadingR } = useReceipts(activeCompanyId ?? undefined)
   const { data: customers = [], isLoading: loadingC } = useCustomers(activeCompanyId ?? undefined)
+  const { data: cartera   = [], isLoading: loadingCxC } = useCartera(activeCompanyId ?? undefined)
+
+  const carteraFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    let rows = cartera
+    if (q) rows = rows.filter(r =>
+      r.customer.toLowerCase().includes(q) || r.invoice_number.toLowerCase().includes(q)
+    )
+    return filterCarteraByAging(rows, filter)
+  }, [cartera, search, filter])
 
   const isLoading =
-    (activeTab === 'quotes'    && loadingQ) ||
-    (activeTab === 'invoices'  && loadingI) ||
-    (activeTab === 'receipts'  && loadingR) ||
-    (activeTab === 'customers' && loadingC)
+    (activeTab === 'quotes'    && loadingQ)   ||
+    (activeTab === 'invoices'  && loadingI)   ||
+    (activeTab === 'receipts'  && loadingR)   ||
+    (activeTab === 'customers' && loadingC)   ||
+    (activeTab === 'cxc'       && loadingCxC)
 
   // ─── Eliminación ─────────────────────────────────────────────────────────
 
@@ -231,6 +271,17 @@ function SalesPageInner() {
       if (lq) data = data.filter(r => (r.customer?.name ?? '').toLowerCase().includes(lq) || r.receipt_number.toLowerCase().includes(lq) || (r.invoice_number ?? '').toLowerCase().includes(lq))
       if (filter !== 'all') data = data.filter(r => r.status === filter)
       exportToExcel(data, receiptColumns, `recibos_${today}`)
+    } else if (activeTab === 'cxc') {
+      const cols: ExcelColumn<CarteraRow>[] = [
+        { header: 'Factura #',    key: 'invoice_number',              width: 16 },
+        { header: 'Cliente',      key: 'customer',                    width: 28 },
+        { header: 'Emisión',      key: r => fmtDate(r.issue_date),    width: 14 },
+        { header: 'Vencimiento',  key: r => fmtDate(r.due_date),      width: 14 },
+        { header: 'Total',        key: r => fmtMoney(r.total),        width: 14 },
+        { header: 'Saldo',        key: r => fmtMoney(r.balance_due),  width: 14 },
+        { header: 'Días vencido', key: r => String(r.dias_vencido),   width: 12 },
+      ]
+      exportToExcel(carteraFiltered, cols, `cxc_${today}`)
     } else {
       let data = customers
       if (lq) data = data.filter(c => c.name.toLowerCase().includes(lq) || (c.email ?? '').toLowerCase().includes(lq) || (c.doc_number ?? '').toLowerCase().includes(lq))
@@ -281,6 +332,14 @@ function SalesPageInner() {
       searchPlaceholder: 'Buscar por nombre, email, teléfono...',
       extraButtons: undefined as React.ReactNode,
     },
+    cxc: {
+      subtitle: 'Facturas de venta pendientes de cobro.',
+      onAdd: undefined as (() => void) | undefined,
+      onDelete: undefined as (() => void) | undefined,
+      filterOptions: CXC_AGING_FILTERS,
+      searchPlaceholder: 'Buscar por # factura o cliente...',
+      extraButtons: undefined as React.ReactNode,
+    },
   }[activeTab]
 
   const tabCounts: Record<TabId, number> = {
@@ -288,6 +347,7 @@ function SalesPageInner() {
     invoices:  invoices.length,
     receipts:  receipts.length,
     customers: customers.length,
+    cxc:       cartera.length,
   }
 
   return (
@@ -367,6 +427,57 @@ function SalesPageInner() {
               paymentFilter={filter}
             />
           )}
+          {activeTab === 'cxc' && (
+            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+              {carteraFiltered.length === 0 ? (
+                <div className="py-16 text-center text-sm text-zinc-400">
+                  No hay facturas pendientes de cobro.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50/50 border-b border-zinc-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Factura #</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Cliente</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Emisión</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencimiento</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Total</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Saldo</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencido</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {carteraFiltered.map(row => {
+                      const band = cxcAgingBand(row.dias_vencido)
+                      return (
+                        <tr key={row.id} className="hover:bg-zinc-50/60 transition-colors">
+                          <td className="px-4 py-3 font-mono text-sm text-blue-600">{row.invoice_number}</td>
+                          <td className="px-4 py-3 font-medium text-zinc-800">{row.customer}</td>
+                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.issue_date)}</td>
+                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.due_date)}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-zinc-700">{fmtMoney(row.total)}</td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">{fmtMoney(row.balance_due)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                              row.payment_status === 'partial' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-600'
+                            }`}>
+                              {row.payment_status === 'partial' ? 'Parcial' : 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
+                              {band.label}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -427,7 +538,7 @@ function SalesPageInner() {
 
       {/* Nuevo cliente */}
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-        <DialogContent className="max-w-xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-xl rounded-2xl shadow-xl border-zinc-100">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-zinc-900">Nuevo cliente</DialogTitle>
           </DialogHeader>

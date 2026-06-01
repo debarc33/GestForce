@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from 'react'
 import { Search, Bell, HelpCircle, ChevronDown, LogOut, Building2, Shield } from 'lucide-react'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -173,6 +174,8 @@ export function Header() {
         <button className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-100 transition-colors">
           <HelpCircle className="h-4 w-4" />
         </button>
+
+        <ThemeToggle className="h-8 w-8" />
 
         <div className="relative ml-1" ref={userRef}>
           <button

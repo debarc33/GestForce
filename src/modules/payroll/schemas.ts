@@ -5,6 +5,7 @@ export const CONTRACT_TYPES = [
   { value: 'fijo',         label: 'Término fijo' },
   { value: 'obra_labor',   label: 'Obra o labor' },
   { value: 'aprendizaje',  label: 'Contrato de aprendizaje' },
+  { value: 'comision',     label: 'Por comisión' },
 ] as const
 
 export const DOC_TYPES = [
@@ -42,8 +43,9 @@ export const employeeFormSchema = z.object({
   position:           z.string().optional().or(z.literal('')),
   department:         z.string().optional().or(z.literal('')),
   hire_date:          z.string().min(1, 'La fecha de ingreso es requerida'),
-  contract_type:      z.enum(['indefinido','fijo','obra_labor','aprendizaje']).default('indefinido'),
+  contract_type:      z.enum(['indefinido','fijo','obra_labor','aprendizaje','comision']).default('indefinido'),
   salary:             z.coerce.number().min(0, 'El salario no puede ser negativo'),
+  commission_rate:    z.coerce.number().min(0).max(100).optional().nullable(),
   is_active:          z.boolean().default(true),
   eps_name:           z.string().optional().or(z.literal('')),
   afp_name:           z.string().optional().or(z.literal('')),

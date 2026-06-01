@@ -14,12 +14,14 @@ import {
   defaultPeriod,
   type FinancePeriod,
 } from '@/modules/finances/queries'
+import { ExpensesTab } from '@/modules/finances/components/expenses-tab'
 
 // ─── Tipos y constantes ───────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'panel',     label: 'Panel'     },
   { id: 'impuestos', label: 'Impuestos' },
+  { id: 'gastos',    label: 'Gastos'    },
 ] as const
 type TabId = typeof TABS[number]['id']
 
@@ -186,7 +188,7 @@ export default function FinancesPage() {
                   <p className="text-xs font-medium text-zinc-500">Por cobrar</p>
                 </div>
                 <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(panel?.cartera ?? 0)}</p>
-                <Link href="/sales/cxc" className="text-xs text-blue-500 hover:underline mt-0.5 block">
+                <Link href="/sales?tab=cxc" className="text-xs text-blue-500 hover:underline mt-0.5 block">
                   Ver detalle CxC →
                 </Link>
               </div>
@@ -200,7 +202,7 @@ export default function FinancesPage() {
                   <p className="text-xs font-medium text-zinc-500">Por pagar</p>
                 </div>
                 <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(panel?.obligaciones ?? 0)}</p>
-                <Link href="/purchases/cxp" className="text-xs text-blue-500 hover:underline mt-0.5 block">
+                <Link href="/purchases?tab=cxp" className="text-xs text-blue-500 hover:underline mt-0.5 block">
                   Ver detalle CxP →
                 </Link>
               </div>
@@ -343,6 +345,16 @@ export default function FinancesPage() {
               Selecciona un período para ver el resumen de impuestos.
             </div>
           )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* TAB: GASTOS                                                       */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'gastos' && activeCompanyId && (
+        <div className="space-y-4">
+          <PeriodSelector />
+          <ExpensesTab companyId={activeCompanyId} period={period} />
         </div>
       )}
     </div>

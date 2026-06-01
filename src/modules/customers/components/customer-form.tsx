@@ -69,7 +69,8 @@ export function CustomerForm({ customer, onSuccess, onCancel }: CustomerFormProp
         referencia:    customer.referencia    ?? '',
       })
     }
-  }, [customer, form])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer])
 
   const mutation = useMutation({
     mutationFn: (values: CustomerFormValues) => {
@@ -191,13 +192,11 @@ export function CustomerForm({ customer, onSuccess, onCancel }: CustomerFormProp
       <div>
         <label className={lbl}>Referencia</label>
         <input
-          {...form.register('referencia')}
+          {...form.register('referencia', {
+            setValueAs: (v: string) => (typeof v === 'string' ? v.toUpperCase() : v),
+          })}
           className={inp + ' uppercase'}
           placeholder="Ej. placa, código, característica especial"
-          onChange={e => {
-            e.target.value = e.target.value.toUpperCase()
-            form.setValue('referencia', e.target.value)
-          }}
         />
         <p className="mt-0.5 text-[11px] text-zinc-400">
           Campo libre para identificar al cliente según tu negocio.

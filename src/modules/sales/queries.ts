@@ -43,7 +43,9 @@ export type InvoiceWithCustomer = {
   created_at: string
   rete_fuente: number
   rete_iva: number
+  agent_id: string | null
   customer: { id: string; name: string; email: string | null } | null
+  agent: { id: string; name: string; commission_rate: number | null } | null
 }
 
 export type ReceiptWithDetails = {
@@ -507,7 +509,15 @@ export function useInvoice(id?: string) {
           .from('quotes').select('quote_number').eq('id', data.quote_id).single()
         quote_number = q?.quote_number ?? null
       }
-      return { ...data, customer, quote_number } as InvoiceWithCustomer & { customer: QuoteCustomer | null }
+      let agent: InvoiceWithCustomer['agent'] = null
+      if (data.agent_id) {
+        const { data: a } = await supabase
+          .from('employees')
+          .select('id, name, commission_rate')
+          .eq('id', data.agent_id).single()
+        agent = a ?? null
+      }
+      return { ...data, customer, quote_number, agent } as InvoiceWithCustomer & { customer: QuoteCustomer | null }
     },
     enabled: !!id,
   })
@@ -574,6 +584,16 @@ export async function updateInvoiceWithItems(payload: {
 export async function cancelInvoice(invoiceId: string) {
   const supabase = createClient()
   const { error } = await supabase.rpc('cancel_invoice', { p_invoice_id: invoiceId })
+  if (error) throw new Error(error.message)
+}
+
+/** Asigna o desasigna el agente de comisión en una factura */
+export async function updateInvoiceAgent(invoiceId: string, agentId: string | null) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('invoices')
+    .update({ agent_id: agentId })
+    .eq('id', invoiceId)
   if (error) throw new Error(error.message)
 }
 

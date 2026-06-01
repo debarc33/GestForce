@@ -1,0 +1,687 @@
+'use client'
+
+import React, { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  Package, Boxes, ArrowDownToLine, ArrowUpFromLine,
+  Settings2, Search, Download, Tag,
+} from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { ModuleToolbar } from '@/components/ui/module-toolbar'
+import { ProductsTable } from '@/modules/products/components/products-table'
+import { ProductForm } from '@/modules/products/components/product-form'
+import { createCategory, deleteProducts, useProducts } from '@/modules/products/queries'
+import { createClient } from '@/lib/supabase/client'
+import { useCompanyStore } from '@/store/useCompanyStore'
+import { exportToExcel, fmtMoney, fmtPercent, type ExcelColumn } from '@/lib/export-excel'
+import {
+  useInventoryMovements, createAdjustment,
+  MOVEMENT_TYPE_LABELS, MOVEMENT_TYPE_COLORS,
+  type MovementType,
+} from '@/modules/inventory/queries'
+
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+type Tab = 'productos' | 'movimientos' | 'kardex' | 'ajustes'
+
+type ProductStock = {
+  id: string; name: string; sku: string | null
+  unit: string | null; stock: number; min_stock: number | null
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const fmt = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
+
+const fmtDateTime = (s: string) =>
+  new Date(s).toLocaleString('es-CO', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+
+function useProductsStock(companyId?: string | null) {
+  return useQuery({
+    queryKey: ['products_inventory', companyId],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, sku, unit, stock, min_stock')
+        .eq('company_id', companyId!)
+        .eq('is_active', true)
+        .order('name')
+      if (error) throw new Error(error.message)
+      return (data ?? []) as ProductStock[]
+    },
+    enabled: !!companyId,
+  })
+}
+
+// ─── Tab: Productos ───────────────────────────────────────────────────────────
+
+const STOCK_FILTER_OPTIONS = [
+  { label: 'Todo el inventario', value: 'all' },
+  { label: 'En stock',           value: 'in' },
+  { label: 'Stock bajo',         value: 'low' },
+  { label: 'Sin stock',          value: 'out' },
+  { label: 'Por reponer',        value: 'reorder' },
+]
+
+function ProductosTab({ companyId }: { companyId: string }) {
+  const queryClient = useQueryClient()
+
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
+  const [categoryName, setCategoryName] = useState('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [searchValue, setSearchValue] = useState('')
+  const [stockFilter, setStockFilter] = useState('all')
+
+  const { data: allProducts = [] } = useProducts(companyId)
+
+  const TAX_TYPE_LABEL: Record<string, string> = {
+    iva: 'IVA (gravado)', excluded: 'Excluido de IVA', exempt: 'Exento de IVA', no_tax: 'Sin impuesto',
+  }
+
+  type ProductRow = typeof allProducts[number]
+
+  const productColumns: ExcelColumn<ProductRow>[] = [
+    { header: 'Nombre',       key: 'name',        width: 30 },
+    { header: 'SKU',          key: 'sku',          width: 14 },
+    { header: 'Descripción',  key: 'description',  width: 36 },
+    { header: 'Precio',       key: (r) => fmtMoney(r.price), width: 14 },
+    { header: 'Stock',        key: 'stock',         width: 10 },
+    { header: 'Stock mínimo', key: 'stock_minimum', width: 12 },
+    { header: 'Unidad',       key: 'unit',          width: 12 },
+    { header: 'Categoría',    key: (r) => (r as ProductRow & { categories?: { name: string } | null }).categories?.name ?? '', width: 18 },
+    { header: 'Tipo IVA',     key: (r) => TAX_TYPE_LABEL[r.tax_type] ?? r.tax_type, width: 18 },
+    { header: 'Tarifa IVA',   key: (r) => fmtPercent(r.tax_rate), width: 12 },
+  ]
+
+  const handleExport = () => {
+    let data = allProducts
+    if (searchValue.trim()) {
+      const q = searchValue.trim().toLowerCase()
+      data = data.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.sku ?? '').toLowerCase().includes(q) ||
+        ((p as ProductRow & { categories?: { name: string } | null }).categories?.name ?? '').toLowerCase().includes(q)
+      )
+    }
+    type PR = typeof allProducts[number] & { stock_minimum?: number }
+    if (stockFilter === 'in')      data = data.filter(p => p.stock >= 10)
+    if (stockFilter === 'low')     data = data.filter(p => p.stock > 0 && p.stock < 10)
+    if (stockFilter === 'out')     data = data.filter(p => p.stock === 0)
+    if (stockFilter === 'reorder') data = data.filter(p => { const m = (p as PR).stock_minimum ?? 0; return m > 0 && p.stock <= m })
+    exportToExcel(data, productColumns, `productos_${new Date().toISOString().slice(0, 10)}`)
+  }
+
+  const categoryMutation = useMutation({
+    mutationFn: () => {
+      return createCategory({ name: categoryName.trim(), company_id: companyId })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', companyId] })
+      setCategoryName('')
+      setIsCategoryDialogOpen(false)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteProducts(selectedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', companyId] })
+      setSelectedIds([])
+    },
+  })
+
+  const inputClass =
+    'w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+
+  return (
+    <div className="space-y-6">
+      <ModuleToolbar
+        title=""
+        subtitle="Catálogo de productos, precios y stock."
+        selectedCount={selectedIds.length}
+        onAdd={() => setIsProductDialogOpen(true)}
+        onDelete={selectedIds.length > 0 ? () => deleteMutation.mutate() : undefined}
+        onPrint={() => window.print()}
+        onUpload={(file) => console.log('Archivo cargado:', file.name)}
+        onExport={handleExport}
+        extraButtons={
+          <button
+            onClick={() => setIsCategoryDialogOpen(true)}
+            title="Nueva categoría"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 transition-all"
+          >
+            <Tag className="h-4 w-4" />
+            <span className="hidden sm:inline">Categoría</span>
+          </button>
+        }
+        searchValue={searchValue}
+        onSearchChange={setSearchValue}
+        searchPlaceholder="Buscar por nombre, SKU, categoría..."
+        filterOptions={STOCK_FILTER_OPTIONS}
+        filterValue={stockFilter}
+        onFilterChange={setStockFilter}
+      />
+
+      <ProductsTable
+        onSelectionChange={setSelectedIds}
+        globalFilter={searchValue}
+        stockFilter={stockFilter}
+      />
+
+      {/* Dialog: Nuevo Producto */}
+      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+        <DialogContent className="max-w-xl rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-zinc-900">Nuevo producto</DialogTitle>
+          </DialogHeader>
+          <ProductForm onSuccess={() => setIsProductDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Nueva Categoría */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[380px] rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-zinc-900">Nueva categoría</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-1">
+            <input
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && categoryMutation.mutate()}
+              className={inputClass}
+              placeholder="Ej. Ropa, Electrónica, Alimentos..."
+              autoFocus
+            />
+            {categoryMutation.isError && (
+              <p className="text-sm text-red-500">
+                {categoryMutation.error instanceof Error
+                  ? categoryMutation.error.message
+                  : 'Error al crear la categoría'}
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)} className="border-zinc-200">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => categoryMutation.mutate()}
+                disabled={!categoryName.trim() || categoryMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {categoryMutation.isPending ? 'Guardando...' : 'Crear'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+// ─── Tab: Movimientos ─────────────────────────────────────────────────────────
+
+function MovimientosTab({ companyId }: { companyId: string }) {
+  const [filterType, setFilterType] = useState<string>('')
+  const [filterProduct, setFilterProduct] = useState<string>('')
+  const [search, setSearch] = useState('')
+
+  const { data: movements = [], isLoading } = useInventoryMovements(companyId, filterProduct || null)
+  const { data: products = [] } = useProductsStock(companyId)
+
+  const filtered = movements.filter(m => {
+    if (filterType && m.movement_type !== filterType) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const pname = m.product?.name?.toLowerCase() ?? ''
+      const ref   = (m.reference_no ?? '').toLowerCase()
+      if (!pname.includes(q) && !ref.includes(q)) return false
+    }
+    return true
+  })
+
+  function exportCsv() {
+    const rows = [
+      ['Fecha', 'Producto', 'Tipo', 'Cantidad', 'Stock antes', 'Stock después', 'Referencia', 'Notas'],
+      ...filtered.map(m => [
+        fmtDateTime(m.created_at),
+        m.product?.name ?? m.product_id,
+        MOVEMENT_TYPE_LABELS[m.movement_type],
+        m.quantity, m.stock_before, m.stock_after,
+        m.reference_no ?? '', m.notes ?? '',
+      ]),
+    ]
+    const csv  = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a'); a.href = url
+    a.download = 'movimientos_inventario.csv'; a.click()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar producto o referencia..."
+            className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          />
+        </div>
+        <select
+          value={filterProduct} onChange={e => setFilterProduct(e.target.value)}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none min-w-44"
+        >
+          <option value="">Todos los productos</option>
+          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <select
+          value={filterType} onChange={e => setFilterType(e.target.value)}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none min-w-36"
+        >
+          <option value="">Todos los tipos</option>
+          {(Object.keys(MOVEMENT_TYPE_LABELS) as MovementType[]).map(t => (
+            <option key={t} value={t}>{MOVEMENT_TYPE_LABELS[t]}</option>
+          ))}
+        </select>
+        <button
+          onClick={exportCsv}
+          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+        >
+          <Download className="h-4 w-4" />Exportar
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-12 animate-pulse rounded-xl bg-zinc-100" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center">
+          <Boxes className="h-10 w-10 text-zinc-300 mx-auto mb-3" />
+          <p className="text-sm text-zinc-500">No hay movimientos registrados.</p>
+          <p className="text-xs text-zinc-400 mt-1">Los ajustes manuales aparecerán aquí.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-zinc-200 overflow-hidden bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 border-b border-zinc-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Producto</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Tipo</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Cantidad</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Stock antes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Stock después</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Referencia</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {filtered.map(m => (
+                <tr key={m.id} className="hover:bg-zinc-50 transition-colors">
+                  <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
+                  <td className="px-4 py-3 font-medium text-zinc-900 max-w-48 truncate">
+                    {m.product?.name ?? '—'}
+                    {m.product?.sku && <span className="ml-1.5 text-xs text-zinc-400 font-mono">{m.product.sku}</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                      {MOVEMENT_TYPE_LABELS[m.movement_type]}
+                    </span>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-mono font-medium tabular-nums ${m.quantity >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {m.quantity >= 0 ? '+' : ''}{fmt(m.quantity)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-zinc-500 tabular-nums">{fmt(m.stock_before)}</td>
+                  <td className="px-4 py-3 text-right font-mono font-medium text-zinc-900 tabular-nums">{fmt(m.stock_after)}</td>
+                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                    {m.reference_no
+                      ? <span className="font-mono">{m.reference_no}</span>
+                      : m.notes ? <span className="italic">{m.notes}</span> : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Tab: Kardex ──────────────────────────────────────────────────────────────
+
+function KardexTab({ companyId }: { companyId: string }) {
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const { data: products = [] } = useProductsStock(companyId)
+  const { data: allMovements = [], isLoading } = useInventoryMovements(companyId, selectedProduct || null)
+
+  const product  = products.find(p => p.id === selectedProduct)
+  const movements = [...allMovements].reverse()
+
+  function exportCsv() {
+    if (!product) return
+    const rows = [
+      ['Fecha', 'Tipo', 'Entrada', 'Salida', 'Saldo', 'Referencia'],
+      ...movements.map(m => [
+        fmtDateTime(m.created_at),
+        MOVEMENT_TYPE_LABELS[m.movement_type],
+        m.quantity > 0 ? m.quantity : '',
+        m.quantity < 0 ? Math.abs(m.quantity) : '',
+        m.stock_after,
+        m.reference_no ?? m.notes ?? '',
+      ]),
+    ]
+    const csv  = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a'); a.href = url
+    a.download = `kardex_${product.name.replace(/\s+/g, '_')}.csv`; a.click()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3 items-center">
+        <select
+          value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none flex-1 max-w-80"
+        >
+          <option value="">— Selecciona un producto —</option>
+          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        {product && (
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+          >
+            <Download className="h-4 w-4" />Exportar
+          </button>
+        )}
+      </div>
+
+      {!selectedProduct ? (
+        <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center">
+          <Package className="h-10 w-10 text-zinc-300 mx-auto mb-3" />
+          <p className="text-sm text-zinc-500">Selecciona un producto para ver su kardex.</p>
+        </div>
+      ) : isLoading ? (
+        <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded-xl bg-zinc-100" />)}</div>
+      ) : (
+        <div className="space-y-4">
+          {product && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-zinc-900">{product.name}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    {product.sku  && <span className="text-xs font-mono text-zinc-500">SKU: {product.sku}</span>}
+                    {product.unit && <span className="text-xs text-zinc-400">Unidad: {product.unit}</span>}
+                    {product.min_stock != null && (
+                      <span className="text-xs text-zinc-400">Stock mín.: {fmt(product.min_stock)}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-400 mb-0.5">Stock actual</p>
+                  <p className={`text-2xl font-bold tabular-nums ${
+                    product.min_stock != null && product.stock <= product.min_stock
+                      ? 'text-red-600' : 'text-zinc-900'
+                  }`}>
+                    {fmt(product.stock)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {movements.length === 0 ? (
+            <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
+              <p className="text-sm text-zinc-400">Sin movimientos para este producto.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-zinc-200 overflow-hidden bg-white">
+              <table className="w-full text-sm">
+                <thead className="bg-zinc-50 border-b border-zinc-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Tipo</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-green-700">Entrada</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-red-600">Salida</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Saldo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Referencia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {movements.map(m => (
+                    <tr key={m.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                          {MOVEMENT_TYPE_LABELS[m.movement_type]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-green-700 tabular-nums">
+                        {m.quantity > 0 ? fmt(m.quantity) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-red-600 tabular-nums">
+                        {m.quantity < 0 ? fmt(Math.abs(m.quantity)) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono font-semibold text-zinc-900 tabular-nums">
+                        {fmt(m.stock_after)}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-500 text-xs">
+                        {m.reference_no
+                          ? <span className="font-mono">{m.reference_no}</span>
+                          : m.notes ? <span className="italic">{m.notes}</span> : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="border-t-2 border-zinc-200 bg-zinc-50">
+                  <tr>
+                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-zinc-700">Saldo actual</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-lg text-zinc-900 tabular-nums">
+                      {product ? fmt(product.stock) : '—'}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Tab: Ajustes ─────────────────────────────────────────────────────────────
+
+function AjustesTab({ companyId }: { companyId: string }) {
+  const queryClient = useQueryClient()
+  const { data: products = [] } = useProductsStock(companyId)
+
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [newQty, setNewQty]                   = useState<string>('')
+  const [notes, setNotes]                     = useState<string>('')
+  const [error, setError]                     = useState<string | null>(null)
+  const [success, setSuccess]                 = useState(false)
+
+  const product  = products.find(p => p.id === selectedProduct)
+  const parsedQty = newQty === '' ? NaN : Number(newQty)
+  const diff = !isNaN(parsedQty) && product ? parsedQty - product.stock : null
+
+  const mut = useMutation({
+    mutationFn: async () => {
+      if (!selectedProduct)                      throw new Error('Selecciona un producto')
+      if (isNaN(parsedQty) || parsedQty < 0)    throw new Error('Ingresa una cantidad válida (≥ 0)')
+      if (!notes.trim())                         throw new Error('El motivo del ajuste es requerido')
+      await createAdjustment(companyId, selectedProduct, parsedQty, notes.trim())
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory_movements', companyId] })
+      queryClient.invalidateQueries({ queryKey: ['products_inventory', companyId] })
+      setNewQty(''); setNotes(''); setError(null); setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    },
+    onError: (e: Error) => setError(e.message),
+  })
+
+  return (
+    <div className="max-w-lg space-y-6">
+      <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-5">
+        <div>
+          <h3 className="text-sm font-semibold text-zinc-900 mb-0.5">Ajuste de inventario</h3>
+          <p className="text-xs text-zinc-500">Corrige el stock de un producto (conteo físico o corrección).</p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Producto</label>
+          <select
+            value={selectedProduct}
+            onChange={e => { setSelectedProduct(e.target.value); setNewQty(''); setError(null) }}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          >
+            <option value="">— Selecciona un producto —</option>
+            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+
+        {product && (
+          <div className="rounded-lg bg-zinc-50 border border-zinc-200 px-4 py-3 flex items-center justify-between text-sm">
+            <span className="text-zinc-500">Stock registrado actualmente</span>
+            <span className="font-mono font-bold text-zinc-900 tabular-nums text-lg">
+              {fmt(product.stock)}
+              {product.unit && <span className="text-xs font-normal text-zinc-400 ml-1">{product.unit}</span>}
+            </span>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Cantidad real (conteo físico)</label>
+          <input
+            type="number" min={0} step={0.01} value={newQty}
+            onChange={e => { setNewQty(e.target.value); setError(null) }}
+            placeholder="0"
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          />
+          {diff !== null && (
+            <p className={`text-xs mt-1.5 font-medium ${diff === 0 ? 'text-zinc-500' : diff > 0 ? 'text-green-700' : 'text-red-600'}`}>
+              {diff === 0 ? 'Sin cambios' : diff > 0 ? `+${fmt(diff)} de entrada` : `${fmt(diff)} de salida`}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Motivo del ajuste</label>
+          <textarea
+            value={notes} onChange={e => setNotes(e.target.value)}
+            placeholder="Ej. Conteo físico enero 2026, merma por vencimiento..."
+            rows={3}
+            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none resize-none"
+          />
+        </div>
+
+        {error   && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {success && (
+          <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+            Ajuste registrado correctamente.
+          </p>
+        )}
+
+        <button
+          onClick={() => mut.mutate()}
+          disabled={mut.isPending || !selectedProduct}
+          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+        >
+          {mut.isPending ? 'Guardando...' : 'Registrar ajuste'}
+        </button>
+      </div>
+
+      <p className="text-xs text-zinc-400 bg-zinc-50 rounded-lg border border-zinc-200 px-4 py-3">
+        Los ajustes quedan registrados en el historial de movimientos con tipo "Ajuste".
+        Úsalos para correcciones por conteo físico, mermas, devoluciones sin referencia o errores de carga.
+      </p>
+    </div>
+  )
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
+export default function InventarioPage() {
+  const router = useRouter()
+  const { activeCompanyId } = useCompanyStore()
+  const [tab, setTab] = useState<Tab>('productos')
+
+  useEffect(() => {
+    if (!activeCompanyId) router.replace('/select-company')
+  }, [activeCompanyId, router])
+
+  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
+    { id: 'productos',   label: 'Productos',           icon: Package  },
+    { id: 'movimientos', label: 'Movimientos de Stock', icon: Boxes    },
+    { id: 'kardex',      label: 'Kardex',               icon: Download },
+    { id: 'ajustes',     label: 'Ajustes',              icon: Settings2 },
+  ]
+
+  return (
+    <div className="space-y-6">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Inventario</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">
+            Productos, catálogo, movimientos de stock y ajustes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5">
+            <ArrowDownToLine className="h-4 w-4 text-green-600" />
+            <span className="text-xs font-medium text-green-700">Entradas</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
+            <ArrowUpFromLine className="h-4 w-4 text-red-600" />
+            <span className="text-xs font-medium text-red-700">Salidas</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-zinc-200">
+        <nav className="-mb-px flex gap-0">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+                tab === t.id
+                  ? 'border-indigo-600 text-indigo-700'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
+              }`}
+            >
+              <t.icon className="h-4 w-4" />
+              {t.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Contenido */}
+      {activeCompanyId && (
+        <>
+          {tab === 'productos'   && <ProductosTab   companyId={activeCompanyId} />}
+          {tab === 'movimientos' && <MovimientosTab companyId={activeCompanyId} />}
+          {tab === 'kardex'      && <KardexTab      companyId={activeCompanyId} />}
+          {tab === 'ajustes'     && <AjustesTab     companyId={activeCompanyId} />}
+        </>
+      )}
+    </div>
+  )
+}

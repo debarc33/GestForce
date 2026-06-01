@@ -479,7 +479,7 @@ export function CustomersTable({
 
       {/* ── Modal: Editar cliente ──────────────────────────────── */}
       <Dialog open={!!editingCustomer} onOpenChange={(v) => { if (!v) setEditingCustomer(null) }}>
-        <DialogContent className="max-w-xl rounded-2xl border-slate-200 shadow-2xl">
+        <DialogContent className="sm:max-w-xl rounded-2xl border-slate-200 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-slate-900">
               {editingCustomer ? 'Editar cliente' : 'Nuevo cliente'}

@@ -5,9 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, AlertCircle, Loader2, FileText, Printer, Ban, Link2, Receipt, FileMinus, FilePlus, AlertTriangle } from 'lucide-react'
 import { useCustomers } from '@/modules/customers/queries'
+import { useCommissionAgents } from '@/modules/payroll/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import {
-  useInvoice, useInvoiceItems, cancelInvoice, useReceipts,
+  useInvoice, useInvoiceItems, cancelInvoice, updateInvoiceAgent, useReceipts,
   useCreditDebitNotes, useCreditDebitNoteItems,
   type CreditDebitNote,
 } from '@/modules/sales/queries'
@@ -49,6 +50,7 @@ export default function EditInvoicePage() {
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [noteType, setNoteType]           = useState<'credit' | 'debit' | null>(null)
   const [viewingNote, setViewingNote]     = useState<CreditDebitNote | null>(null)
+  const [agentSaved, setAgentSaved]       = useState(false)
 
   const { data: invoice,      isLoading: loadingInvoice } = useInvoice(id)
   const { data: invoiceItems = [], isLoading: loadingItems } = useInvoiceItems(id)
@@ -57,6 +59,16 @@ export default function EditInvoicePage() {
   const { data: allReceipts = []   } = useReceipts(activeCompanyId ?? undefined)
   const { data: creditDebitNotes = [] } = useCreditDebitNotes(id)
   const { data: noteItems = []     } = useCreditDebitNoteItems(viewingNote?.id)
+  const { data: commissionAgents = [] } = useCommissionAgents(activeCompanyId ?? undefined)
+
+  const agentMut = useMutation({
+    mutationFn: (agentId: string | null) => updateInvoiceAgent(id, agentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoice', id] })
+      setAgentSaved(true)
+      setTimeout(() => setAgentSaved(false), 2000)
+    },
+  })
   const invoiceReceipts = allReceipts.filter(r => r.invoice_id === id)
 
   const { expiryAlert } = getDianAlerts(company)
@@ -286,7 +298,7 @@ export default function EditInvoicePage() {
       )}
 
       {/* 2 · Encabezado */}
-      <div className="rounded-xl border border-zinc-200 bg-white p-3">
+      <div className="rounded-xl border border-zinc-200 bg-white p-3 space-y-3">
         <div className="grid grid-cols-4 gap-3">
           <div className="col-span-2">
             <label className="block text-xs font-medium text-zinc-500 mb-1">Cliente</label>
@@ -311,6 +323,54 @@ export default function EditInvoicePage() {
             <input type="date" value={invoice.due_date ?? ''} readOnly className={inputRoCls} />
           </div>
         </div>
+
+        {/* Agente de comisión — visible solo si hay agentes registrados */}
+        {commissionAgents.length > 0 && (
+          <div className="border-t border-zinc-100 pt-3">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex-1 min-w-48">
+                <label className="block text-xs font-medium text-zinc-500 mb-1">
+                  Agente de venta
+                </label>
+                <select
+                  value={invoice.agent_id ?? ''}
+                  onChange={e => agentMut.mutate(e.target.value === '' ? null : e.target.value)}
+                  disabled={agentMut.isPending}
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 transition-colors disabled:opacity-60"
+                >
+                  <option value="">— Sin agente —</option>
+                  {commissionAgents.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}{a.commission_rate != null ? ` (${a.commission_rate}%)` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Comisión calculada */}
+              {invoice.agent && invoice.agent.commission_rate != null && (
+                <div className="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2 min-w-40">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-500 mb-0.5">
+                    Comisión estimada
+                  </p>
+                  <p className="text-sm font-bold text-indigo-700 tabular-nums">
+                    {fmt(invoice.total * invoice.agent.commission_rate / 100)}
+                  </p>
+                  <p className="text-[10px] text-indigo-400">
+                    {invoice.agent.commission_rate}% de {fmt(invoice.total)}
+                  </p>
+                </div>
+              )}
+
+              {/* Confirmación de guardado */}
+              {agentSaved && (
+                <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+                  ✓ Agente guardado
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3 · Tabla de ítems */}

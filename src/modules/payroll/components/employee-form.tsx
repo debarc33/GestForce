@@ -33,11 +33,13 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
     defaultValues: {
       name: '', doc_type: 'CC', doc_number: '', birth_date: '',
       position: '', department: '', hire_date: '',
-      contract_type: 'indefinido', salary: 0, is_active: true,
+      contract_type: 'indefinido', salary: 0, commission_rate: null, is_active: true,
       eps_name: '', afp_name: '', arl_rate: 0.00522, ccf_name: '',
       bank_name: '', bank_account_type: '', bank_account_number: '', notes: '',
     },
   })
+
+  const watchContractType = form.watch('contract_type')
 
   useEffect(() => {
     if (employee) {
@@ -51,6 +53,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
         hire_date:           employee.hire_date,
         contract_type:       (employee.contract_type as EmployeeFormValues['contract_type']) ?? 'indefinido',
         salary:              employee.salary,
+        commission_rate:     employee.commission_rate      ?? null,
         is_active:           employee.is_active,
         eps_name:            employee.eps_name             ?? '',
         afp_name:            employee.afp_name             ?? '',
@@ -62,7 +65,8 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
         notes:               employee.notes                ?? '',
       })
     }
-  }, [employee, form])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employee])
 
   const mutation = useMutation({
     mutationFn: (values: EmployeeFormValues) => {
@@ -168,17 +172,46 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
               {CONTRACT_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
-          <div>
-            <label className={lbl}>Salario básico mensual (COP) <span className="text-red-500">*</span></label>
-            <input type="number" min="0" step="1000" {...form.register('salary')} className={inp}
-              placeholder="1300000" />
-            {form.formState.errors.salary && (
-              <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.salary.message}</p>
-            )}
-            <p className="text-xs text-zinc-400 mt-0.5">
-              El auxilio de transporte se agrega automáticamente si el salario es ≤ 2 SMLV.
-            </p>
-          </div>
+
+          {/* Comisión: solo aparece cuando contract_type = 'comision' */}
+          {watchContractType === 'comision' ? (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-3">
+              <p className="text-xs font-medium text-indigo-700 flex items-center gap-1.5">
+                <span>%</span> Configuración de comisión
+              </p>
+              <div>
+                <label className={lbl}>Porcentaje de comisión <span className="text-red-500">*</span></label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" min="0" max="100" step="0.1"
+                    {...form.register('commission_rate')}
+                    className={inp}
+                    placeholder="Ej. 5"
+                  />
+                  <span className="text-sm font-medium text-zinc-500 shrink-0">%</span>
+                </div>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Porcentaje sobre el total neto de cada factura que se asigne a este agente.
+                </p>
+              </div>
+              <div className="rounded-lg bg-white border border-indigo-100 px-3 py-2 text-xs text-indigo-600">
+                Este empleado aparecerá como <strong>agente</strong> seleccionable en las facturas de venta.
+                El valor de comisión se calcula al liquidar la nómina del período.
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className={lbl}>Salario básico mensual (COP) <span className="text-red-500">*</span></label>
+              <input type="number" min="0" step="1000" {...form.register('salary')} className={inp}
+                placeholder="1300000" />
+              {form.formState.errors.salary && (
+                <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.salary.message}</p>
+              )}
+              <p className="text-xs text-zinc-400 mt-0.5">
+                El auxilio de transporte se agrega automáticamente si el salario es ≤ 2 SMLV.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
