@@ -321,24 +321,24 @@ export default function SettingsPage() {
     <div className="flex items-center justify-between">
       <div>
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
           {badge}
         </div>
-        <p className="text-sm text-zinc-500 mt-0.5">{sub}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{sub}</p>
       </div>
       {!editing ? (
         <button onClick={onEdit}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-[var(--glass)] transition-colors">
           <Pencil className="h-3.5 w-3.5" />Editar
         </button>
       ) : (
         <div className="flex items-center gap-2">
           <button onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
+            className="rounded-lg border border-[var(--glass-border)] px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-[var(--glass)] transition-colors">
             Cancelar
           </button>
           <button onClick={onSave} disabled={companyMut.isPending}
-            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
             {companyMut.isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
@@ -370,17 +370,17 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Configuración</h1>
-        <p className="mt-0.5 text-[13px] text-zinc-400">Personaliza el comportamiento de GestForce para tu empresa.</p>
+        <h1 className="text-xl font-bold text-foreground tracking-tight">Configuración</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">Personaliza el comportamiento de GestForce para tu empresa.</p>
       </div>
 
       <div className="flex gap-8 items-start">
 
         {/* ── Navegación lateral ─────────────────────────────────────── */}
-        <nav className="w-48 shrink-0 sticky top-6 rounded-xl border border-zinc-200 bg-white p-3 space-y-4">
+        <nav className="w-48 shrink-0 sticky top-6 rounded-xl border border-[var(--glass-border)] glass-surface p-3 space-y-4">
           {NAV_GROUPS.map(group => (
             <div key={group.label}>
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mb-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 mb-1">
                 {group.label}
               </p>
               <div className="space-y-0.5">
@@ -390,8 +390,8 @@ export default function SettingsPage() {
                     onClick={() => setActiveSection(item.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                       activeSection === item.id
-                        ? 'bg-blue-50 text-blue-700 font-semibold'
-                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
                     }`}
                   >
                     {item.label}
@@ -416,9 +416,9 @@ export default function SettingsPage() {
         />
 
         {loadingCompany ? (
-          <div className="h-40 animate-pulse rounded-xl bg-zinc-100" />
+          <div className="h-40 animate-pulse rounded-xl bg-[var(--glass-hover)]" />
         ) : editingCompany ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div><label className={lbl}>Nombre comercial</label>
                 <input value={companyForm.name ?? ''} onChange={cf('name')} className={fieldCls} placeholder="Mi Empresa S.A.S." /></div>
@@ -453,7 +453,7 @@ export default function SettingsPage() {
               <div>
                 <label className={lbl}>
                   Cód. Actividad Económica (CIIU)
-                  <span className="text-zinc-400 font-normal ml-1">(opcional)</span>
+                  <span className="text-muted-foreground font-normal ml-1">(opcional)</span>
                 </label>
                 <input value={companyForm.ciiu_code ?? ''} onChange={cf('ciiu_code')}
                   className={fieldCls} placeholder="Ej. 4711" maxLength={10} />
@@ -462,28 +462,28 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
             {company ? (
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                    <Building2 className="h-5 w-5 text-blue-600" />
+                  <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                    <Building2 className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-zinc-900">{company.name}</p>
+                    <p className="font-semibold text-foreground">{company.name}</p>
                     {company.legal_name && company.legal_name !== company.name && (
-                      <p className="text-xs text-zinc-400">{company.legal_name}</p>
+                      <p className="text-xs text-muted-foreground">{company.legal_name}</p>
                     )}
-                    {company.nit && <p className="text-xs text-zinc-500 mt-0.5">NIT: <span className="font-mono">{company.nit}</span></p>}
+                    {company.nit && <p className="text-xs text-muted-foreground mt-0.5">NIT: <span className="font-mono">{company.nit}</span></p>}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm border-t border-zinc-100 pt-3">
-                  {company.address && (<div><p className="text-xs text-zinc-400">Dirección</p><p className="text-zinc-700">{company.address}</p></div>)}
-                  {(company.city || company.department) && (<div><p className="text-xs text-zinc-400">Ciudad</p><p className="text-zinc-700">{[company.city, company.department].filter(Boolean).join(', ')}</p></div>)}
-                  {company.phone && (<div><p className="text-xs text-zinc-400">Teléfono</p><p className="text-zinc-700">{company.phone}</p></div>)}
-                  {company.email && (<div><p className="text-xs text-zinc-400">Email</p><p className="text-zinc-700">{company.email}</p></div>)}
-                  <div><p className="text-xs text-zinc-400">Régimen fiscal</p><p className="text-zinc-700">{FISCAL_LABELS[company.fiscal_regime] ?? company.fiscal_regime}</p></div>
-                  {company.ciiu_code && (<div><p className="text-xs text-zinc-400">CIIU</p><p className="text-zinc-700 font-mono">{company.ciiu_code}</p></div>)}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm border-t border-[var(--glass-border)]/50 pt-3">
+                  {company.address && (<div><p className="text-xs text-muted-foreground">Dirección</p><p className="text-foreground">{company.address}</p></div>)}
+                  {(company.city || company.department) && (<div><p className="text-xs text-muted-foreground">Ciudad</p><p className="text-foreground">{[company.city, company.department].filter(Boolean).join(', ')}</p></div>)}
+                  {company.phone && (<div><p className="text-xs text-muted-foreground">Teléfono</p><p className="text-foreground">{company.phone}</p></div>)}
+                  {company.email && (<div><p className="text-xs text-muted-foreground">Email</p><p className="text-foreground">{company.email}</p></div>)}
+                  <div><p className="text-xs text-muted-foreground">Régimen fiscal</p><p className="text-foreground">{FISCAL_LABELS[company.fiscal_regime] ?? company.fiscal_regime}</p></div>
+                  {company.ciiu_code && (<div><p className="text-xs text-muted-foreground">CIIU</p><p className="text-foreground font-mono">{company.ciiu_code}</p></div>)}
                 </div>
                 {!company.nit && (
                   <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                 )}
               </div>
             ) : (
-              <p className="text-sm text-zinc-400 text-center py-4">No se pudo cargar el perfil.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No se pudo cargar el perfil.</p>
             )}
           </div>
         )}
@@ -518,7 +518,7 @@ export default function SettingsPage() {
         />
 
         {editingDian ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div><label className={lbl}>Número de resolución</label>
                 <input value={companyForm.dian_resolution ?? ''} onChange={cf('dian_resolution')}
@@ -544,22 +544,22 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
             {company?.dian_resolution ? (
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                <div><p className="text-xs text-zinc-400">Resolución</p><p className="font-mono text-zinc-700">{company.dian_resolution}</p></div>
-                {company.dian_resolution_date && <div><p className="text-xs text-zinc-400">Fecha resolución</p><p className="text-zinc-700">{new Date(company.dian_resolution_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p></div>}
-                {company.dian_prefix && <div><p className="text-xs text-zinc-400">Prefijo</p><p className="font-mono text-zinc-700">{company.dian_prefix}</p></div>}
+                <div><p className="text-xs text-muted-foreground">Resolución</p><p className="font-mono text-foreground">{company.dian_resolution}</p></div>
+                {company.dian_resolution_date && <div><p className="text-xs text-muted-foreground">Fecha resolución</p><p className="text-foreground">{new Date(company.dian_resolution_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}</p></div>}
+                {company.dian_prefix && <div><p className="text-xs text-muted-foreground">Prefijo</p><p className="font-mono text-foreground">{company.dian_prefix}</p></div>}
                 {(company.dian_from_number || company.dian_to_number) && (
-                  <div><p className="text-xs text-zinc-400">Rango autorizado</p>
-                    <p className="font-mono text-zinc-700">{company.dian_from_number?.toLocaleString()} — {company.dian_to_number?.toLocaleString()}</p>
+                  <div><p className="text-xs text-muted-foreground">Rango autorizado</p>
+                    <p className="font-mono text-foreground">{company.dian_from_number?.toLocaleString()} — {company.dian_to_number?.toLocaleString()}</p>
                   </div>
                 )}
-                {company.dian_validity_from && <div><p className="text-xs text-zinc-400">Vigencia desde</p><p className="text-zinc-700">{new Date(company.dian_validity_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
-                {company.dian_validity_to && <div><p className="text-xs text-zinc-400">Vigencia hasta</p><p className="text-zinc-700">{new Date(company.dian_validity_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
+                {company.dian_validity_from && <div><p className="text-xs text-muted-foreground">Vigencia desde</p><p className="text-foreground">{new Date(company.dian_validity_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
+                {company.dian_validity_to && <div><p className="text-xs text-muted-foreground">Vigencia hasta</p><p className="text-foreground">{new Date(company.dian_validity_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
               </div>
             ) : (
-              <p className="text-sm text-zinc-400 text-center py-3">No hay resolución configurada. Haz clic en Editar para agregarla.</p>
+              <p className="text-sm text-muted-foreground text-center py-3">No hay resolución configurada. Haz clic en Editar para agregarla.</p>
             )}
           </div>
         )}
@@ -578,19 +578,19 @@ export default function SettingsPage() {
           />
 
           {editingFE ? (
-            <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
               {/* Modo */}
               <div>
                 <p className={lbl}>Modo de operación</p>
                 <div className="flex gap-3">
                   <button type="button"
                     onClick={() => cfBool('fe_test_mode', true)}
-                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${companyForm.fe_test_mode ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'}`}>
+                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${companyForm.fe_test_mode ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
                     🔶 Habilitación (pruebas)
                   </button>
                   <button type="button"
                     onClick={() => cfBool('fe_test_mode', false)}
-                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${!companyForm.fe_test_mode ? 'border-green-300 bg-green-50 text-green-700' : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'}`}>
+                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${!companyForm.fe_test_mode ? 'border-green-300 bg-green-50 text-green-700' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
                     ✅ Producción
                   </button>
                 </div>
@@ -607,23 +607,23 @@ export default function SettingsPage() {
               <div><label className={lbl}>Llave Técnica del PT</label>
                 <input type="password" value={companyForm.fe_technical_key ?? ''} onChange={cf('fe_technical_key')}
                   className={fieldCls} placeholder="Clave técnica para el cálculo del CUFE" /></div>
-              <p className="text-xs text-zinc-400 rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-2">
+              <p className="text-xs text-muted-foreground rounded-lg bg-[var(--glass)] border border-[var(--glass-border)]/50 px-3 py-2">
                 El CUFE y el XML UBL 2.1 se calculan automáticamente al emitir cada factura.
                 La transmisión a la DIAN se realiza a través de tu Proveedor Tecnológico.
               </p>
               {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
             </div>
           ) : (
-            <div className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
               {feConfigured ? (
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <div><p className="text-xs text-zinc-400">URL del PT</p><p className="text-zinc-700 truncate">{company?.fe_api_url ?? '—'}</p></div>
-                  <div><p className="text-xs text-zinc-400">ID de Software</p><p className="font-mono text-zinc-700">{company?.fe_software_id ?? '—'}</p></div>
-                  <div><p className="text-xs text-zinc-400">PIN</p><p className="text-zinc-700">••••••••</p></div>
-                  <div><p className="text-xs text-zinc-400">Llave Técnica</p><p className="text-zinc-700">••••••••</p></div>
+                  <div><p className="text-xs text-muted-foreground">URL del PT</p><p className="text-foreground truncate">{company?.fe_api_url ?? '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">ID de Software</p><p className="font-mono text-foreground">{company?.fe_software_id ?? '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">PIN</p><p className="text-foreground">••••••••</p></div>
+                  <div><p className="text-xs text-muted-foreground">Llave Técnica</p><p className="text-foreground">••••••••</p></div>
                 </div>
               ) : (
-                <p className="text-sm text-zinc-400 text-center py-3">
+                <p className="text-sm text-muted-foreground text-center py-3">
                   Configura las credenciales de tu PT para habilitar la Facturación Electrónica DIAN.
                 </p>
               )}
@@ -642,7 +642,7 @@ export default function SettingsPage() {
           onCancel={() => { setEditingIca(false); setCompanyError(null) }}
         />
         {editingIca ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div>
               <label className={lbl}>
                 Tasa ICA municipal (%)
@@ -658,7 +658,7 @@ export default function SettingsPage() {
                 className={fieldCls}
                 placeholder="0.414"
               />
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Ingresa el porcentaje (%). Ej: Bogotá comercio = 0.414%, industria = 0.966%.
                 Consulta la tarifa con tu contador o en el sitio web de tu alcaldía.
               </p>
@@ -666,10 +666,10 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-500">Tasa ICA configurada</span>
-              <span className="font-mono font-medium text-zinc-900">
+              <span className="text-muted-foreground">Tasa ICA configurada</span>
+              <span className="font-mono font-medium text-foreground">
                 {((company?.ica_rate ?? 0.00414) * 100).toFixed(3)}%
               </span>
             </div>
@@ -688,7 +688,7 @@ export default function SettingsPage() {
           onCancel={() => { setEditingPayroll(false); setCompanyError(null) }}
         />
         {editingPayroll ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={lbl}>SMLV — Salario mínimo mensual (COP)</label>
@@ -703,7 +703,7 @@ export default function SettingsPage() {
                   value={companyForm.transport_allowance ?? 162000}
                   onChange={cfNum('transport_allowance')}
                   className={fieldCls} placeholder="162000" />
-                <p className="text-xs text-zinc-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Se aplica a empleados con salario ≤ 2 SMLV.
                 </p>
               </div>
@@ -711,17 +711,17 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
             <div className="grid grid-cols-2 gap-6 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500">SMLV mensual</span>
-                <span className="font-mono font-medium text-zinc-900">
+                <span className="text-muted-foreground">SMLV mensual</span>
+                <span className="font-mono font-medium text-foreground">
                   ${(company?.smlv ?? 1300000).toLocaleString('es-CO')} COP
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Auxilio de transporte</span>
-                <span className="font-mono font-medium text-zinc-900">
+                <span className="text-muted-foreground">Auxilio de transporte</span>
+                <span className="font-mono font-medium text-foreground">
                   ${(company?.transport_allowance ?? 162000).toLocaleString('es-CO')} COP
                 </span>
               </div>
@@ -742,7 +742,7 @@ export default function SettingsPage() {
         />
 
         {editingPrint ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-5">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-5">
 
             {/* Tamaño de papel */}
             <div>
@@ -757,8 +757,8 @@ export default function SettingsPage() {
                     onClick={() => setCompanyForm(prev => ({ ...prev, print_paper_size: p.value }))}
                     className={`flex flex-col items-center rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                       companyForm.print_paper_size === p.value
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
-                        : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
+                        ? 'border-primary/40 bg-primary/10 text-primary'
+                        : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
                     }`}
                   >
                     <span>{p.label}</span>
@@ -773,25 +773,25 @@ export default function SettingsPage() {
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div
                   onClick={() => cfBool('print_show_logo', !(companyForm.print_show_logo ?? true))}
-                  className={`h-5 w-9 rounded-full transition-colors relative cursor-pointer ${companyForm.print_show_logo ?? true ? 'bg-blue-600' : 'bg-zinc-200'}`}
+                  className={`h-5 w-9 rounded-full transition-colors relative cursor-pointer ${companyForm.print_show_logo ?? true ? 'bg-primary' : 'bg-muted'}`}
                 >
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${companyForm.print_show_logo ?? true ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full glass-surface shadow transition-transform ${companyForm.print_show_logo ?? true ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-800">Mostrar logo en documentos</p>
-                  <p className="text-xs text-zinc-400">Aparece junto al nombre de la empresa en facturas y cotizaciones</p>
+                  <p className="text-sm font-medium text-foreground">Mostrar logo en documentos</p>
+                  <p className="text-xs text-muted-foreground">Aparece junto al nombre de la empresa en facturas y cotizaciones</p>
                 </div>
               </label>
               <label className="flex items-center gap-3 cursor-pointer group">
                 <div
                   onClick={() => cfBool('print_auto_dian_footer', !(companyForm.print_auto_dian_footer ?? true))}
-                  className={`h-5 w-9 rounded-full transition-colors relative cursor-pointer ${companyForm.print_auto_dian_footer ?? true ? 'bg-blue-600' : 'bg-zinc-200'}`}
+                  className={`h-5 w-9 rounded-full transition-colors relative cursor-pointer ${companyForm.print_auto_dian_footer ?? true ? 'bg-primary' : 'bg-muted'}`}
                 >
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${companyForm.print_auto_dian_footer ?? true ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full glass-surface shadow transition-transform ${companyForm.print_auto_dian_footer ?? true ? 'translate-x-4' : 'translate-x-0.5'}`} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-zinc-800">Incluir resolución DIAN automática</p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-sm font-medium text-foreground">Incluir resolución DIAN automática</p>
+                  <p className="text-xs text-muted-foreground">
                     Genera: &quot;Resolución de Facturación DIAN No. X del fecha, autoriza del FV-1 al FV-1000, vigente hasta...&quot;
                   </p>
                 </div>
@@ -802,7 +802,7 @@ export default function SettingsPage() {
             <div>
               <label className={lbl}>
                 Líneas legales adicionales
-                <span className="font-normal text-zinc-400 ml-1">(una por línea)</span>
+                <span className="font-normal text-muted-foreground ml-1">(una por línea)</span>
               </label>
               <textarea
                 value={companyForm.print_legal_lines ?? ''}
@@ -811,17 +811,17 @@ export default function SettingsPage() {
                 placeholder={'No somos autorretenedores de renta\nNo somos grandes contribuyentes\nActuamos como agentes de retención de IVA'}
                 className={`${fieldCls} resize-none`}
               />
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Estas líneas aparecen al pie de facturas y cotizaciones, después de la resolución DIAN.
               </p>
             </div>
 
             {/* Preview del pie */}
             {(companyForm.print_auto_dian_footer || companyForm.print_legal_lines) && (
-              <div className="rounded-lg bg-zinc-50 border border-zinc-200 px-4 py-3 space-y-1">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Vista previa del pie</p>
+              <div className="rounded-lg bg-[var(--glass)] border border-[var(--glass-border)] px-4 py-3 space-y-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Vista previa del pie</p>
                 {companyForm.print_auto_dian_footer && company?.dian_resolution && (
-                  <p className="text-[10px] text-zinc-600 text-center">
+                  <p className="text-[10px] text-muted-foreground text-center">
                     Resolución de Facturación DIAN No. {company.dian_resolution}
                     {company.dian_resolution_date ? ` del ${new Date(company.dian_resolution_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}
                     {company.dian_prefix && company.dian_from_number && company.dian_to_number
@@ -831,12 +831,12 @@ export default function SettingsPage() {
                   </p>
                 )}
                 {companyForm.print_auto_dian_footer && !company?.dian_resolution && (
-                  <p className="text-[10px] text-zinc-400 italic text-center">
+                  <p className="text-[10px] text-muted-foreground italic text-center">
                     (Configura la resolución DIAN para ver la línea automática)
                   </p>
                 )}
                 {(companyForm.print_legal_lines ?? '').split('\n').filter(l => l.trim()).map((line, i) => (
-                  <p key={i} className="text-[10px] text-zinc-600 text-center">{line.trim()}</p>
+                  <p key={i} className="text-[10px] text-muted-foreground text-center">{line.trim()}</p>
                 ))}
               </div>
             )}
@@ -844,32 +844,32 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4 space-y-3">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-500">Tamaño de papel</span>
-              <span className="font-medium text-zinc-900">
+              <span className="text-muted-foreground">Tamaño de papel</span>
+              <span className="font-medium text-foreground">
                 {company?.print_paper_size === 'media_carta' ? 'Media carta' :
                  company?.print_paper_size === 'tiquete_80mm' ? 'Tiquete 80 mm' : 'Carta'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm border-t border-zinc-100 pt-3">
-              <span className="text-zinc-500">Logo en documentos</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_show_logo !== false ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-500'}`}>
+            <div className="flex items-center justify-between text-sm border-t border-[var(--glass-border)]/50 pt-3">
+              <span className="text-muted-foreground">Logo en documentos</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_show_logo !== false ? 'bg-green-100 text-green-700' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
                 {company?.print_show_logo !== false ? 'Activado' : 'Desactivado'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm border-t border-zinc-100 pt-3">
-              <span className="text-zinc-500">Resolución DIAN automática</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_auto_dian_footer !== false ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-zinc-500'}`}>
+            <div className="flex items-center justify-between text-sm border-t border-[var(--glass-border)]/50 pt-3">
+              <span className="text-muted-foreground">Resolución DIAN automática</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_auto_dian_footer !== false ? 'bg-green-100 text-green-700' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
                 {company?.print_auto_dian_footer !== false ? 'Activado' : 'Desactivado'}
               </span>
             </div>
             {company?.print_legal_lines && (
-              <div className="border-t border-zinc-100 pt-3">
-                <p className="text-xs text-zinc-400 mb-1">Líneas legales</p>
+              <div className="border-t border-[var(--glass-border)]/50 pt-3">
+                <p className="text-xs text-muted-foreground mb-1">Líneas legales</p>
                 <div className="space-y-0.5">
                   {company.print_legal_lines.split('\n').filter(l => l.trim()).map((line, i) => (
-                    <p key={i} className="text-xs text-zinc-600">• {line.trim()}</p>
+                    <p key={i} className="text-xs text-muted-foreground">• {line.trim()}</p>
                   ))}
                 </div>
               </div>
@@ -896,13 +896,13 @@ export default function SettingsPage() {
         />
 
         {editingLogo ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-5">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-5">
             {/* Logo upload */}
             <div>
-              <p className="block text-xs font-medium text-zinc-500 mb-3">Logo de la empresa</p>
+              <p className="block text-xs font-medium text-muted-foreground mb-3">Logo de la empresa</p>
               <div className="flex items-center gap-5">
                 {/* Preview */}
-                <div className="h-24 w-24 rounded-xl border-2 border-dashed border-zinc-300 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                <div className="h-24 w-24 rounded-xl border-2 border-dashed border-[var(--glass-border)] glass-surface flex items-center justify-center overflow-hidden shrink-0">
                   {(logoPreview ?? company?.logo_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -911,7 +911,7 @@ export default function SettingsPage() {
                       className="h-full w-full object-contain p-1"
                     />
                   ) : (
-                    <ImageIcon className="h-8 w-8 text-zinc-300" />
+                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
                   )}
                 </div>
                 <div className="space-y-2 flex-1">
@@ -925,7 +925,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => logoInputRef.current?.click()}
-                    className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+                    className="flex items-center gap-2 rounded-lg border border-[var(--glass-border)] glass-surface px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass)] transition-colors"
                   >
                     <Upload className="h-4 w-4" />
                     {company?.logo_url ? 'Cambiar logo' : 'Subir logo'}
@@ -935,12 +935,12 @@ export default function SettingsPage() {
                       type="button"
                       onClick={uploadLogo}
                       disabled={logoUploading}
-                      className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
                     >
                       {logoUploading ? 'Subiendo...' : 'Confirmar subida'}
                     </button>
                   )}
-                  <p className="text-xs text-zinc-400">PNG, JPG o WebP · máx. 2 MB</p>
+                  <p className="text-xs text-muted-foreground">PNG, JPG o WebP · máx. 2 MB</p>
                   {logoError && <p className="text-xs text-red-600">{logoError}</p>}
                 </div>
               </div>
@@ -956,7 +956,7 @@ export default function SettingsPage() {
                 placeholder="Ej. Consigne a Bancolombia Cta Ahorros 123-456789-00 a nombre de Mi Empresa S.A.S."
                 className={`${fieldCls} resize-none`}
               />
-              <p className="text-xs text-zinc-400 mt-1">Aparece al pie de cada factura y orden de compra impresa o en PDF.</p>
+              <p className="text-xs text-muted-foreground mt-1">Aparece al pie de cada factura y orden de compra impresa o en PDF.</p>
             </div>
 
             {/* Términos cotizaciones */}
@@ -974,35 +974,35 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-4">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-4">
             <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-xl border border-zinc-200 bg-zinc-50 flex items-center justify-center overflow-hidden shrink-0">
+              <div className="h-16 w-16 rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] flex items-center justify-center overflow-hidden shrink-0">
                 {company?.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={company.logo_url} alt="Logo" className="h-full w-full object-contain p-1" />
                 ) : (
-                  <ImageIcon className="h-7 w-7 text-zinc-300" />
+                  <ImageIcon className="h-7 w-7 text-muted-foreground/40" />
                 )}
               </div>
               <div className="text-sm">
-                <p className="font-medium text-zinc-900">{company?.logo_url ? 'Logo cargado' : 'Sin logo'}</p>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="font-medium text-foreground">{company?.logo_url ? 'Logo cargado' : 'Sin logo'}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {company?.logo_url ? 'Aparece en encabezados de documentos' : 'Agrega tu logo para documentos profesionales'}
                 </p>
               </div>
             </div>
             {(company?.invoice_footer || company?.quote_terms) && (
-              <div className="border-t border-zinc-100 pt-3 space-y-2 text-sm">
+              <div className="border-t border-[var(--glass-border)]/50 pt-3 space-y-2 text-sm">
                 {company.invoice_footer && (
                   <div>
-                    <p className="text-xs text-zinc-400">Pie de facturas</p>
-                    <p className="text-zinc-700 text-xs mt-0.5 leading-relaxed">{company.invoice_footer}</p>
+                    <p className="text-xs text-muted-foreground">Pie de facturas</p>
+                    <p className="text-foreground text-xs mt-0.5 leading-relaxed">{company.invoice_footer}</p>
                   </div>
                 )}
                 {company.quote_terms && (
                   <div>
-                    <p className="text-xs text-zinc-400">Términos en cotizaciones</p>
-                    <p className="text-zinc-700 text-xs mt-0.5 leading-relaxed line-clamp-2">{company.quote_terms}</p>
+                    <p className="text-xs text-muted-foreground">Términos en cotizaciones</p>
+                    <p className="text-foreground text-xs mt-0.5 leading-relaxed line-clamp-2">{company.quote_terms}</p>
                   </div>
                 )}
               </div>
@@ -1015,15 +1015,15 @@ export default function SettingsPage() {
       <section className={`space-y-4${activeSection !== 'bancos' ? ' hidden' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Cuentas bancarias</h2>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <h2 className="text-base font-semibold text-foreground">Cuentas bancarias</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Cuentas de la empresa para recibir pagos. Aparecen en el pie de facturas.
             </p>
           </div>
           {!addingBank && (
             <button
               onClick={() => { setAddingBank(true); setBankError(null) }}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" />Agregar
             </button>
@@ -1032,7 +1032,7 @@ export default function SettingsPage() {
 
         {/* Formulario nueva cuenta */}
         {addingBank && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-4 space-y-3">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={lbl}>Banco</label>
@@ -1069,7 +1069,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className={lbl}>Titular <span className="text-zinc-400 font-normal">(opcional)</span></label>
+                <label className={lbl}>Titular <span className="text-muted-foreground font-normal">(opcional)</span></label>
                 <input
                   value={bankForm.account_holder}
                   onChange={e => setBankForm(p => ({ ...p, account_holder: e.target.value }))}
@@ -1086,7 +1086,7 @@ export default function SettingsPage() {
                   onChange={e => setBankForm(p => ({ ...p, is_primary: e.target.checked }))}
                   className="rounded"
                 />
-                <span className="text-xs text-zinc-600">Marcar como cuenta principal</span>
+                <span className="text-xs text-muted-foreground">Marcar como cuenta principal</span>
               </label>
             </div>
             {bankError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{bankError}</p>}
@@ -1094,13 +1094,13 @@ export default function SettingsPage() {
               <button
                 onClick={() => bankCreateMut.mutate()}
                 disabled={bankCreateMut.isPending}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {bankCreateMut.isPending ? 'Guardando...' : 'Guardar cuenta'}
               </button>
               <button
                 onClick={() => { setAddingBank(false); setBankError(null) }}
-                className="rounded-lg border border-zinc-200 px-4 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+                className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-[var(--glass)] transition-colors"
               >
                 Cancelar
               </button>
@@ -1109,36 +1109,36 @@ export default function SettingsPage() {
         )}
 
         {loadingBanks ? (
-          <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-16 animate-pulse rounded-xl bg-zinc-100" />)}</div>
+          <div className="space-y-2">{[1,2].map(i => <div key={i} className="h-16 animate-pulse rounded-xl bg-[var(--glass-hover)]" />)}</div>
         ) : bankAccounts.length === 0 && !addingBank ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
-            <CreditCard className="h-9 w-9 text-zinc-300 mx-auto mb-2" />
-            <p className="text-sm text-zinc-500">No hay cuentas bancarias configuradas.</p>
-            <p className="text-xs text-zinc-400 mt-1">Agrega la cuenta donde tus clientes te consignarán.</p>
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-8 text-center">
+            <CreditCard className="h-9 w-9 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No hay cuentas bancarias configuradas.</p>
+            <p className="text-xs text-muted-foreground mt-1">Agrega la cuenta donde tus clientes te consignarán.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {bankAccounts.map(acc => (
               <div
                 key={acc.id}
-                className={`flex items-center justify-between rounded-xl border px-4 py-3 bg-white transition-colors ${acc.is_primary ? 'border-blue-200 bg-blue-50/30' : 'border-zinc-200'}`}
+                className={`flex items-center justify-between rounded-xl border px-4 py-3 glass-surface transition-colors ${acc.is_primary ? 'border-primary/30 bg-primary/10/30' : 'border-[var(--glass-border)]'}`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${acc.is_primary ? 'bg-blue-100' : 'bg-zinc-100'}`}>
-                    <CreditCard className={`h-4 w-4 ${acc.is_primary ? 'text-blue-600' : 'text-zinc-500'}`} />
+                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${acc.is_primary ? 'bg-primary/20' : 'bg-[var(--glass-hover)]'}`}>
+                    <CreditCard className={`h-4 w-4 ${acc.is_primary ? 'text-primary' : 'text-muted-foreground'}`} />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-zinc-900 truncate">{acc.bank_name}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{acc.bank_name}</p>
                       {acc.is_primary && (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-primary/20 text-primary">
                           <Star className="h-3 w-3" />Principal
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-500 font-mono">
+                    <p className="text-xs text-muted-foreground font-mono">
                       {acc.account_type.charAt(0).toUpperCase() + acc.account_type.slice(1)} · {acc.account_number}
-                      {acc.account_holder && <span className="font-sans ml-1.5 text-zinc-400">— {acc.account_holder}</span>}
+                      {acc.account_holder && <span className="font-sans ml-1.5 text-muted-foreground">— {acc.account_holder}</span>}
                     </p>
                   </div>
                 </div>
@@ -1147,14 +1147,14 @@ export default function SettingsPage() {
                     <button
                       onClick={() => bankPrimaryMut.mutate(acc.id)}
                       title="Marcar como principal"
-                      className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-blue-600 transition-colors"
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-primary transition-colors"
                     >
                       <Star className="h-4 w-4" />
                     </button>
                   )}
                   <button
                     onClick={() => { if (confirm('¿Eliminar esta cuenta bancaria?')) bankDeleteMut.mutate(acc.id) }}
-                    className="rounded-md p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -1169,12 +1169,12 @@ export default function SettingsPage() {
       <section className={`space-y-4${activeSection !== 'medios_pago' ? ' hidden' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Medios de pago</h2>
-            <p className="text-sm text-zinc-500 mt-0.5">Métodos disponibles al registrar pagos en recibos.</p>
+            <h2 className="text-base font-semibold text-foreground">Medios de pago</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Métodos disponibles al registrar pagos en recibos.</p>
           </div>
           {!addingNew && (
             <button onClick={() => setAddingNew(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 transition-colors shadow-sm">
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm">
               <Plus className="h-4 w-4" />Agregar
             </button>
           )}
@@ -1185,11 +1185,11 @@ export default function SettingsPage() {
         )}
 
         {isLoading ? (
-          <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-14 animate-pulse rounded-xl bg-zinc-100" />)}</div>
+          <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-14 animate-pulse rounded-xl bg-[var(--glass-hover)]" />)}</div>
         ) : paymentMethods.length === 0 && !addingNew ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
-            <p className="text-sm text-zinc-500">No hay medios de pago configurados.</p>
-            <p className="text-xs text-zinc-400 mt-1">Agrega Efectivo, Transferencia, etc.</p>
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-8 text-center">
+            <p className="text-sm text-muted-foreground">No hay medios de pago configurados.</p>
+            <p className="text-xs text-muted-foreground mt-1">Agrega Efectivo, Transferencia, etc.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -1199,25 +1199,25 @@ export default function SettingsPage() {
               }
               return (
                 <div key={method.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3">
+                  className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] glass-surface px-4 py-3">
                   <div className="flex items-center gap-3">
                     <button onClick={() => toggleActive.mutate({ id: method.id, is_active: !method.is_active })}
                       title={method.is_active ? 'Desactivar' : 'Activar'}
-                      className={`h-5 w-9 rounded-full transition-colors relative ${method.is_active ? 'bg-blue-600' : 'bg-zinc-200'}`}>
-                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${method.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      className={`h-5 w-9 rounded-full transition-colors relative ${method.is_active ? 'bg-primary' : 'bg-muted'}`}>
+                      <span className={`absolute top-0.5 h-4 w-4 rounded-full glass-surface shadow transition-transform ${method.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
                     </button>
                     <div>
-                      <p className="text-sm font-medium text-zinc-900">{method.name}</p>
-                      <p className="text-xs text-zinc-400">{TYPE_LABELS[method.type] ?? method.type}</p>
+                      <p className="text-sm font-medium text-foreground">{method.name}</p>
+                      <p className="text-xs text-muted-foreground">{TYPE_LABELS[method.type] ?? method.type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => setEditingId(method.id)}
-                      className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-muted-foreground transition-colors">
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button onClick={() => deleteMut.mutate(method.id)}
-                      className="rounded-md p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -1239,7 +1239,7 @@ export default function SettingsPage() {
           onCancel={() => { setEditingThreshold(false); setCompanyError(null) }}
         />
         {editingThreshold ? (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/20 p-5 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div>
               <label className={lbl}>
                 Umbral identificación del comprador (COP)
@@ -1247,7 +1247,7 @@ export default function SettingsPage() {
               <input type="number" min={0} step={1000}
                 value={companyForm.buyer_threshold ?? 212000} onChange={cfNum('buyer_threshold')}
                 className={fieldCls} />
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Cuando una factura o ticket supere este valor sin cliente identificado, aparecerá una advertencia.
                 La DIAN exige identificar al comprador cuando el monto supera ~$212.000 COP.
               </p>
@@ -1255,10 +1255,10 @@ export default function SettingsPage() {
             {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-500">Umbral identificación comprador</span>
-              <span className="font-mono font-medium text-zinc-900">
+              <span className="text-muted-foreground">Umbral identificación comprador</span>
+              <span className="font-mono font-medium text-foreground">
                 ${(company?.buyer_threshold ?? 212000).toLocaleString('es-CO')} COP
               </span>
             </div>
