@@ -11,15 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { type InvoiceWithCustomer } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  draft:     { label: 'Borrador', cls: 'bg-zinc-100 text-zinc-600' },
-  issued:    { label: 'Emitida',  cls: 'bg-blue-100 text-blue-700' },
-  cancelled: { label: 'Anulada', cls: 'bg-red-100 text-red-600' },
+  draft:     { label: 'Borrador', cls: 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground' },
+  issued:    { label: 'Emitida',  cls: 'bg-blue-500/10 border border-blue-500/20 text-blue-600' },
+  cancelled: { label: 'Anulada', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
 }
 
 const PAY_CFG: Record<string, { label: string; cls: string }> = {
-  unpaid:  { label: 'Pendiente', cls: 'bg-red-50 text-red-600' },
-  partial: { label: 'Parcial',   cls: 'bg-amber-50 text-amber-700' },
-  paid:    { label: 'Pagado',    cls: 'bg-green-50 text-green-700' },
+  unpaid:  { label: 'Pendiente', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
+  partial: { label: 'Parcial',   cls: 'bg-amber-500/10 border border-amber-500/20 text-amber-700' },
+  paid:    { label: 'Pagado',    cls: 'bg-green-500/10 border border-green-500/20 text-green-700' },
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
@@ -82,16 +82,16 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
       cell: ({ row }) => (
         <div>
           <Link href={`/sales/invoices/${row.original.id}`}
-            className="font-mono text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+            className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
             {row.original.invoice_number}
           </Link>
           {row.original.quote_number && (
-            <p className="text-xs text-zinc-400 font-mono">{row.original.quote_number}</p>
+            <p className="text-xs text-muted-foreground font-mono">{row.original.quote_number}</p>
           )}
           <span className={`text-xs font-medium rounded-full px-1.5 py-0.5 ${
             row.original.document_type === 'ticket'
-              ? 'bg-amber-100 text-amber-700'
-              : 'bg-blue-50 text-blue-600'
+              ? 'bg-amber-500/10 border border-amber-500/20 text-amber-700'
+              : 'bg-blue-500/10 border border-blue-500/20 text-blue-600'
           }`}>
             {row.original.document_type === 'ticket' ? 'Ticket' : 'Factura'}
           </span>
@@ -102,8 +102,8 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
       id: 'customer',
       header: 'Cliente',
       cell: ({ row }) => (
-        <span className="text-zinc-700">
-          {row.original.customer?.name ?? <span className="text-zinc-400 italic">Sin cliente</span>}
+        <span className="text-foreground">
+          {row.original.customer?.name ?? <span className="text-muted-foreground italic">Sin cliente</span>}
         </span>
       ),
     },
@@ -144,15 +144,15 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
   return (
     <>
       {actionError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div>
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600">{actionError}</div>
       )}
-      <div className="rounded-xl border border-zinc-100 bg-white shadow-md overflow-hidden">
+      <div className="rounded-2xl glass-surface overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50">
+          <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="border-zinc-200 hover:bg-zinc-50">
+              <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
                 {hg.headers.map((h) => (
-                  <TableHead key={h.id} className="py-4 px-4 font-semibold text-zinc-700 text-[12px] uppercase tracking-wide">
+                  <TableHead key={h.id} className="py-4 px-4 font-semibold text-muted-foreground text-[11px] uppercase tracking-wide">
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
                 ))}
@@ -163,7 +163,7 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
-                  className="border-zinc-100 hover:bg-zinc-50/60 data-[state=selected]:bg-blue-50/50 transition-colors">
+                  className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
