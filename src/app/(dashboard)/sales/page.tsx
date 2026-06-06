@@ -424,11 +424,11 @@ function SalesPageInner() {
             <CustomersTable
               onSelectionChange={setSelectedIds}
               globalFilter={search}
-              paymentFilter={filter}
+              fiscalFilter={filter}
             />
           )}
           {activeTab === 'cxc' && (
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl glass-surface overflow-hidden">
               {carteraFiltered.length === 0 ? (
                 <div className="py-16 text-center text-sm text-zinc-400">
                   No hay facturas pendientes de cobro.
