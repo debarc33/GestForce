@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { PurchaseOrderWithSupplier } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  draft:     { label: 'Borrador', cls: 'bg-zinc-100 text-zinc-600' },
-  sent:      { label: 'Enviada',  cls: 'bg-blue-100 text-blue-700' },
-  received:  { label: 'Recibida', cls: 'bg-green-100 text-green-700' },
-  cancelled: { label: 'Anulada',  cls: 'bg-red-100 text-red-600' },
+  draft:     { label: 'Borrador', cls: 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground' },
+  sent:      { label: 'Enviada',  cls: 'bg-blue-500/10 border border-blue-500/20 text-blue-600' },
+  received:  { label: 'Recibida', cls: 'bg-green-500/10 border border-green-500/20 text-green-600' },
+  cancelled: { label: 'Anulada',  cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
@@ -67,12 +67,12 @@ export function PurchaseOrdersTable({
         <input type="checkbox" checked={table.getIsAllPageRowsSelected()}
           ref={el => { if (el) el.indeterminate = table.getIsSomePageRowsSelected() }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
       cell: ({ row }) => (
         <input type="checkbox" checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
     },
     {
@@ -80,7 +80,7 @@ export function PurchaseOrdersTable({
       header: '# Orden',
       cell: ({ row }) => (
         <Link href={`/purchases/orders/${row.original.id}`}
-          className="font-mono text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+          className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
           {row.original.order_number}
         </Link>
       ),
@@ -89,8 +89,8 @@ export function PurchaseOrdersTable({
       id: 'supplier',
       header: 'Proveedor',
       cell: ({ row }) => (
-        <span className="text-zinc-700">
-          {row.original.supplier?.name ?? <span className="text-zinc-400 italic">Sin proveedor</span>}
+        <span className="text-foreground">
+          {row.original.supplier?.name ?? <span className="text-muted-foreground italic">Sin proveedor</span>}
         </span>
       ),
     },
@@ -98,7 +98,7 @@ export function PurchaseOrdersTable({
       accessorKey: 'issue_date',
       header: 'Fecha emisión',
       cell: ({ row }) => (
-        <span className="text-zinc-500 text-sm">
+        <span className="text-muted-foreground text-sm">
           {new Date(row.original.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
         </span>
       ),
@@ -107,10 +107,10 @@ export function PurchaseOrdersTable({
       accessorKey: 'expected_date',
       header: 'Entrega esperada',
       cell: ({ row }) => (
-        <span className="text-zinc-500 text-sm">
+        <span className="text-muted-foreground text-sm">
           {row.original.expected_date
             ? new Date(row.original.expected_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
-            : <span className="text-zinc-300">—</span>}
+            : <span className="text-muted-foreground/50">—</span>}
         </span>
       ),
     },
@@ -125,7 +125,7 @@ export function PurchaseOrdersTable({
     {
       accessorKey: 'total',
       header: 'Total',
-      cell: ({ row }) => <span className="font-medium text-zinc-900">{fmt(row.original.total)}</span>,
+      cell: ({ row }) => <span className="font-medium text-foreground">{fmt(row.original.total)}</span>,
     },
   ]
 
@@ -135,13 +135,13 @@ export function PurchaseOrdersTable({
   })
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl glass-surface overflow-hidden">
       <Table>
-        <TableHeader className="bg-zinc-50/50">
+        <TableHeader className="border-b border-[var(--glass-border)]">
           {table.getHeaderGroups().map(hg => (
-            <TableRow key={hg.id} className="border-zinc-200 hover:bg-zinc-50/30">
+            <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
               {hg.headers.map(h => (
-                <TableHead key={h.id} className="py-3 font-semibold text-zinc-600 text-xs uppercase tracking-wide">
+                <TableHead key={h.id} className="py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                   {flexRender(h.column.columnDef.header, h.getContext())}
                 </TableHead>
               ))}
@@ -152,7 +152,7 @@ export function PurchaseOrdersTable({
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map(row => (
               <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
-                className="border-zinc-100 hover:bg-zinc-50/60 data-[state=selected]:bg-blue-50/50 transition-colors">
+                className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
                 {row.getVisibleCells().map(cell => (
                   <TableCell key={cell.id} className="py-3.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -163,7 +163,7 @@ export function PurchaseOrdersTable({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-40 text-center">
-                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <ShoppingBag className="h-10 w-10 opacity-30" />
                   <p className="text-sm font-medium">
                     {globalFilter || statusFilter !== 'all'

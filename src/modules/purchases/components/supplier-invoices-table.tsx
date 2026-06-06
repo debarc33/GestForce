@@ -11,10 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { SupplierInvoiceWithDetails } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  pending:   { label: 'Pendiente',  cls: 'bg-red-50 text-red-600' },
-  partial:   { label: 'Parcial',    cls: 'bg-amber-50 text-amber-700' },
-  paid:      { label: 'Pagada',     cls: 'bg-green-50 text-green-700' },
-  cancelled: { label: 'Anulada',    cls: 'bg-zinc-100 text-zinc-500' },
+  pending:   { label: 'Pendiente',  cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
+  partial:   { label: 'Parcial',    cls: 'bg-amber-500/10 border border-amber-500/20 text-amber-700' },
+  paid:      { label: 'Pagada',     cls: 'bg-green-500/10 border border-green-500/20 text-green-700' },
+  cancelled: { label: 'Anulada',    cls: 'bg-zinc-500/10 border border-zinc-500/20 text-muted-foreground' },
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
@@ -67,12 +67,12 @@ export function SupplierInvoicesTable({
         <input type="checkbox" checked={table.getIsAllPageRowsSelected()}
           ref={el => { if (el) el.indeterminate = table.getIsSomePageRowsSelected() }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
       cell: ({ row }) => (
         <input type="checkbox" checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
     },
     {
@@ -81,14 +81,14 @@ export function SupplierInvoicesTable({
       cell: ({ row }) => (
         <div>
           <Link href={`/purchases/invoices/${row.original.id}`}
-            className="font-mono text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+            className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
             {row.original.invoice_number}
           </Link>
           {row.original.supplier_invoice_no && (
-            <p className="text-xs text-zinc-400 font-mono">Prov: {row.original.supplier_invoice_no}</p>
+            <p className="text-xs text-muted-foreground font-mono">Prov: {row.original.supplier_invoice_no}</p>
           )}
           {row.original.order_number && (
-            <p className="text-xs text-zinc-400 font-mono">{row.original.order_number}</p>
+            <p className="text-xs text-muted-foreground font-mono">{row.original.order_number}</p>
           )}
         </div>
       ),
@@ -97,8 +97,8 @@ export function SupplierInvoicesTable({
       id: 'supplier',
       header: 'Proveedor',
       cell: ({ row }) => (
-        <span className="text-zinc-700">
-          {row.original.supplier?.name ?? <span className="text-zinc-400 italic">Sin proveedor</span>}
+        <span className="text-foreground">
+          {row.original.supplier?.name ?? <span className="text-muted-foreground italic">Sin proveedor</span>}
         </span>
       ),
     },
@@ -106,7 +106,7 @@ export function SupplierInvoicesTable({
       accessorKey: 'issue_date',
       header: 'Fecha',
       cell: ({ row }) => (
-        <span className="text-zinc-500 text-sm">
+        <span className="text-muted-foreground text-sm">
           {new Date(row.original.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
         </span>
       ),
@@ -122,12 +122,12 @@ export function SupplierInvoicesTable({
     {
       accessorKey: 'total',
       header: 'Total',
-      cell: ({ row }) => <span className="font-medium text-zinc-900">{fmt(row.original.total)}</span>,
+      cell: ({ row }) => <span className="font-medium text-foreground">{fmt(row.original.total)}</span>,
     },
     {
       accessorKey: 'balance_due',
       header: 'Saldo',
-      cell: ({ row }) => <span className="text-zinc-600 text-sm">{fmt(row.original.balance_due)}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{fmt(row.original.balance_due)}</span>,
     },
   ]
 
@@ -137,13 +137,13 @@ export function SupplierInvoicesTable({
   })
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl glass-surface overflow-hidden">
       <Table>
-        <TableHeader className="bg-zinc-50/50">
+        <TableHeader className="border-b border-[var(--glass-border)]">
           {table.getHeaderGroups().map(hg => (
-            <TableRow key={hg.id} className="border-zinc-200 hover:bg-zinc-50/30">
+            <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
               {hg.headers.map(h => (
-                <TableHead key={h.id} className="py-3 font-semibold text-zinc-600 text-xs uppercase tracking-wide">
+                <TableHead key={h.id} className="py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                   {flexRender(h.column.columnDef.header, h.getContext())}
                 </TableHead>
               ))}
@@ -154,7 +154,7 @@ export function SupplierInvoicesTable({
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map(row => (
               <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
-                className="border-zinc-100 hover:bg-zinc-50/60 data-[state=selected]:bg-blue-50/50 transition-colors">
+                className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
                 {row.getVisibleCells().map(cell => (
                   <TableCell key={cell.id} className="py-3.5">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -165,7 +165,7 @@ export function SupplierInvoicesTable({
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-40 text-center">
-                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <FileText className="h-10 w-10 opacity-30" />
                   <p className="text-sm font-medium">
                     {globalFilter || statusFilter !== 'all'
