@@ -33,7 +33,8 @@
       "Bash(pkill -f \"next dev\")",
       "Bash(taskkill /PID 2800 /F)",
       "Bash(taskkill /PID 9120 /F)",
-      "Bash(curl -s http://localhost:3000/login)"
+      "Bash(curl -s http://localhost:3000/login)",
+      "Bash(tee server.log)"
     ]
   }
 }

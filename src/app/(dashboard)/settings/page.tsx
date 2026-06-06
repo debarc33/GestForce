@@ -20,6 +20,7 @@ import {
   type CompanyProfileUpdate, type CompanyBankAccount,
 } from '@/modules/company/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
+import { AppearanceTab } from '@/modules/settings/appearance-tab'
 
 // ─── Constantes ────────────────────────────────────────────────────────────
 
@@ -364,6 +365,9 @@ export default function SettingsPage() {
     ]},
     { label: 'Nómina', items: [
       { id: 'nomina',      label: 'Valores de nómina' },
+    ]},
+    { label: 'Interfaz', items: [
+      { id: 'apariencia',  label: 'Apariencia' },
     ]},
   ]
 
@@ -1264,6 +1268,17 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* ══ Apariencia ═════════════════════════════════════════════════════════ */}
+      <section className={`space-y-4${activeSection !== 'apariencia' ? ' hidden' : ''}`}>
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Apariencia</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Personaliza los temas, colores y fondos de tu espacio de trabajo.
+          </p>
+        </div>
+        <AppearanceTab />
       </section>
 
         </div>{/* content */}
