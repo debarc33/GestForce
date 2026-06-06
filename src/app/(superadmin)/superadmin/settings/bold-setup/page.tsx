@@ -22,7 +22,7 @@ export default function BoldSetupPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">Configurar Bold</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Guía paso a paso para integrar Bold con GestForce
         </p>
       </div>
@@ -30,7 +30,7 @@ export default function BoldSetupPage() {
       {/* Progress Steps */}
       <div className="space-y-4">
         {/* Step 1 */}
-        <details open className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+        <details open className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
           <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
@@ -38,10 +38,10 @@ export default function BoldSetupPage() {
               </div>
               <h3 className="font-semibold text-white">Obtener credenciales de Bold</h3>
             </div>
-            <ChevronDown className="h-5 w-5 text-zinc-600 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
 
-          <div className="border-t border-zinc-800 px-6 py-6 space-y-4">
+          <div className="border-t border-[var(--glass-border)] px-6 py-6 space-y-4">
             <div className="rounded-lg bg-blue-900/20 border border-blue-800/30 p-4">
               <p className="text-sm text-blue-200">
                 1. Accede a{' '}
@@ -58,37 +58,37 @@ export default function BoldSetupPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>2. Ve a:</strong> Configuración → API Keys (o Settings → API)
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>3. Copia estos valores:</strong>
               </p>
 
               <div className="space-y-2">
                 <div className="rounded-lg bg-zinc-800/50 p-3">
-                  <p className="text-xs font-medium text-zinc-500 mb-2">API Key</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">API Key</p>
                   <input
                     type="text"
                     placeholder="pk_... o similar"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600"
+                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                     readOnly
                   />
-                  <p className="mt-1 text-[10px] text-zinc-500">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     Copia tu API Key de Bold dashboard
                   </p>
                 </div>
 
                 <div className="rounded-lg bg-zinc-800/50 p-3">
-                  <p className="text-xs font-medium text-zinc-500 mb-2">Secret Key</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Secret Key</p>
                   <input
                     type="password"
                     placeholder="sk_... o similar"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600"
+                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                     readOnly
                   />
-                  <p className="mt-1 text-[10px] text-zinc-500">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     Copia tu Secret Key de Bold dashboard
                   </p>
                 </div>
@@ -98,7 +98,7 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 2 */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
           <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
@@ -106,10 +106,10 @@ export default function BoldSetupPage() {
               </div>
               <h3 className="font-semibold text-white">Configurar en GestForce</h3>
             </div>
-            <ChevronDown className="h-5 w-5 text-zinc-600 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
 
-          <div className="border-t border-zinc-800 px-6 py-6 space-y-4">
+          <div className="border-t border-[var(--glass-border)] px-6 py-6 space-y-4">
             <div className="rounded-lg bg-emerald-900/20 border border-emerald-800/30 p-4">
               <p className="text-sm text-emerald-200">
                 ✓ Ve a{' '}
@@ -123,30 +123,30 @@ export default function BoldSetupPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>1. Click en Bold</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>2. Click en el ícono de engranaje</strong> para editar
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>3. Ingresa tu información:</strong>
               </p>
 
               <div className="space-y-2 ml-4">
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
                     Webhook URL (automático)
                   </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-zinc-300 break-all">
+                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-foreground break-all">
                       {webhookUrl}
                     </code>
                     <button
                       onClick={() => copyToClipboard(webhookUrl, 'webhook-url')}
-                      className="text-zinc-400 hover:text-indigo-400 transition-colors"
+                      className="text-muted-foreground hover:text-indigo-400 transition-colors"
                       title="Copiar"
                     >
                       <Copy className="h-4 w-4" />
@@ -154,44 +154,44 @@ export default function BoldSetupPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
                     Webhook Secret (desde Bold)
                   </p>
                   <input
                     type="password"
                     placeholder="Pega el secret de Bold aquí"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600"
+                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
-                  <p className="mt-1 text-[10px] text-zinc-500">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     Este es el secret que Bold te proporciona para validar webhooks
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">API Key</p>
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">API Key</p>
                   <input
                     type="password"
                     placeholder="Pega tu API Key aquí"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600"
+                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">Secret Key</p>
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Secret Key</p>
                   <input
                     type="password"
                     placeholder="Pega tu Secret Key aquí"
-                    className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-xs text-zinc-300 placeholder:text-zinc-600"
+                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
 
-              <p className="text-sm text-zinc-300 mt-4">
+              <p className="text-sm text-foreground mt-4">
                 <strong>4. Click en "Guardar"</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>5. Click en "Activar"</strong> para usar Bold como proveedor activo
               </p>
             </div>
@@ -199,7 +199,7 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 3 */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
           <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
@@ -207,10 +207,10 @@ export default function BoldSetupPage() {
               </div>
               <h3 className="font-semibold text-white">Configurar webhook en Bold</h3>
             </div>
-            <ChevronDown className="h-5 w-5 text-zinc-600 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
 
-          <div className="border-t border-zinc-800 px-6 py-6 space-y-4">
+          <div className="border-t border-[var(--glass-border)] px-6 py-6 space-y-4">
             <div className="rounded-lg bg-amber-900/20 border border-amber-800/30 p-4">
               <p className="text-sm text-amber-200 flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -221,24 +221,24 @@ export default function BoldSetupPage() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>1. En Bold Dashboard:</strong> Ve a Configuración → Webhooks
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>2. Click en "Agregar Webhook"</strong>
               </p>
 
               <div className="space-y-2 ml-4">
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">URL del Webhook</p>
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">URL del Webhook</p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-zinc-300 break-all">
+                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-foreground break-all">
                       {webhookUrl}
                     </code>
                     <button
                       onClick={() => copyToClipboard(webhookUrl, 'webhook-url-2')}
-                      className="text-zinc-400 hover:text-indigo-400 transition-colors"
+                      className="text-muted-foreground hover:text-indigo-400 transition-colors"
                       title="Copiar"
                     >
                       <Copy className="h-4 w-4" />
@@ -246,18 +246,18 @@ export default function BoldSetupPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
                     Header: X-Bold-Signature
                   </p>
-                  <p className="text-[10px] text-zinc-400">
+                  <p className="text-[10px] text-muted-foreground">
                     Bold automáticamente enviará este header para validar la autenticidad del webhook
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-zinc-700">
-                  <p className="text-xs font-medium text-zinc-500 mb-1">Eventos a suscribirse</p>
-                  <ul className="text-[10px] text-zinc-400 space-y-1">
+                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Eventos a suscribirse</p>
+                  <ul className="text-[10px] text-muted-foreground space-y-1">
                     <li>✓ transaction.success</li>
                     <li>✓ transaction.failed</li>
                     <li>✓ transaction.pending</li>
@@ -265,11 +265,11 @@ export default function BoldSetupPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-zinc-300 mt-4">
+              <p className="text-sm text-foreground mt-4">
                 <strong>3. Click en "Crear Webhook"</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>4. Copiar el Secret</strong> que Bold genera y pegarlo en GestForce:
                 <br /> Configuración → Proveedores de Pago → Bold → Webhook Secret
               </p>
@@ -278,7 +278,7 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 4 */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
           <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
@@ -286,36 +286,36 @@ export default function BoldSetupPage() {
               </div>
               <h3 className="font-semibold text-white">Probar la integración</h3>
             </div>
-            <ChevronDown className="h-5 w-5 text-zinc-600 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
 
-          <div className="border-t border-zinc-800 px-6 py-6 space-y-4">
+          <div className="border-t border-[var(--glass-border)] px-6 py-6 space-y-4">
             <div className="space-y-3">
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>1. Crear una empresa de prueba</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>2. Ve a Empresas → [Tu empresa] → Suscripción</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>3. Selecciona un período y click en "Proceder al Pago"</strong>
               </p>
 
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 <strong>4. Deberías ver:</strong>
               </p>
-              <ul className="ml-4 text-sm text-zinc-400 space-y-1">
+              <ul className="ml-4 text-sm text-muted-foreground space-y-1">
                 <li>• Redirección a Bold (si tienes credenciales válidas)</li>
                 <li>• Formulario de pago de Bold</li>
                 <li>• Después de pagar, regresará a GestForce</li>
               </ul>
 
-              <p className="text-sm text-zinc-300 mt-4">
+              <p className="text-sm text-foreground mt-4">
                 <strong>5. Verificar en BD:</strong>
               </p>
-              <ul className="ml-4 text-sm text-zinc-400 space-y-1">
+              <ul className="ml-4 text-sm text-muted-foreground space-y-1">
                 <li>• Tabla payment_orders debe tener el registro</li>
                 <li>• Status debe cambiar a "completed"</li>
                 <li>• Email de confirmación debe enviarse</li>
@@ -325,7 +325,7 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Help */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
+        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
           <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
@@ -333,10 +333,10 @@ export default function BoldSetupPage() {
               </div>
               <h3 className="font-semibold text-white">Solución de problemas</h3>
             </div>
-            <ChevronDown className="h-5 w-5 text-zinc-600 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
 
-          <div className="border-t border-zinc-800 px-6 py-6 space-y-4">
+          <div className="border-t border-[var(--glass-border)] px-6 py-6 space-y-4">
             <div className="space-y-3">
               <div className="rounded-lg bg-red-900/20 border border-red-800/30 p-3">
                 <p className="text-sm font-semibold text-red-200 mb-1">

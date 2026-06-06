@@ -54,7 +54,7 @@ const ENTRY_TYPE_LABEL: Record<string, string> = {
   adjustment: 'Ajuste',
 }
 
-const inp = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -120,17 +120,17 @@ export default function AccountingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Contabilidad</h1>
-        <p className="mt-0.5 text-[13px] text-zinc-400">Plan de cuentas PUC, comprobantes y estados financieros.</p>
+        <h1 className="text-xl font-bold text-foreground tracking-tight">Contabilidad</h1>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">Plan de cuentas PUC, comprobantes y estados financieros.</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-zinc-200">
+      <div className="flex gap-0.5 border-b border-[var(--glass-border)]">
         {TABS.map(tab => (
           <button key={tab.id} type="button"
             onClick={() => { setActiveTab(tab.id); setSearch('') }}
             className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'text-blue-600' : 'text-zinc-500 hover:text-zinc-700'
+              activeTab === tab.id ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground'
             }`}>
             {tab.label}
             {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
@@ -144,7 +144,7 @@ export default function AccountingPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <input type="search" placeholder="Buscar por código o nombre..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none w-64" />
+              className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none w-64" />
             <div className="flex gap-2">
               <button onClick={() => exportToExcel(filteredAccounts, [
                 { header: 'Código',  key: 'code',         width: 12 },
@@ -152,7 +152,7 @@ export default function AccountingPage() {
                 { header: 'Tipo',    key: r => ACCOUNT_TYPE_LABEL[r.account_type], width: 14 },
                 { header: 'Naturaleza', key: 'nature',    width: 12 },
               ] as ExcelColumn<Account>[], 'plan_de_cuentas')}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground hover:bg-[var(--glass-hover)]">
                 Exportar
               </button>
               <button onClick={() => setShowNewAccount(true)}
@@ -172,12 +172,12 @@ export default function AccountingPage() {
           {loadingCOA ? (
             <div className="h-48 animate-pulse rounded-xl bg-zinc-100" />
           ) : (
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
               <Table>
-                <TableHeader className="bg-zinc-50/50">
-                  <TableRow className="border-zinc-200">
+                <TableHeader className="bg-[var(--glass-hover)]/50">
+                  <TableRow className="border-[var(--glass-border)]">
                     {['Código','Nombre','Tipo','Naturaleza','Nivel'].map(h => (
-                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">{h}</TableHead>
+                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -186,21 +186,21 @@ export default function AccountingPage() {
                     filteredAccounts.map(acct => {
                       const indent = (acct.code.length - 1) * 8
                       return (
-                        <TableRow key={acct.id} className="border-zinc-100 hover:bg-zinc-50/40">
-                          <TableCell className="py-2.5 font-mono text-sm text-zinc-700">{acct.code}</TableCell>
+                        <TableRow key={acct.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                          <TableCell className="py-2.5 font-mono text-sm text-foreground">{acct.code}</TableCell>
                           <TableCell className="py-2.5">
-                            <span style={{ paddingLeft: indent }} className="text-sm text-zinc-800">
-                              {!acct.is_leaf && <span className="text-zinc-400 mr-1">▸</span>}
+                            <span style={{ paddingLeft: indent }} className="text-sm text-foreground">
+                              {!acct.is_leaf && <span className="text-muted-foreground mr-1">▸</span>}
                               {acct.name}
                             </span>
                           </TableCell>
                           <TableCell className="py-2.5">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLOR[acct.account_type] ?? 'bg-zinc-100 text-zinc-600'}`}>
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLOR[acct.account_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
                               {ACCOUNT_TYPE_LABEL[acct.account_type] ?? acct.account_type}
                             </span>
                           </TableCell>
-                          <TableCell className="py-2.5 text-xs text-zinc-500 capitalize">{acct.nature}</TableCell>
-                          <TableCell className="py-2.5 text-xs text-zinc-400">
+                          <TableCell className="py-2.5 text-xs text-muted-foreground capitalize">{acct.nature}</TableCell>
+                          <TableCell className="py-2.5 text-xs text-muted-foreground">
                             {acct.is_leaf ? 'Auxiliar' : 'Mayor'}
                           </TableCell>
                         </TableRow>
@@ -208,7 +208,7 @@ export default function AccountingPage() {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-sm text-zinc-400">
+                      <TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">
                         {search ? 'Sin resultados.' : 'Cargando plan de cuentas...'}
                       </TableCell>
                     </TableRow>
@@ -226,12 +226,12 @@ export default function AccountingPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             {/* Selector de período */}
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-zinc-500 text-xs font-medium">Desde:</span>
+              <span className="text-muted-foreground text-xs font-medium">Desde:</span>
               <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-                className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
-              <span className="text-zinc-400">→</span>
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
+              <span className="text-muted-foreground">→</span>
               <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-                className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
             </div>
             <button onClick={() => setShowNewEntry(true)}
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
@@ -242,33 +242,33 @@ export default function AccountingPage() {
           {loadingJE ? (
             <div className="h-48 animate-pulse rounded-xl bg-zinc-100" />
           ) : entries.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center">
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-12 text-center">
               <BookOpen className="h-10 w-10 text-zinc-200 mx-auto mb-3" />
-              <p className="text-sm text-zinc-400">No hay comprobantes en el período seleccionado.</p>
-              <p className="text-xs text-zinc-400 mt-1">Los asientos se generan automáticamente al emitir facturas, registrar pagos o cerrar nómina.</p>
+              <p className="text-sm text-muted-foreground">No hay comprobantes en el período seleccionado.</p>
+              <p className="text-xs text-muted-foreground mt-1">Los asientos se generan automáticamente al emitir facturas, registrar pagos o cerrar nómina.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
               <Table>
-                <TableHeader className="bg-zinc-50/50">
-                  <TableRow className="border-zinc-200">
+                <TableHeader className="bg-[var(--glass-hover)]/50">
+                  <TableRow className="border-[var(--glass-border)]">
                     {['#Comprobante','Fecha','Tipo','Descripción','Débito = Crédito',''].map(h => (
-                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-zinc-600">{h}</TableHead>
+                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {entries.map(entry => (
-                    <TableRow key={entry.id} className="border-zinc-100 hover:bg-zinc-50/40">
-                      <TableCell className="py-3 font-mono text-sm text-zinc-700">{entry.entry_number}</TableCell>
-                      <TableCell className="py-3 text-sm text-zinc-600">{fmtDate(entry.entry_date)}</TableCell>
+                    <TableRow key={entry.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                      <TableCell className="py-3 font-mono text-sm text-foreground">{entry.entry_number}</TableCell>
+                      <TableCell className="py-3 text-sm text-muted-foreground">{fmtDate(entry.entry_date)}</TableCell>
                       <TableCell className="py-3">
-                        <span className="text-xs bg-zinc-100 text-zinc-600 rounded-full px-2 py-0.5">
+                        <span className="text-xs bg-zinc-100 text-muted-foreground rounded-full px-2 py-0.5">
                           {ENTRY_TYPE_LABEL[entry.entry_type] ?? entry.entry_type}
                         </span>
                       </TableCell>
-                      <TableCell className="py-3 text-sm text-zinc-700">{entry.description}</TableCell>
-                      <TableCell className="py-3 text-sm text-zinc-500">—</TableCell>
+                      <TableCell className="py-3 text-sm text-foreground">{entry.description}</TableCell>
+                      <TableCell className="py-3 text-sm text-muted-foreground">—</TableCell>
                       <TableCell className="py-3">
                         <button onClick={() => setSelectedEntry(entry)}
                           className="text-blue-600 hover:underline text-xs flex items-center gap-1">
@@ -306,20 +306,20 @@ export default function AccountingPage() {
               { label: 'Costo de ventas', type: 'costo', accounts: balances.costo, cls: 'border-amber-200 bg-amber-50/30' },
             ].map(group => (
               <div key={group.type} className={`rounded-xl border p-4 ${group.cls}`}>
-                <h3 className="text-sm font-semibold text-zinc-700 mb-3">
+                <h3 className="text-sm font-semibold text-foreground mb-3">
                   {group.label}
-                  <span className="ml-2 text-xs font-normal text-zinc-400">({group.accounts.length} cuentas)</span>
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">({group.accounts.length} cuentas)</span>
                 </h3>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
                   {group.accounts.filter(a => a.is_leaf).slice(0, 12).map(a => (
                     <div key={a.id} className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-zinc-500 w-16 shrink-0">{a.code}</span>
-                      <span className="text-zinc-700 flex-1 truncate">{a.name}</span>
-                      <span className="text-zinc-400 ml-2">$ 0</span>
+                      <span className="font-mono text-muted-foreground w-16 shrink-0">{a.code}</span>
+                      <span className="text-foreground flex-1 truncate">{a.name}</span>
+                      <span className="text-muted-foreground ml-2">$ 0</span>
                     </div>
                   ))}
                   {group.accounts.filter(a => a.is_leaf).length > 12 && (
-                    <p className="text-xs text-zinc-400 text-center pt-1">
+                    <p className="text-xs text-muted-foreground text-center pt-1">
                       +{group.accounts.filter(a => a.is_leaf).length - 12} más...
                     </p>
                   )}
@@ -337,40 +337,40 @@ export default function AccountingPage() {
         <DialogContent className="max-w-2xl rounded-2xl shadow-xl border-zinc-100">
           <DialogHeader>
             <DialogTitle>Comprobante {selectedEntry?.entry_number}</DialogTitle>
-            <DialogDescription className="text-xs text-zinc-500">
+            <DialogDescription className="text-xs text-muted-foreground">
               {selectedEntry && fmtDate(selectedEntry.entry_date)} · {selectedEntry && (ENTRY_TYPE_LABEL[selectedEntry.entry_type] ?? selectedEntry.entry_type)}
             </DialogDescription>
           </DialogHeader>
           {selectedEntry && (
             <div className="space-y-3 mt-2">
-              <p className="text-sm text-zinc-700">{selectedEntry.description}</p>
+              <p className="text-sm text-foreground">{selectedEntry.description}</p>
               {entryLines.length > 0 ? (
                 <table className="w-full text-sm border rounded-xl overflow-hidden">
-                  <thead className="bg-zinc-50">
+                  <thead className="bg-[var(--glass-hover)]">
                     <tr>
                       {['Cuenta','Descripción','Débito','Crédito'].map(h => (
-                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-zinc-500">{h}</th>
+                        <th key={h} className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {entryLines.map(line => (
                       <tr key={line.id} className="border-t border-zinc-100">
-                        <td className="px-3 py-2 font-mono text-zinc-700">{line.account_code}</td>
-                        <td className="px-3 py-2 text-zinc-600">{line.description ?? '—'}</td>
-                        <td className="px-3 py-2 tabular-nums text-zinc-700">{line.debit > 0 ? fmtCOP(line.debit) : '—'}</td>
-                        <td className="px-3 py-2 tabular-nums text-zinc-700">{line.credit > 0 ? fmtCOP(line.credit) : '—'}</td>
+                        <td className="px-3 py-2 font-mono text-foreground">{line.account_code}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{line.description ?? '—'}</td>
+                        <td className="px-3 py-2 tabular-nums text-foreground">{line.debit > 0 ? fmtCOP(line.debit) : '—'}</td>
+                        <td className="px-3 py-2 tabular-nums text-foreground">{line.credit > 0 ? fmtCOP(line.credit) : '—'}</td>
                       </tr>
                     ))}
-                    <tr className="border-t-2 border-zinc-300 bg-zinc-50">
-                      <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-right text-zinc-500">Totales</td>
-                      <td className="px-3 py-2 tabular-nums font-bold text-zinc-800">{fmtCOP(entryLines.reduce((s, l) => s + l.debit, 0))}</td>
-                      <td className="px-3 py-2 tabular-nums font-bold text-zinc-800">{fmtCOP(entryLines.reduce((s, l) => s + l.credit, 0))}</td>
+                    <tr className="border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
+                      <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-right text-muted-foreground">Totales</td>
+                      <td className="px-3 py-2 tabular-nums font-bold text-foreground">{fmtCOP(entryLines.reduce((s, l) => s + l.debit, 0))}</td>
+                      <td className="px-3 py-2 tabular-nums font-bold text-foreground">{fmtCOP(entryLines.reduce((s, l) => s + l.credit, 0))}</td>
                     </tr>
                   </tbody>
                 </table>
               ) : (
-                <p className="text-sm text-zinc-400 text-center py-4">Sin líneas de detalle.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Sin líneas de detalle.</p>
               )}
             </div>
           )}
@@ -441,7 +441,7 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
     }
   }
 
-  const inp2 = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
+  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -450,19 +450,19 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
         <div className="space-y-3 mt-2">
           <div className="grid grid-cols-[130px_1fr] gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Código PUC <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Código PUC <span className="text-red-500">*</span></label>
               <input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))}
                 className={inp2} placeholder="Ej. 110510" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Nombre <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Nombre <span className="text-red-500">*</span></label>
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 className={inp2} placeholder="Nombre de la cuenta" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Tipo</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo</label>
               <select value={form.account_type} onChange={e => setForm(p => ({ ...p, account_type: e.target.value as Account['account_type'] }))} className={inp2}>
                 {['activo','pasivo','patrimonio','ingreso','gasto','costo'].map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -470,7 +470,7 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Naturaleza</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Naturaleza</label>
               <select value={form.nature} onChange={e => setForm(p => ({ ...p, nature: e.target.value as Account['nature'] }))} className={inp2}>
                 <option value="debito">Débito</option>
                 <option value="credito">Crédito</option>
@@ -478,18 +478,18 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">Cuenta padre (código)</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Cuenta padre (código)</label>
             <input value={form.parent_code} onChange={e => setForm(p => ({ ...p, parent_code: e.target.value }))}
               className={inp2} placeholder="Ej. 1105" />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.is_leaf} onChange={e => setForm(p => ({ ...p, is_leaf: e.target.checked }))}
               className="h-4 w-4 accent-blue-600" />
-            <span className="text-sm text-zinc-700">Cuenta auxiliar (acepta movimientos)</span>
+            <span className="text-sm text-foreground">Cuenta auxiliar (acepta movimientos)</span>
           </label>
           {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50">Cancelar</button>
+            <button onClick={onClose} className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)]">Cancelar</button>
             <button onClick={handle} disabled={saving}
               className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
               {saving ? 'Guardando...' : 'Crear cuenta'}
@@ -548,7 +548,7 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
     }
   }
 
-  const inp2 = 'rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none w-full'
+  const inp2 = 'rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none w-full'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -557,22 +557,22 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
         <div className="space-y-4 mt-2">
           <div className="grid grid-cols-[160px_1fr] gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Fecha</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inp2} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1">Descripción <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Descripción <span className="text-red-500">*</span></label>
               <input value={desc} onChange={e => setDesc(e.target.value)} className={inp2} placeholder="Ej. Ajuste provisión diciembre" />
             </div>
           </div>
 
           {/* Líneas */}
-          <div className="rounded-xl border border-zinc-200 overflow-hidden">
+          <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50">
+              <thead className="bg-[var(--glass-hover)]">
                 <tr>
                   {['Cuenta','Descripción','Débito','Crédito',''].map(h => (
-                    <th key={h} className="px-2 py-2 text-left text-xs font-medium text-zinc-500">{h}</th>
+                    <th key={h} className="px-2 py-2 text-left text-xs font-medium text-muted-foreground">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -610,8 +610,8 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
                   </tr>
                 ))}
                 {/* Totales */}
-                <tr className="border-t-2 border-zinc-300 bg-zinc-50">
-                  <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-right text-zinc-500">Totales</td>
+                <tr className="border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
+                  <td colSpan={2} className="px-3 py-2 text-xs font-semibold text-right text-muted-foreground">Totales</td>
                   <td className={`px-2 py-2 tabular-nums font-bold text-sm ${balanced ? 'text-green-700' : 'text-red-600'}`}>
                     $ {totalDebit.toLocaleString('es-CO')}
                   </td>
@@ -638,7 +638,7 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
           {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
           <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50">Cancelar</button>
+            <button onClick={onClose} className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)]">Cancelar</button>
             <button onClick={handle} disabled={saving || !balanced}
               className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
               {saving ? 'Guardando...' : 'Registrar asiento'}

@@ -101,23 +101,23 @@ function MovimientosTab({ companyId }: { companyId: string }) {
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto o referencia..."
-            className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] pl-9 pr-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           />
         </div>
         <select
           value={filterProduct} onChange={e => setFilterProduct(e.target.value)}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none min-w-44"
+          className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:outline-none min-w-44"
         >
           <option value="">Todos los productos</option>
           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <select
           value={filterType} onChange={e => setFilterType(e.target.value)}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none min-w-36"
+          className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:outline-none min-w-36"
         >
           <option value="">Todos los tipos</option>
           {(Object.keys(MOVEMENT_TYPE_LABELS) as MovementType[]).map(t => (
@@ -126,7 +126,7 @@ function MovimientosTab({ companyId }: { companyId: string }) {
         </select>
         <button
           onClick={exportExcel}
-          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+          className="flex items-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
         >
           <Download className="h-4 w-4" />Exportar
         </button>
@@ -136,32 +136,32 @@ function MovimientosTab({ companyId }: { companyId: string }) {
       {isLoading ? (
         <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-12 animate-pulse rounded-xl bg-zinc-100" />)}</div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center">
+        <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-12 text-center">
           <Boxes className="h-10 w-10 text-zinc-300 mx-auto mb-3" />
-          <p className="text-sm text-zinc-500">No hay movimientos registrados.</p>
-          <p className="text-xs text-zinc-400 mt-1">Los ajustes manuales aparecerán aquí.</p>
+          <p className="text-sm text-muted-foreground">No hay movimientos registrados.</p>
+          <p className="text-xs text-muted-foreground mt-1">Los ajustes manuales aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-200 overflow-hidden bg-white">
+        <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 border-b border-zinc-200">
+            <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Producto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Tipo</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Cantidad</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Stock antes</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Stock después</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Referencia</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Producto</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Cantidad</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock antes</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock después</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {filtered.map(m => (
-                <tr key={m.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">{fmtDate(m.created_at)}</td>
-                  <td className="px-4 py-3 font-medium text-zinc-900 max-w-48 truncate">
+                <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(m.created_at)}</td>
+                  <td className="px-4 py-3 font-medium text-foreground max-w-48 truncate">
                     {m.product?.name ?? '—'}
-                    {m.product?.sku && <span className="ml-1.5 text-xs text-zinc-400 font-mono">{m.product.sku}</span>}
+                    {m.product?.sku && <span className="ml-1.5 text-xs text-muted-foreground font-mono">{m.product.sku}</span>}
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
@@ -171,9 +171,9 @@ function MovimientosTab({ companyId }: { companyId: string }) {
                   <td className={`px-4 py-3 text-right font-mono font-medium tabular-nums ${m.quantity >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                     {m.quantity >= 0 ? '+' : ''}{fmt(m.quantity)}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-zinc-500 tabular-nums">{fmt(m.stock_before)}</td>
-                  <td className="px-4 py-3 text-right font-mono font-medium text-zinc-900 tabular-nums">{fmt(m.stock_after)}</td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                  <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">{fmt(m.stock_before)}</td>
+                  <td className="px-4 py-3 text-right font-mono font-medium text-foreground tabular-nums">{fmt(m.stock_after)}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
                     {m.reference_no
                       ? <span className="font-mono">{m.reference_no}</span>
                       : m.notes
@@ -227,7 +227,7 @@ function KardexTab({ companyId }: { companyId: string }) {
       <div className="flex gap-3 items-center">
         <select
           value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:outline-none flex-1 max-w-80"
+          className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:outline-none flex-1 max-w-80"
         >
           <option value="">— Selecciona un producto —</option>
           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -235,7 +235,7 @@ function KardexTab({ companyId }: { companyId: string }) {
         {product && (
           <button
             onClick={exportExcel}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors"
+            className="flex items-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
           >
             <Download className="h-4 w-4" />Exportar
           </button>
@@ -243,9 +243,9 @@ function KardexTab({ companyId }: { companyId: string }) {
       </div>
 
       {!selectedProduct ? (
-        <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center">
+        <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-12 text-center">
           <Package className="h-10 w-10 text-zinc-300 mx-auto mb-3" />
-          <p className="text-sm text-zinc-500">Selecciona un producto para ver su kardex.</p>
+          <p className="text-sm text-muted-foreground">Selecciona un producto para ver su kardex.</p>
         </div>
       ) : isLoading ? (
         <div className="space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 animate-pulse rounded-xl bg-zinc-100" />)}</div>
@@ -253,21 +253,21 @@ function KardexTab({ companyId }: { companyId: string }) {
         <div className="space-y-4">
           {/* Info del producto */}
           {product && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-zinc-900">{product.name}</p>
+                  <p className="font-semibold text-foreground">{product.name}</p>
                   <div className="flex items-center gap-3 mt-1">
-                    {product.sku && <span className="text-xs font-mono text-zinc-500">SKU: {product.sku}</span>}
-                    {product.unit && <span className="text-xs text-zinc-400">Unidad: {product.unit}</span>}
+                    {product.sku && <span className="text-xs font-mono text-muted-foreground">SKU: {product.sku}</span>}
+                    {product.unit && <span className="text-xs text-muted-foreground">Unidad: {product.unit}</span>}
                     {product.min_stock != null && (
-                      <span className="text-xs text-zinc-400">Stock mín.: {fmt(product.min_stock)}</span>
+                      <span className="text-xs text-muted-foreground">Stock mín.: {fmt(product.min_stock)}</span>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-zinc-400 mb-0.5">Stock actual</p>
-                  <p className={`text-2xl font-bold tabular-nums ${product.min_stock != null && product.stock <= product.min_stock ? 'text-red-600' : 'text-zinc-900'}`}>
+                  <p className="text-xs text-muted-foreground mb-0.5">Stock actual</p>
+                  <p className={`text-2xl font-bold tabular-nums ${product.min_stock != null && product.stock <= product.min_stock ? 'text-red-600' : 'text-foreground'}`}>
                     {fmt(product.stock)}
                   </p>
                 </div>
@@ -276,26 +276,26 @@ function KardexTab({ companyId }: { companyId: string }) {
           )}
 
           {movements.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center">
-              <p className="text-sm text-zinc-400">Sin movimientos para este producto.</p>
+            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-8 text-center">
+              <p className="text-sm text-muted-foreground">Sin movimientos para este producto.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-zinc-200 overflow-hidden bg-white">
+            <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
               <table className="w-full text-sm">
-                <thead className="bg-zinc-50 border-b border-zinc-200">
+                <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Tipo</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 text-green-700">Entrada</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 text-red-600">Salida</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500">Saldo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500">Referencia</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground text-green-700">Entrada</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground text-red-600">Salida</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Saldo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                   {movements.map(m => (
-                    <tr key={m.id} className="hover:bg-zinc-50 transition-colors">
-                      <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">{fmtDate(m.created_at)}</td>
+                    <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDate(m.created_at)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
                           {MOVEMENT_TYPE_LABELS[m.movement_type]}
@@ -307,10 +307,10 @@ function KardexTab({ companyId }: { companyId: string }) {
                       <td className="px-4 py-3 text-right font-mono text-red-600 tabular-nums">
                         {m.quantity < 0 ? fmt(Math.abs(m.quantity)) : '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-semibold text-zinc-900 tabular-nums">
+                      <td className="px-4 py-3 text-right font-mono font-semibold text-foreground tabular-nums">
                         {fmt(m.stock_after)}
                       </td>
-                      <td className="px-4 py-3 text-zinc-500 text-xs">
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
                         {m.reference_no
                           ? <span className="font-mono">{m.reference_no}</span>
                           : m.notes
@@ -321,10 +321,10 @@ function KardexTab({ companyId }: { companyId: string }) {
                   ))}
                 </tbody>
                 {/* Footer — saldo final */}
-                <tfoot className="border-t-2 border-zinc-200 bg-zinc-50">
+                <tfoot className="border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-zinc-700">Saldo actual</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-lg text-zinc-900 tabular-nums">
+                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-foreground">Saldo actual</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-lg text-foreground tabular-nums">
                       {product ? fmt(product.stock) : '—'}
                     </td>
                     <td />
@@ -376,19 +376,19 @@ function AjustesTab({ companyId }: { companyId: string }) {
 
   return (
     <div className="max-w-lg space-y-6">
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 space-y-5">
+      <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-5 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900 mb-0.5">Ajuste de inventario</h3>
-          <p className="text-xs text-zinc-500">Corrige el stock de un producto (conteo físico o corrección).</p>
+          <h3 className="text-sm font-semibold text-foreground mb-0.5">Ajuste de inventario</h3>
+          <p className="text-xs text-muted-foreground">Corrige el stock de un producto (conteo físico o corrección).</p>
         </div>
 
         {/* Producto */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Producto</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Producto</label>
           <select
             value={selectedProduct}
             onChange={e => { setSelectedProduct(e.target.value); setNewQty(''); setError(null) }}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           >
             <option value="">— Selecciona un producto —</option>
             {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -397,18 +397,18 @@ function AjustesTab({ companyId }: { companyId: string }) {
 
         {/* Stock info */}
         {product && (
-          <div className="rounded-lg bg-zinc-50 border border-zinc-200 px-4 py-3 flex items-center justify-between text-sm">
-            <span className="text-zinc-500">Stock registrado actualmente</span>
-            <span className="font-mono font-bold text-zinc-900 tabular-nums text-lg">
+          <div className="rounded-lg bg-[var(--glass-hover)] border border-[var(--glass-border)] px-4 py-3 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Stock registrado actualmente</span>
+            <span className="font-mono font-bold text-foreground tabular-nums text-lg">
               {fmt(product.stock)}
-              {product.unit && <span className="text-xs font-normal text-zinc-400 ml-1">{product.unit}</span>}
+              {product.unit && <span className="text-xs font-normal text-muted-foreground ml-1">{product.unit}</span>}
             </span>
           </div>
         )}
 
         {/* Nueva cantidad */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Cantidad real (conteo físico)</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Cantidad real (conteo físico)</label>
           <input
             type="number"
             min={0}
@@ -416,11 +416,11 @@ function AjustesTab({ companyId }: { companyId: string }) {
             value={newQty}
             onChange={e => { setNewQty(e.target.value); setError(null) }}
             placeholder="0"
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           />
           {/* Diferencia calculada */}
           {diff !== null && (
-            <p className={`text-xs mt-1.5 font-medium ${diff === 0 ? 'text-zinc-500' : diff > 0 ? 'text-green-700' : 'text-red-600'}`}>
+            <p className={`text-xs mt-1.5 font-medium ${diff === 0 ? 'text-muted-foreground' : diff > 0 ? 'text-green-700' : 'text-red-600'}`}>
               {diff === 0 ? 'Sin cambios' : diff > 0 ? `+${fmt(diff)} de entrada` : `${fmt(diff)} de salida`}
             </p>
           )}
@@ -428,13 +428,13 @@ function AjustesTab({ companyId }: { companyId: string }) {
 
         {/* Motivo */}
         <div>
-          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Motivo del ajuste</label>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Motivo del ajuste</label>
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
             placeholder="Ej. Conteo físico enero 2026, merma por vencimiento..."
             rows={3}
-            className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none resize-none"
+            className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none resize-none"
           />
         </div>
 
@@ -454,7 +454,7 @@ function AjustesTab({ companyId }: { companyId: string }) {
         </button>
       </div>
 
-      <p className="text-xs text-zinc-400 bg-zinc-50 rounded-lg border border-zinc-200 px-4 py-3">
+      <p className="text-xs text-muted-foreground bg-[var(--glass-hover)] rounded-lg border border-[var(--glass-border)] px-4 py-3">
         Los ajustes quedan registrados en el historial de movimientos con tipo "Ajuste".
         Úsalos para correcciones por conteo físico, mermas, devoluciones sin referencia o errores de carga.
       </p>
@@ -484,8 +484,8 @@ export default function InventoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Inventario</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Inventario</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             Movimientos, kardex por producto y ajustes de stock.
           </p>
         </div>
@@ -504,7 +504,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-zinc-200">
+      <div className="border-b border-[var(--glass-border)]">
         <nav className="-mb-px flex gap-0">
           {tabs.map(t => (
             <button
@@ -513,7 +513,7 @@ export default function InventoryPage() {
               className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.id
                   ? 'border-blue-600 text-blue-700'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-[var(--glass-border)]'
               }`}
             >
               <t.icon className="h-4 w-4" />
