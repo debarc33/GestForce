@@ -15,8 +15,8 @@ import {
   type Expense, type ExpenseCategory,
 } from '../expense-queries'
 
-const inp = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1'
 const err = 'mt-0.5 text-xs text-red-600'
 
 interface ExpenseFormProps {
@@ -140,7 +140,7 @@ export function ExpenseForm({
                 ))}
               </select>
               <button type="button" onClick={() => setShowNewCategory(v => !v)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg glass-surface text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
                 title="Nueva categoría">
                 <Plus className="h-4 w-4" />
               </button>
@@ -150,7 +150,7 @@ export function ExpenseForm({
 
         {/* Nueva categoría inline */}
         {showNewCategory && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 space-y-3">
+          <div className="rounded-xl glass-surface border border-primary/20 p-3 space-y-3">
             <p className="text-xs font-semibold text-blue-700">Nueva categoría</p>
             <div className="grid grid-cols-[1fr_120px_180px] gap-3">
               <div>
@@ -241,8 +241,8 @@ export function ExpenseForm({
             </div>
           ) : null}
           <div className="mt-1 flex items-center gap-2">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 transition-colors">
-              <Paperclip className="h-4 w-4 text-zinc-400" />
+            <label className="flex cursor-pointer items-center gap-2 rounded-lg glass-surface border border-[var(--glass-border)] px-3 py-2 text-sm text-muted-foreground hover:bg-[var(--glass)] transition-colors">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
               {receiptFile ? receiptFile.name : 'Adjuntar archivo'}
               <input type="file" accept="image/*,.pdf" className="hidden" onChange={handleFile} />
             </label>
@@ -254,7 +254,7 @@ export function ExpenseForm({
             )}
           </div>
           {receiptError && <p className={err}>{receiptError}</p>}
-          <p className="mt-0.5 text-xs text-zinc-400">JPG, PNG, WEBP o PDF — máx. 5 MB</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">JPG, PNG, WEBP o PDF — máx. 5 MB</p>
         </div>
 
         {/* Notas */}
@@ -265,7 +265,7 @@ export function ExpenseForm({
         </div>
 
         {/* Opciones adicionales */}
-        <div className="space-y-2 border-t border-zinc-100 pt-3">
+        <div className="space-y-2 border-t border-[var(--glass-border)] pt-3">
           {/* Comprobante contable — solo si ya está pagado */}
           {watchStatus === 'pagado' && !expense && (
             <label className="flex items-start gap-2.5 cursor-pointer">

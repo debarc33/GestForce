@@ -29,8 +29,8 @@ interface ProductFormProps {
 }
 
 const inp =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
+  'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1'
 
 export function ProductForm({ product, onSuccess }: ProductFormProps) {
   const queryClient = useQueryClient()
@@ -154,8 +154,8 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
       </div>
 
       {/* IVA — inline */}
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50/50 px-3 py-2.5">
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Impuesto</p>
+      <div className="rounded-lg glass-surface border border-[var(--glass-border)] px-3 py-2.5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Impuesto</p>
         <div className={`grid gap-3 ${taxType === 'iva' ? 'grid-cols-2' : 'grid-cols-1'}`}>
           <div>
             <label className={lbl}>Tipo de IVA</label>
@@ -190,7 +190,7 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
             </div>
           )}
         </div>
-        <p className="mt-1.5 text-xs text-zinc-400">
+        <p className="mt-1.5 text-xs text-muted-foreground">
           {taxType === 'iva'
             ? `Se aplicará ${(form.watch('tax_rate') * 100).toFixed(0)}% IVA al vender este producto`
             : 'Este producto no genera IVA al ser vendido'}
@@ -198,16 +198,16 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
       </div>
 
       {mutation.isError && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-600">
           {mutation.error instanceof Error ? mutation.error.message : 'Error al guardar'}
         </p>
       )}
 
-      <div className="flex justify-end pt-1">
+      <div className="flex justify-end pt-1 border-t border-[var(--glass-border)]">
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {mutation.isPending ? 'Guardando...' : product ? 'Guardar cambios' : 'Crear producto'}
         </button>

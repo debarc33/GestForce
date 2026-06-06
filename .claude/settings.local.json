@@ -23,7 +23,9 @@
       "Bash(git commit -m 'feat\\(ui\\): glass shell foundation complete \\(fase 1 part 2\\) *)",
       "Bash(git commit -m 'feat\\(ui\\): shared table + toolbar primitives \\(fase 2\\) *)",
       "Bash(git commit -m 'feat\\(ui\\): apply glass styling to customers module \\(fase 3.1\\) *)",
-      "Bash(git commit -m 'feat\\(ui\\): apply glass styling to quotes module \\(fase 3.2\\) *)"
+      "Bash(git commit -m 'feat\\(ui\\): apply glass styling to quotes module \\(fase 3.2\\) *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000)"
     ]
   }
 }
