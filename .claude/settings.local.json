@@ -21,7 +21,8 @@
       "Bash(git commit -m 'feat\\(ui\\): glass shell tokens + design system \\(fase 1 part 1\\) *)",
       "Bash(cd \"C:\\\\Users\\\\usuario\\\\GestForce1\" && cp production/components/ui/*.tsx src/components/ui/ && ls -la src/components/ui/ | grep -E \"glass|metric|command|background|status|toolbar|pagination\")",
       "Bash(git commit -m 'feat\\(ui\\): glass shell foundation complete \\(fase 1 part 2\\) *)",
-      "Bash(git commit -m 'feat\\(ui\\): shared table + toolbar primitives \\(fase 2\\) *)"
+      "Bash(git commit -m 'feat\\(ui\\): shared table + toolbar primitives \\(fase 2\\) *)",
+      "Bash(git commit -m 'feat\\(ui\\): apply glass styling to customers module \\(fase 3.1\\) *)"
     ]
   }
 }

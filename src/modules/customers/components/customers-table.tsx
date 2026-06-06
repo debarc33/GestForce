@@ -161,7 +161,7 @@ export function CustomersTable({
           type="checkbox"
           checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
-          className="h-3.5 w-3.5 rounded border-slate-300 accent-blue-600 cursor-pointer"
+          className="h-3.5 w-3.5 rounded border-[var(--glass-border)] accent-primary cursor-pointer"
         />
       ),
       size: 40,
@@ -184,7 +184,7 @@ export function CustomersTable({
             <div className="min-w-0">
               <button
                 onClick={() => setEditingCustomer(c)}
-                className="font-semibold text-slate-800 hover:text-blue-600 text-[13px] transition-colors text-left truncate max-w-[200px] hover:underline underline-offset-2"
+                className="font-semibold text-foreground hover:text-primary text-[13px] transition-colors text-left truncate max-w-[200px] hover:underline underline-offset-2"
               >
                 {c.name}
               </button>
@@ -200,10 +200,10 @@ export function CustomersTable({
         const c = row.original
         return (
           <div>
-            <span className="text-[10px] font-bold text-slate-400 tracking-wide">{c.doc_type}</span>
+            <span className="text-[10px] font-bold text-muted-foreground tracking-wide">{c.doc_type}</span>
             {c.doc_number
-              ? <p className="text-[13px] font-medium text-slate-700">{c.doc_number}</p>
-              : <p className="text-slate-300 text-sm">—</p>
+              ? <p className="text-[13px] font-medium text-foreground">{c.doc_number}</p>
+              : <p className="text-muted-foreground text-sm">—</p>
             }
           </div>
         )
@@ -217,8 +217,8 @@ export function CustomersTable({
         if (!c.email) return <span className="text-slate-300">—</span>
         return (
           <div className="flex items-center gap-1.5">
-            <Mail className="h-3 w-3 text-slate-300 shrink-0" />
-            <span className="text-[12px] text-slate-600 truncate max-w-[160px]">{c.email}</span>
+            <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-[12px] text-muted-foreground truncate max-w-[160px]">{c.email}</span>
           </div>
         )
       },
@@ -231,8 +231,8 @@ export function CustomersTable({
         if (!c.phone) return <span className="text-slate-300">—</span>
         return (
           <div className="flex items-center gap-1.5">
-            <Phone className="h-3 w-3 text-slate-300 shrink-0" />
-            <span className="text-[12px] text-slate-600">{c.phone}</span>
+            <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+            <span className="text-[12px] text-muted-foreground">{c.phone}</span>
           </div>
         )
       },
@@ -241,7 +241,7 @@ export function CustomersTable({
       id: 'fiscal',
       header: 'Régimen',
       cell: ({ row }) => (
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+        <span className="inline-flex items-center rounded-full bg-[var(--glass)] border border-[var(--glass-border)] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
           {FISCAL_LABEL[row.original.fiscal_regime] ?? row.original.fiscal_regime}
         </span>
       ),
@@ -255,7 +255,7 @@ export function CustomersTable({
           <div className="flex items-center gap-0.5 justify-end">
             <button
               onClick={() => setEditingCustomer(c)}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
               title="Editar"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -263,16 +263,16 @@ export function CustomersTable({
             <div className="relative" ref={openMoreId === c.id ? moreRef : null}>
               <button
                 onClick={() => setOpenMoreId(openMoreId === c.id ? null : c.id)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
                 title="Más opciones"
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
               {openMoreId === c.id && (
-                <div className="absolute right-0 top-full mt-1 w-36 animate-fade-in rounded-lg border border-slate-200 bg-white py-1 shadow-xl z-50">
+                <div className="absolute right-0 top-full mt-1 w-36 animate-[slideUp_220ms_ease] rounded-lg glass-surface-strong py-1 z-50">
                   <button
                     onClick={() => setOpenMoreId(null)}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-red-500 hover:bg-red-50 transition-colors"
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-destructive hover:bg-destructive/10 transition-colors"
                   >
                     Eliminar
                   </button>
@@ -297,17 +297,17 @@ export function CustomersTable({
   /* ── Estados de carga ─────────────────────────────────────── */
 
   if (isLoading) return (
-    <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+    <div className="rounded-2xl glass-surface p-12 text-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-        <p className="text-[13px] text-slate-400">Cargando clientes...</p>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="text-[13px] text-muted-foreground">Cargando clientes...</p>
       </div>
     </div>
   )
 
   if (isError) return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-12 text-center shadow-sm">
-      <p className="text-[13px] text-red-600 font-medium">Error al cargar clientes. Intenta recargar la página.</p>
+    <div className="rounded-2xl glass-surface border border-destructive/20 p-12 text-center">
+      <p className="text-[13px] text-destructive font-medium">Error al cargar clientes. Intenta recargar la página.</p>
     </div>
   )
 
@@ -315,13 +315,17 @@ export function CustomersTable({
 
   return (
     <>
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden animate-fade-in-up">
-        <table className="w-full table-premium">
+      <div className="rounded-2xl glass-surface overflow-hidden animate-[slideUp_250ms_ease]">
+        <table className="w-full">
           <thead>
             {table.getHeaderGroups().map(hg => (
-              <tr key={hg.id}>
+              <tr key={hg.id} className="border-b border-[var(--glass-border)]">
                 {hg.headers.map(h => (
-                  <th key={h.id} style={{ width: h.column.getSize() !== 150 ? h.column.getSize() : undefined }}>
+                  <th
+                    key={h.id}
+                    style={{ width: h.column.getSize() !== 150 ? h.column.getSize() : undefined }}
+                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                  >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
                 ))}
@@ -335,12 +339,12 @@ export function CustomersTable({
                   key={row.id}
                   data-state={row.getIsSelected() ? 'selected' : undefined}
                   className={cn(
-                    'transition-colors',
-                    row.getIsSelected() ? 'bg-blue-50/60' : ''
+                    'border-b border-[var(--glass-border)] transition-colors',
+                    row.getIsSelected() ? 'bg-[var(--glass-strong)]' : 'hover:bg-[var(--glass)]'
                   )}
                 >
                   {row.getVisibleCells().map(cell => (
-                    <td key={cell.id}>
+                    <td key={cell.id} className="px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}
@@ -349,17 +353,17 @@ export function CustomersTable({
             ) : (
               <tr>
                 <td colSpan={columns.length} className="h-48 text-center" style={{ padding: '0' }}>
-                  <div className="flex flex-col items-center gap-3 text-slate-400">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--glass)]">
                       <UserSquare2 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="text-[13px] font-medium text-slate-600">
+                      <p className="text-[13px] font-medium text-foreground">
                         {globalFilter || paymentFilter !== 'all'
                           ? 'Ningún cliente coincide con la búsqueda'
                           : 'No hay clientes registrados'}
                       </p>
-                      <p className="text-[12px] text-slate-400 mt-0.5">
+                      <p className="text-[12px] text-muted-foreground mt-0.5">
                         {globalFilter || paymentFilter !== 'all'
                           ? 'Intenta con otros términos de búsqueda.'
                           : 'Usa el botón Nuevo para agregar tu primer cliente.'}
@@ -374,24 +378,24 @@ export function CustomersTable({
 
         {/* ── Paginación ────────────────────────────────────── */}
         {filteredData.length > 0 && (
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-            <p className="text-[12px] text-slate-400">
+          <div className="flex items-center justify-between border-t border-[var(--glass-border)] px-4 py-3">
+            <p className="text-[12px] text-muted-foreground">
               Mostrando{' '}
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-foreground">
                 {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, filteredData.length)}
               </span>{' '}
               de{' '}
-              <span className="font-medium text-slate-600">{filteredData.length}</span> resultados
+              <span className="font-medium text-foreground">{filteredData.length}</span> resultados
             </p>
 
             <div className="flex items-center gap-3">
               {/* Page size */}
-              <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+              <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                 <span>Filas</span>
                 <select
                   value={pageSize}
                   onChange={e => { setPageSize(Number(e.target.value)); setPageIndex(0) }}
-                  className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="rounded-md border border-[var(--glass-border)] bg-[var(--glass)] px-1.5 py-0.5 text-[12px] text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/20"
                 >
                   {PAGE_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -402,7 +406,7 @@ export function CustomersTable({
                 <button
                   onClick={() => setPageIndex(p => Math.max(0, p - 1))}
                   disabled={pageIndex === 0}
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
                 >
                   ‹
                 </button>
@@ -415,8 +419,8 @@ export function CustomersTable({
                       className={cn(
                         'flex h-7 w-7 items-center justify-center rounded-md text-[12px] font-medium transition-colors',
                         p === pageIndex
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'bg-primary text-primary-foreground shadow-[var(--shadow-glass)]'
+                          : 'border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)]'
                       )}
                     >
                       {p + 1}
@@ -426,7 +430,7 @@ export function CustomersTable({
                 <button
                   onClick={() => setPageIndex(p => Math.min(totalPages - 1, p + 1))}
                   disabled={pageIndex >= totalPages - 1}
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
                 >
                   ›
                 </button>
@@ -438,9 +442,9 @@ export function CustomersTable({
 
       {/* ── Modal: Editar cliente ──────────────────────────────── */}
       <Dialog open={!!editingCustomer} onOpenChange={(v) => { if (!v) setEditingCustomer(null) }}>
-        <DialogContent className="sm:max-w-xl rounded-2xl border-slate-200 shadow-2xl">
+        <DialogContent className="sm:max-w-xl rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-strong)] shadow-[var(--shadow-pop)]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-slate-900">
+            <DialogTitle className="text-base font-semibold text-foreground">
               {editingCustomer ? 'Editar cliente' : 'Nuevo cliente'}
             </DialogTitle>
           </DialogHeader>
