@@ -2,6 +2,13 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Expose glass tokens to Tailwind 4 utilities */
+@theme inline {
+  --color-glass: var(--glass);
+  --color-glass-hover: var(--glass-hover);
+  --color-glass-strong: var(--glass-strong);
+}
+
 :root {
   /* Fuentes */
   --font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
@@ -141,6 +148,18 @@ body {
 /* ── Fondo futurista (escena con glows) ────────────────────────────────────── */
 /* Lo monta <BackgroundLayer/>. Esta es la capa base con glows ambientales. */
 .gf-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 700px at 12% -10%, var(--amb-1), transparent 60%),
+    radial-gradient(800px 600px at 95% 8%,  rgba(56,189,248,0.16), transparent 55%),
+    radial-gradient(760px 560px at 60% 100%, rgba(236,72,153,0.12), transparent 55%);
+}
+
+/* Alias para compatibilidad con production/ */
+.ambient {
   position: fixed;
   inset: 0;
   z-index: 0;
