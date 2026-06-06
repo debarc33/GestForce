@@ -1,7 +1,28 @@
 'use client'
 
+/**
+ * GestForce — BackgroundLayer  [REEMPLAZO]
+ *
+ * Pega en: src/components/ui/background-layer.tsx
+ *
+ * Renderiza la escena futurista detrás de toda la app y lee el fondo elegido
+ * desde el AppearanceProvider. Usa clases GLOBALES (.gf-ambient / .gf-grid) que
+ * declaraste en globals.css, así Tailwind v4 nunca las elimina.
+ *
+ * Si todavía NO tienes el AppearanceProvider montado, este componente igual
+ * funciona con el fondo "aurora" por defecto (try/catch).
+ */
+
 import { useEffect } from 'react'
-import { useAppearance } from '@/components/appearance/appearance-provider'
+
+let useAppearanceSafe: () => { background?: string; grid?: boolean }
+try {
+  // Import dinámico tolerante: si el provider existe, se usa.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  useAppearanceSafe = require('@/components/appearance/appearance-provider').useAppearance
+} catch {
+  useAppearanceSafe = () => ({ background: 'aurora', grid: true })
+}
 
 const SCENE: Record<string, string> = {
   aurora:
@@ -19,7 +40,7 @@ const SCENE: Record<string, string> = {
 }
 
 export function BackgroundLayer() {
-  const { background = 'aurora', grid = true } = useAppearance()
+  const { background = 'aurora', grid = true } = useAppearanceSafe()
 
   // Aplica la escena elegida a la capa ambiental
   useEffect(() => {

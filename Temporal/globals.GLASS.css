@@ -1,49 +1,26 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+/* ════════════════════════════════════════════════════════════════════════════
+ * GestForce — SISTEMA GLASS (pegar TODO esto al FINAL de src/app/globals.css)
+ *
+ * Esto es lo que faltaba para que NO se vea negro y plano.
+ * No borres nada de tu globals.css; solo pega esto debajo de lo que ya tienes.
+ *
+ * IMPORTANTE (Tailwind v4): estas clases se declaran como CSS plano (global),
+ * NO como utilidades, para que Tailwind nunca las elimine ("purgue").
+ * ════════════════════════════════════════════════════════════════════════════ */
 
+/* ── Tokens de vidrio ──────────────────────────────────────────────────────── */
 :root {
-  /* Fuentes */
-  --font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
-  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-
   /* Fondo base: NO negro puro. Un azul-noche muy oscuro para que el glow se vea. */
   --app-bg: oklch(0.96 0.005 275);          /* claro */
-
-  /* Glass tokens - Light Mode */
   --glass: oklch(1 0 0 / 0.55);
   --glass-hover: oklch(1 0 0 / 0.78);
   --glass-strong: oklch(1 0 0 / 0.9);
   --glass-border: oklch(0.2 0.02 275 / 0.1);
   --glass-border-strong: oklch(0.2 0.02 275 / 0.18);
 
-  /* Acento Principal - Púrpura */
-  --accent: #8b5cff;
-  --accent-soft: #a78bfa;
-  --accent-bg: rgba(139, 92, 255, 0.12);
-  --accent-bg-strong: rgba(139, 92, 255, 0.22);
-  --accent-border: rgba(139, 92, 255, 0.35);
-  --accent-glow: rgba(139, 92, 255, 0.55);
+  --accent-soft: var(--primary);
+  --amb-1: rgba(139, 92, 255, 0.18);        /* glow principal (lo cambia el acento) */
 
-  /* Estados */
-  --danger: #ef4d6e;
-  --danger-bg: rgba(239, 77, 110, 0.12);
-  --danger-border: rgba(239, 77, 110, 0.3);
-  --info: #38bdf8;
-  --info-bg: rgba(56, 189, 248, 0.12);
-  --info-border: rgba(56, 189, 248, 0.28);
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --success-border: rgba(16, 185, 129, 0.28);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --warning-border: rgba(245, 158, 11, 0.28);
-
-  /* Fondos ambientales */
-  --amb-1: rgba(139, 92, 255, 0.18);        /* glow principal */
-
-  /* Sombras */
   --shadow-glass: 0 1px 0 oklch(1 0 0 / 0.7) inset,
                   0 0 0 1px oklch(0.2 0.02 275 / 0.04),
                   0 8px 24px oklch(0.2 0.02 275 / 0.08);
@@ -56,46 +33,10 @@
 
   --glass-blur: 24px;
   --glass-saturate: 180%;
-
-  /* Timing */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Radius */
-  --radius: 0.75rem;
-
-  /* Para compatibilidad con Tailwind */
-  --background: var(--app-bg);
-  --foreground: #0f121e;
-  --card: #ffffff;
-  --card-foreground: #0f121e;
-  --popover: #ffffff;
-  --popover-foreground: #0f121e;
-  --primary: var(--accent);
-  --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #1f2937;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent-color: var(--accent);
-  --accent-foreground: #ffffff;
-  --destructive: var(--danger);
-  --border: var(--glass-border);
-  --input: var(--glass-border);
-  --ring: var(--accent);
-
-  /* Charts */
-  --chart-1: var(--accent);
-  --chart-2: #06b6d4;
-  --chart-3: #ec4899;
-  --chart-4: #f59e0b;
-  --chart-5: #10b981;
 }
 
 .dark {
   --app-bg: oklch(0.17 0.02 270);           /* azul-noche, NO #000 */
-
-  /* Glass tokens - Dark Mode */
   --glass: oklch(0.24 0.02 270 / 0.5);
   --glass-hover: oklch(0.28 0.02 270 / 0.68);
   --glass-strong: oklch(0.26 0.02 270 / 0.8);
@@ -113,29 +54,11 @@
   --shadow-pop: 0 1px 0 oklch(1 0 0 / 0.08) inset,
                 0 0 0 1px oklch(1 0 0 / 0.08),
                 0 24px 48px oklch(0 0 0 / 0.55);
-
-  /* Para compatibilidad */
-  --background: var(--app-bg);
-  --foreground: #e5e7eb;
-  --card: #0a0a10;
-  --card-foreground: #e5e7eb;
-  --popover: #0a0a10;
-  --popover-foreground: #e5e7eb;
 }
 
-* {
-  font-family: var(--font-sans);
-}
-
-html {
-  font-family: var(--font-sans);
-}
-
+/* El body usa el fondo base (clave para que NO sea negro plano) */
 body {
   background: var(--app-bg);
-  color: var(--foreground);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  font-variant-numeric: tabular-nums;
 }
 
 /* ── Fondo futurista (escena con glows) ────────────────────────────────────── */
@@ -181,49 +104,6 @@ body {
   box-shadow: var(--shadow-pop);
 }
 
-/* ── Animaciones ────────────────────────────────────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes pingDot {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-
-/* Focus Ring */
-:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
-  border-radius: var(--radius);
-}
-
-/* Scrollbar moderno */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--glass-border-strong);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--glass-border-strong);
-}
+/* ── Animaciones suaves ────────────────────────────────────────────────────── */
+@keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }

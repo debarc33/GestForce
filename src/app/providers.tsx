@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AppearanceProvider } from '@/components/appearance/appearance-provider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Inicializamos el cliente una sola vez por sesión de usuario
@@ -20,8 +21,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NextThemesProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        {children}
+      <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <AppearanceProvider>
+          {children}
+        </AppearanceProvider>
       </NextThemesProvider>
     </QueryClientProvider>
   )

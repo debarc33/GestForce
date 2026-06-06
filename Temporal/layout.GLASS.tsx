@@ -1,3 +1,21 @@
+/**
+ * GestForce — (dashboard)/layout.tsx  [REEMPLAZO COMPLETO]
+ *
+ * Pega esto en: src/app/(dashboard)/layout.tsx
+ *
+ * Lo que arregla:
+ *  - Monta el FONDO futurista (gf-ambient + grid) detrás de todo → ya no se ve negro plano.
+ *  - Deja el <main> con offsets correctos para el sidebar/header flotantes.
+ *  - Conserva tus guards (CompanyGuard / ModuleGuard) intactos.
+ *
+ * Requisitos:
+ *  - Pegaste production/globals.GLASS.css al final de src/app/globals.css
+ *  - Copiaste background-layer.tsx y los demás primitivos a src/components/ui/
+ *  - Envolviste la app con <AppearanceProvider> en src/app/layout.tsx
+ *
+ * NOTA: ajusta los imports a las rutas reales de TU proyecto si difieren.
+ */
+
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { CompanyGuard } from '@/components/layout/company-guard'
@@ -9,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <CompanyGuard>
       <ModuleGuard>
         <div className="relative min-h-screen overflow-hidden" style={{ background: 'var(--app-bg)' }}>
-          {/* Fondo futurista con glows */}
+          {/* Fondo futurista con glows (lee el fondo elegido del AppearanceProvider) */}
           <BackgroundLayer />
 
           {/* Shells flotantes */}

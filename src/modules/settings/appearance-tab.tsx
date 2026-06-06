@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes'
 import { useMutation } from '@tanstack/react-query'
 import { Check, Moon, Sun } from 'lucide-react'
 import { useCompanyStore } from '@/store/useCompanyStore'
+import { useAppearance } from '@/components/appearance/appearance-provider'
 import {
   loadUIPreferences, saveUIPreferences,
   ACCENT_COLORS, BACKGROUND_THEMES,
@@ -31,11 +32,11 @@ const BACKGROUND_OPTIONS: { id: BackgroundTheme; label: string }[] = [
 export function AppearanceTab() {
   const { activeCompanyId } = useCompanyStore()
   const { theme, setTheme } = useTheme()
+  const { background, grid, accentColor, setBackground, setGrid, setAccentColor, isLoading } = useAppearance()
 
   const [preferences, setPreferences] = useState<UIPreferences | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  // Cargar preferencias
+  // Cargar preferencias iniciales
   useEffect(() => {
     if (!activeCompanyId) return
 
@@ -44,44 +45,89 @@ export function AppearanceTab() {
         setPreferences(prefs)
         // Aplicar tema al cargar
         if (prefs.mode) setTheme(prefs.mode)
-        applyTheme(prefs)
       })
-      .finally(() => setLoading(false))
+      .catch(err => console.error('Error loading preferences:', err))
   }, [activeCompanyId, setTheme])
 
-  // Mutation para guardar
+  // Mutation para guardar en Supabase
   const saveMutation = useMutation({
     mutationFn: async (newPrefs: Partial<UIPreferences>) => {
       if (!activeCompanyId) throw new Error('No company selected')
       return saveUIPreferences(activeCompanyId, newPrefs)
     },
-    onSuccess: (saved) => {
-      setPreferences(saved)
-      applyTheme(saved)
-    },
   })
 
   const handleModeChange = (mode: ThemeMode) => {
     setTheme(mode)
-    saveMutation.mutate({ mode })
+    if (preferences) {
+      const updated = { ...preferences, mode }
+      setPreferences(updated)
+      saveMutation.mutate({ mode })
+    }
   }
 
   const handleAccentChange = (accent: AccentColor) => {
-    saveMutation.mutate({ accent_color: accent })
+    setAccentColor(accent)
+    const accentHex = ACCENT_COLORS[accent]
+    document.documentElement.style.setProperty('--accent', accentHex)
+    document.documentElement.style.setProperty('--accent-soft', accentHex + '99')
+
+    // Actualizar amb-1 según tema
+    const opacity = theme === 'dark' ? 0.35 : 0.18
+    const rgba = convertHexToRgba(accentHex, opacity)
+    document.documentElement.style.setProperty('--amb-1', rgba)
+
+    if (preferences) {
+      const updated = { ...preferences, accent_color: accent }
+      setPreferences(updated)
+      saveMutation.mutate({ accent_color: accent })
+    }
   }
 
   const handleBackgroundChange = (bg: BackgroundTheme) => {
-    saveMutation.mutate({ background_theme: bg })
+    // Mapear nombres de fondos
+    const bgMap: Record<BackgroundTheme, string> = {
+      'auroras': 'aurora',
+      'mesh': 'mesh',
+      'nebulosa': 'nebula',
+      'horizonte': 'horizonte',
+      'topográfico': 'topo',
+      'circuito': 'circuit',
+    }
+
+    setBackground(bgMap[bg])
+
+    if (preferences) {
+      const updated = { ...preferences, background_theme: bg }
+      setPreferences(updated)
+      saveMutation.mutate({ background_theme: bg })
+    }
   }
 
   const handleGridToggle = () => {
-    if (!preferences) return
-    saveMutation.mutate({ grid_overlay: !preferences.grid_overlay })
+    const newGrid = !grid
+    setGrid(newGrid)
+
+    if (preferences) {
+      const updated = { ...preferences, grid_overlay: newGrid }
+      setPreferences(updated)
+      saveMutation.mutate({ grid_overlay: newGrid })
+    }
   }
 
-  if (loading || !preferences) {
-    return <div className="h-40 animate-pulse rounded-xl bg-[var(--glass-hover)]" />
+  if (isLoading || !preferences) {
+    return <div className="h-40 animate-pulse rounded-xl bg-slate-700/20" />
   }
+
+  // Determinar fondo actual en formato de appearance-queries
+  const currentBg = Object.entries({
+    'auroras': 'aurora',
+    'mesh': 'mesh',
+    'nebulosa': 'nebula',
+    'horizonte': 'horizonte',
+    'topográfico': 'topo',
+    'circuito': 'circuit',
+  }).find(([_, v]) => v === background)?.[0] as BackgroundTheme || 'auroras'
 
   return (
     <div className="space-y-8">
@@ -91,27 +137,27 @@ export function AppearanceTab() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => handleModeChange('light')}
-            className={`flex items-center gap-2 rounded-xl p-4 border-2 transition-all ${
+            className={`flex items-center gap-2 rounded-xl p-4 border-2 transition-all cursor-pointer ${
               theme === 'light'
-                ? 'border-primary bg-primary/10'
-                : 'border-[var(--border-subtle)] bg-glass-surface hover:bg-[var(--glass-hover)]'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                : 'border-slate-500/30 bg-slate-500/10 hover:border-slate-500/50 hover:bg-slate-500/15'
             }`}
           >
             <Sun className="h-4 w-4" />
             <span className="text-sm font-medium">Claro</span>
-            {theme === 'light' && <Check className="ml-auto h-4 w-4 text-primary" />}
+            {theme === 'light' && <Check className="ml-auto h-4 w-4 text-[var(--accent)]" />}
           </button>
           <button
             onClick={() => handleModeChange('dark')}
-            className={`flex items-center gap-2 rounded-xl p-4 border-2 transition-all ${
+            className={`flex items-center gap-2 rounded-xl p-4 border-2 transition-all cursor-pointer ${
               theme === 'dark'
-                ? 'border-primary bg-primary/10'
-                : 'border-[var(--border-subtle)] bg-glass-surface hover:bg-[var(--glass-hover)]'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                : 'border-slate-500/30 bg-slate-500/10 hover:border-slate-500/50 hover:bg-slate-500/15'
             }`}
           >
             <Moon className="h-4 w-4" />
             <span className="text-sm font-medium">Oscuro</span>
-            {theme === 'dark' && <Check className="ml-auto h-4 w-4 text-primary" />}
+            {theme === 'dark' && <Check className="ml-auto h-4 w-4 text-[var(--accent)]" />}
           </button>
         </div>
       </section>
@@ -119,25 +165,26 @@ export function AppearanceTab() {
       {/* Color de acento */}
       <section>
         <h3 className="text-sm font-semibold text-foreground mb-4">Color de acento</h3>
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="text-xs text-muted-foreground mb-4">
           El color de la marca. Tine botones, enlaces, gráficos y el resplandor del fondo.
         </p>
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-4 flex-wrap">
           {ACCENT_OPTIONS.map(({ id, label }) => (
             <button
               key={id}
               onClick={() => handleAccentChange(id)}
-              className="flex flex-col items-center gap-2 group"
+              className="flex flex-col items-center gap-2 group cursor-pointer"
+              title={`Cambiar a ${label}`}
             >
               <div
-                className={`h-12 w-12 rounded-lg border-2 transition-all ${
-                  preferences.accent_color === id
-                    ? 'border-foreground/80'
-                    : 'border-transparent group-hover:border-foreground/40'
+                className={`h-14 w-14 rounded-lg border-2 transition-all shadow-lg ${
+                  accentColor === id
+                    ? 'border-white/80 shadow-xl scale-110'
+                    : 'border-white/20 group-hover:border-white/50 group-hover:scale-105'
                 }`}
                 style={{ background: ACCENT_COLORS[id] }}
               />
-              <span className="text-xs text-muted-foreground">{label}</span>
+              <span className="text-xs font-medium text-foreground">{label}</span>
             </button>
           ))}
         </div>
@@ -146,31 +193,31 @@ export function AppearanceTab() {
       {/* Fondo */}
       <section>
         <h3 className="text-sm font-semibold text-foreground mb-4">Fondo del espacio de trabajo</h3>
-        <p className="text-xs text-muted-foreground mb-3">
+        <p className="text-xs text-muted-foreground mb-4">
           Una escena futurista que se ve difuminada a través de las superficies de vidrio.
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {BACKGROUND_OPTIONS.map(({ id, label }) => (
             <button
               key={id}
               onClick={() => handleBackgroundChange(id)}
-              className={`relative rounded-lg overflow-hidden border-2 h-24 transition-all group ${
-                preferences.background_theme === id
-                  ? 'border-primary'
-                  : 'border-[var(--border-subtle)] hover:border-primary/50'
+              className={`relative rounded-lg overflow-hidden border-2 h-28 transition-all cursor-pointer group ${
+                currentBg === id
+                  ? 'border-white scale-105 shadow-xl'
+                  : 'border-white/20 hover:border-white/50 hover:scale-102'
               }`}
             >
               <div
                 className="absolute inset-0"
                 style={{ background: BACKGROUND_THEMES[id] }}
               />
-              <div className="absolute inset-0 bg-black/40" />
-              {preferences.background_theme === id && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-primary" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {currentBg === id && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Check className="h-6 w-6 text-white drop-shadow-lg" />
                 </div>
               )}
-              <span className="absolute bottom-2 left-2 text-xs font-medium text-white">
+              <span className="absolute bottom-2 left-3 text-xs font-semibold text-white drop-shadow-md">
                 {label}
               </span>
             </button>
@@ -179,7 +226,7 @@ export function AppearanceTab() {
       </section>
 
       {/* Rejilla técnica */}
-      <section className="rounded-xl glass-surface border border-primary/20 p-4">
+      <section className="rounded-xl border border-slate-500/30 bg-slate-500/10 p-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-foreground">Rejilla técnica</h3>
@@ -189,13 +236,14 @@ export function AppearanceTab() {
           </div>
           <button
             onClick={handleGridToggle}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              preferences.grid_overlay ? 'bg-primary' : 'bg-[var(--border-strong)]'
+            className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer ${
+              grid ? 'bg-[var(--accent)]' : 'bg-slate-500/50'
             }`}
+            title="Activar/desactivar rejilla"
           >
             <div
-              className={`absolute h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                preferences.grid_overlay ? 'translate-x-5' : 'translate-x-0.5'
+              className={`absolute h-5 w-5 rounded-full bg-white shadow-md transition-transform ${
+                grid ? 'translate-x-5' : 'translate-x-0.5'
               }`}
             />
           </button>
@@ -203,25 +251,19 @@ export function AppearanceTab() {
       </section>
 
       {/* Info */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+      <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 p-4">
         <p className="text-xs text-muted-foreground">
-          ✓ Los cambios se aplican al instante. En producción se guardan en Supabase y se cargan al iniciar sesión.
+          ✓ Los cambios se aplican al instante. Se guardan en Supabase y se cargan al iniciar sesión.
         </p>
       </div>
     </div>
   )
 }
 
-// Aplicar tema dinámicamente
-function applyTheme(prefs: UIPreferences) {
-  const root = document.documentElement
-  const accentColor = ACCENT_COLORS[prefs.accent_color]
-  const bgGradient = BACKGROUND_THEMES[prefs.background_theme]
-
-  // Actualizar CSS variables
-  root.style.setProperty('--accent', accentColor)
-  root.style.setProperty('--accent-soft', accentColor + '99')
-
-  // Fondo
-  root.style.setProperty('--bg-gradient', bgGradient)
+// Helper para convertir hex a rgba
+function convertHexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
