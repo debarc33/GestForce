@@ -324,9 +324,8 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
-        {/* Agente de comisión — visible solo si hay agentes registrados */}
-        {commissionAgents.length > 0 && (
-          <div className="border-t border-zinc-100 pt-3">
+        {/* Agente de venta — siempre visible, no aparece en el documento del cliente */}
+        <div className="border-t border-zinc-100 pt-3">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex-1 min-w-48">
                 <label className="block text-xs font-medium text-zinc-500 mb-1">
@@ -369,8 +368,7 @@ export default function EditInvoicePage() {
                 </span>
               )}
             </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* 3 · Tabla de ítems */}

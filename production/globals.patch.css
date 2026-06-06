@@ -1,0 +1,113 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+ * GestForce — Glass tokens patch
+ *
+ * AGREGA este bloque AL FINAL de src/app/globals.css.
+ * No reemplaces los tokens existentes (--primary, --card, etc.).
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --color-glass: var(--glass);
+  --color-glass-hover: var(--glass-hover);
+  --color-glass-strong: var(--glass-strong);
+}
+
+:root {
+  /* Glass surfaces (light mode) */
+  --glass: oklch(1 0 0 / 0.55);
+  --glass-hover: oklch(1 0 0 / 0.78);
+  --glass-strong: oklch(1 0 0 / 0.92);
+  --glass-border: oklch(0.13 0.01 260 / 0.08);
+  --glass-border-strong: oklch(0.13 0.01 260 / 0.14);
+
+  /* Ambient background glows (tinted by accent) */
+  --bg-glow-1: oklch(0.65 0.22 270 / 0.10);
+  --bg-glow-2: oklch(0.68 0.18 220 / 0.07);
+  --bg-glow-3: oklch(0.7  0.20 320 / 0.06);
+
+  /* Floating shadows */
+  --shadow-glass: 0 1px 0 oklch(1 0 0 / 0.7) inset,
+                  0 0 0 1px oklch(0.13 0.01 260 / 0.04),
+                  0 8px 24px oklch(0.13 0.01 260 / 0.06);
+  --shadow-float: 0 1px 0 oklch(1 0 0 / 0.7) inset,
+                  0 0 0 1px oklch(0.13 0.01 260 / 0.06),
+                  0 20px 40px -16px oklch(0.13 0.01 260 / 0.12);
+  --shadow-pop: 0 1px 0 oklch(1 0 0 / 0.7) inset,
+                0 0 0 1px oklch(0.13 0.01 260 / 0.08),
+                0 24px 48px oklch(0.13 0.01 260 / 0.18),
+                0 0 80px -20px var(--bg-glow-1);
+
+  /* Glass blur tunable from a settings panel */
+  --glass-blur: 24px;
+  --glass-saturate: 180%;
+}
+
+.dark {
+  --glass: oklch(0.18 0.005 285 / 0.55);
+  --glass-hover: oklch(0.22 0.005 285 / 0.7);
+  --glass-strong: oklch(0.22 0.005 285 / 0.85);
+  --glass-border: oklch(1 0 0 / 0.08);
+  --glass-border-strong: oklch(1 0 0 / 0.14);
+
+  --bg-glow-1: oklch(0.65 0.25 270 / 0.18);
+  --bg-glow-2: oklch(0.65 0.20 220 / 0.10);
+  --bg-glow-3: oklch(0.6  0.22 320 / 0.07);
+
+  --shadow-glass: 0 1px 0 oklch(1 0 0 / 0.05) inset,
+                  0 0 0 1px oklch(1 0 0 / 0.04),
+                  0 20px 50px oklch(0 0 0 / 0.4);
+  --shadow-float: 0 1px 0 oklch(1 0 0 / 0.06) inset,
+                  0 0 0 1px oklch(1 0 0 / 0.06),
+                  0 30px 60px -20px oklch(0 0 0 / 0.55);
+  --shadow-pop: 0 1px 0 oklch(1 0 0 / 0.08) inset,
+                0 0 0 1px oklch(1 0 0 / 0.08),
+                0 24px 48px oklch(0 0 0 / 0.5),
+                0 0 80px -20px var(--bg-glow-1);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Ambient background — radial glows behind the whole app
+ * Mounted from (dashboard)/layout.tsx as <div className="ambient" />
+ * ──────────────────────────────────────────────────────────────────────────── */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 700px at 12% -10%, var(--bg-glow-1), transparent 60%),
+    radial-gradient(800px 600px at 95% 10%, var(--bg-glow-2), transparent 55%),
+    radial-gradient(700px 500px at 60% 100%, var(--bg-glow-3), transparent 55%);
+}
+
+/* Floating shells use these utility classes */
+.glass-surface {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-float);
+}
+
+.glass-surface-strong {
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--shadow-pop);
+}
+
+/* Animations */
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pingDot {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Focus ring with accent */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  border-radius: var(--radius-md);
+}

@@ -8,7 +8,7 @@ import {
   type ColumnDef, type RowSelectionState,
 } from '@tanstack/react-table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { UserSquare2, Eye, Pencil, MoreHorizontal, Mail, Phone } from 'lucide-react'
+import { UserSquare2, Pencil, MoreHorizontal, Mail, Phone } from 'lucide-react'
 import { CustomerForm } from './customer-form'
 import { cn } from '@/lib/utils'
 
@@ -86,7 +86,6 @@ export function CustomersTable({
   const { data: customers = [], isLoading, isError } = useCustomers(activeCompanyId)
   const [rowSelection, setRowSelection]   = useState<RowSelectionState>({})
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
-  const [viewCustomer, setViewCustomer]   = useState<Customer | null>(null)
   const [pageIndex, setPageIndex]         = useState(0)
   const [pageSize, setPageSize]           = useState(10)
   const [openMoreId, setOpenMoreId]       = useState<string | null>(null)
@@ -185,15 +184,10 @@ export function CustomersTable({
             <div className="min-w-0">
               <button
                 onClick={() => setEditingCustomer(c)}
-                className="font-semibold text-slate-800 hover:text-blue-600 text-[13px] transition-colors text-left truncate max-w-[200px]"
+                className="font-semibold text-slate-800 hover:text-blue-600 text-[13px] transition-colors text-left truncate max-w-[200px] hover:underline underline-offset-2"
               >
                 {c.name}
               </button>
-              {c.city && (
-                <p className="text-[11px] text-slate-400 truncate">
-                  {c.city}{c.department ? `, ${c.department}` : ''}
-                </p>
-              )}
             </div>
           </div>
         )
@@ -217,24 +211,28 @@ export function CustomersTable({
     },
     {
       id: 'contacto',
-      header: 'Contacto',
+      header: 'Email',
       cell: ({ row }) => {
         const c = row.original
-        if (!c.email && !c.phone) return <span className="text-slate-300">—</span>
+        if (!c.email) return <span className="text-slate-300">—</span>
         return (
-          <div className="space-y-0.5">
-            {c.email && (
-              <div className="flex items-center gap-1.5">
-                <Mail className="h-3 w-3 text-slate-300 shrink-0" />
-                <span className="text-[12px] text-slate-600 truncate max-w-[160px]">{c.email}</span>
-              </div>
-            )}
-            {c.phone && (
-              <div className="flex items-center gap-1.5">
-                <Phone className="h-3 w-3 text-slate-300 shrink-0" />
-                <span className="text-[12px] text-slate-500">{c.phone}</span>
-              </div>
-            )}
+          <div className="flex items-center gap-1.5">
+            <Mail className="h-3 w-3 text-slate-300 shrink-0" />
+            <span className="text-[12px] text-slate-600 truncate max-w-[160px]">{c.email}</span>
+          </div>
+        )
+      },
+    },
+    {
+      id: 'celular',
+      header: 'Celular',
+      cell: ({ row }) => {
+        const c = row.original
+        if (!c.phone) return <span className="text-slate-300">—</span>
+        return (
+          <div className="flex items-center gap-1.5">
+            <Phone className="h-3 w-3 text-slate-300 shrink-0" />
+            <span className="text-[12px] text-slate-600">{c.phone}</span>
           </div>
         )
       },
@@ -249,43 +247,12 @@ export function CustomersTable({
       ),
     },
     {
-      id: 'pago',
-      header: 'Tipo Pago',
-      cell: ({ row }) => {
-        const c = row.original
-        if (!c.payment_type) return <span className="text-slate-300 text-sm">—</span>
-        const isCredito = c.payment_type.toLowerCase() === 'credito'
-        return (
-          <div>
-            <span className={cn(
-              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize',
-              isCredito
-                ? 'bg-amber-50 text-amber-700'
-                : 'bg-emerald-50 text-emerald-700'
-            )}>
-              {c.payment_type}
-            </span>
-            {isCredito && c.credit_days != null && c.credit_days > 0 && (
-              <p className="text-[11px] text-slate-400 mt-0.5">{c.credit_days}d</p>
-            )}
-          </div>
-        )
-      },
-    },
-    {
       id: 'acciones',
       header: '',
       cell: ({ row }) => {
         const c = row.original
         return (
           <div className="flex items-center gap-0.5 justify-end">
-            <button
-              onClick={() => setViewCustomer(c)}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-              title="Ver detalle"
-            >
-              <Eye className="h-3.5 w-3.5" />
-            </button>
             <button
               onClick={() => setEditingCustomer(c)}
               className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
@@ -303,14 +270,6 @@ export function CustomersTable({
               </button>
               {openMoreId === c.id && (
                 <div className="absolute right-0 top-full mt-1 w-36 animate-fade-in rounded-lg border border-slate-200 bg-white py-1 shadow-xl z-50">
-                  <button
-                    onClick={() => { setEditingCustomer(c); setOpenMoreId(null) }}
-                    className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-slate-700 hover:bg-slate-50 transition-colors"
-                  >
-                    <Pencil className="h-3 w-3 text-slate-400" />
-                    Editar
-                  </button>
-                  <div className="my-1 h-px bg-slate-100" />
                   <button
                     onClick={() => setOpenMoreId(null)}
                     className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-red-500 hover:bg-red-50 transition-colors"
@@ -495,62 +454,6 @@ export function CustomersTable({
         </DialogContent>
       </Dialog>
 
-      {/* ── Modal: Ver detalle ─────────────────────────────────── */}
-      <Dialog open={!!viewCustomer} onOpenChange={(v) => { if (!v) setViewCustomer(null) }}>
-        <DialogContent className="max-w-md rounded-2xl border-slate-200 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-slate-900">
-              Detalle del cliente
-            </DialogTitle>
-          </DialogHeader>
-          {viewCustomer && (
-            <div className="space-y-4 pt-1">
-              {/* Avatar + nombre */}
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[15px] font-bold',
-                  getAvatarColor(viewCustomer.name)
-                )}>
-                  {getInitials(viewCustomer.name)}
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-900">{viewCustomer.name}</p>
-                  <p className="text-[12px] text-slate-400">
-                    {viewCustomer.doc_type} {viewCustomer.doc_number}
-                  </p>
-                </div>
-              </div>
-
-              {/* Campos */}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Email',      value: viewCustomer.email },
-                  { label: 'Teléfono',   value: viewCustomer.phone },
-                  { label: 'Ciudad',     value: viewCustomer.city },
-                  { label: 'Dirección',  value: viewCustomer.address },
-                  { label: 'Régimen',    value: FISCAL_LABEL[viewCustomer.fiscal_regime] ?? viewCustomer.fiscal_regime },
-                  { label: 'Tipo Pago',  value: viewCustomer.payment_type },
-                ].map(({ label, value }) => (
-                  <div key={label} className="rounded-lg bg-slate-50 px-3 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-                    <p className="mt-0.5 text-[13px] text-slate-700 font-medium">{value ?? '—'}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  onClick={() => { setViewCustomer(null); setEditingCustomer(viewCustomer) }}
-                  className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-blue-700 transition-colors"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Editar
-                </button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

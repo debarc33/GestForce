@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Building2, Users, LayoutDashboard, ArrowLeft, Shield } from 'lucide-react'
+import { Building2, Users, LayoutDashboard, ArrowLeft, Shield, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/superadmin',           label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/superadmin/companies', label: 'Empresas',   icon: Building2 },
-  { href: '/superadmin/users',     label: 'Usuarios',   icon: Users },
+  { href: '/superadmin',           label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/superadmin/companies', label: 'Empresas',       icon: Building2 },
+  { href: '/superadmin/users',     label: 'Usuarios',       icon: Users },
+  { href: '/superadmin/settings',  label: 'Configuración',  icon: Settings },
 ]
 
 export function SuperadminNav() {

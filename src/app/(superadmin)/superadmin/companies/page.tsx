@@ -56,6 +56,8 @@ export default function CompaniesPage() {
     email:           '',
     fiscal_regime:   'no_iva',
     subscription_period: '1_year' as SubscriptionPeriod,
+    owner_email:     '',
+    owner_first_name: '',
   })
 
   const fetchCompanies = useCallback(async () => {
@@ -93,7 +95,7 @@ export default function CompaniesPage() {
     })
     setSaving(false)
     setShowCreate(false)
-    setNewCompany({ name: '', nit: '', legal_name: '', email: '', fiscal_regime: 'no_iva', subscription_period: '1_year' })
+    setNewCompany({ name: '', nit: '', legal_name: '', email: '', fiscal_regime: 'no_iva', subscription_period: '1_year', owner_email: '', owner_first_name: '' })
     fetchCompanies()
   }
 
@@ -327,6 +329,34 @@ export default function CompaniesPage() {
                 />
               </div>
 
+              {/* Divisor visual */}
+              <div className="h-px bg-zinc-700/50" />
+
+              {/* Propietario - Email */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-400">Email del propietario *</label>
+                <input
+                  type="email"
+                  placeholder="propietario@email.com"
+                  value={newCompany.owner_email}
+                  onChange={(e) => setNewCompany({ ...newCompany, owner_email: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                />
+                <p className="mt-1 text-[10px] text-zinc-500">Se creará automáticamente una cuenta con contraseña temporal</p>
+              </div>
+
+              {/* Propietario - Nombre */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-zinc-400">Nombre del propietario *</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Juan Pérez"
+                  value={newCompany.owner_first_name}
+                  onChange={(e) => setNewCompany({ ...newCompany, owner_first_name: e.target.value })}
+                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+
               {/* Régimen fiscal */}
               <div>
                 <label className="mb-1 block text-xs font-medium text-zinc-400">Régimen fiscal</label>
@@ -375,7 +405,7 @@ export default function CompaniesPage() {
                   })}
                 </div>
                 <p className="mt-1.5 text-[11px] text-zinc-600">
-                  La fecha de inicio es hoy y el estado inicial será <strong className="text-zinc-500">Pendiente pago</strong> hasta confirmar el cobro.
+                  La fecha de inicio es hoy con <strong className="text-zinc-500">15 días de prueba gratis</strong>. El propietario recibirá un email con sus credenciales de acceso.
                 </p>
               </div>
             </div>
@@ -390,7 +420,7 @@ export default function CompaniesPage() {
               </button>
               <button
                 onClick={createCompany}
-                disabled={saving || !newCompany.name.trim()}
+                disabled={saving || !newCompany.name.trim() || !newCompany.owner_email.trim() || !newCompany.owner_first_name.trim()}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

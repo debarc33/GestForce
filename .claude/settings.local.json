@@ -10,7 +10,15 @@
       "Bash(xargs grep -l \"inventory\\\\|supplier\\\\|vendor\\\\|table\")",
       "Bash(xargs grep -l \"useCompanyStore\\\\|activeCompanyId\\\\|CompanyStore\")",
       "WebSearch",
-      "Bash(dir /B \"C:\\\\\\\\Users\\\\\\\\usuario\\\\\\\\GestForce1\")"
+      "Bash(dir /B \"C:\\\\\\\\Users\\\\\\\\usuario\\\\\\\\GestForce1\")",
+      "Bash(Get-ChildItem -Recurse -Directory -Name)",
+      "Bash(xargs grep -l \"process.env\")",
+      "Bash(awk '{print $3}')",
+      "Bash(cd C:\\\\\\\\Users\\\\\\\\usuario\\\\\\\\GestForce1)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\src\\\\app\\\\api\\\\superadmin\\\\companies\\\\[id]\\\\users\")",
+      "Bash(ls -la \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\\" | grep -E \"^d\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat\\(ui\\): glass shell tokens + design system \\(fase 1 part 1\\) *)"
     ]
   }
 }
