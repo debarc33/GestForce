@@ -46,6 +46,13 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        glass: {
+          DEFAULT: "var(--glass)",
+          hover: "var(--glass-hover)",
+          strong: "var(--glass-strong)",
+          border: "var(--glass-border)",
+          "border-strong": "var(--glass-border-strong)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -54,7 +61,24 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addUtilities }: any) {
+      addUtilities({
+        '.glass-surface': {
+          'background': 'var(--glass)',
+          'backdrop-filter': 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          '-webkit-backdrop-filter': 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          'border': '1px solid var(--glass-border)',
+        },
+        '.glass-surface-strong': {
+          'background': 'var(--glass-strong)',
+          'backdrop-filter': 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          '-webkit-backdrop-filter': 'blur(var(--glass-blur)) saturate(var(--glass-saturate))',
+          'border': '1px solid var(--glass-border-strong)',
+        },
+      })
+    },
+  ],
 };
 
 export default config;
