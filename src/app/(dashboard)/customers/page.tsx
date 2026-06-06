@@ -14,10 +14,11 @@ import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-const PAYMENT_FILTER_OPTIONS = [
-  { label: 'Todos los clientes', value: 'all' },
-  { label: 'Contado',            value: 'contado' },
-  { label: 'Crédito',            value: 'credito' },
+const FISCAL_FILTER_OPTIONS = [
+  { label: 'Todos', value: 'all' },
+  { label: 'Resp. IVA',      value: 'iva' },
+  { label: 'No Resp. IVA',   value: 'no_iva' },
+  { label: 'Gran Contrib.',  value: 'gran_contribuyente' },
 ]
 
 const TABS = [
@@ -38,7 +39,7 @@ export default function CustomersPage() {
   const [blockedCount,      setBlockedCount]      = useState(0)
   const [selectedIds,       setSelectedIds]       = useState<string[]>([])
   const [searchValue,       setSearchValue]       = useState('')
-  const [paymentFilter,     setPaymentFilter]     = useState('all')
+  const [fiscalFilter,      setFiscalFilter]      = useState('all')
 
   const { data: allCustomers = [] } = useCustomers(activeCompanyId ?? undefined)
 
@@ -82,8 +83,8 @@ export default function CustomersPage() {
         ((c as CustomerRow & { city?: string | null }).city ?? '').toLowerCase().includes(q)
       )
     }
-    if (paymentFilter !== 'all') {
-      data = data.filter(c => (c.payment_type ?? '').toLowerCase() === paymentFilter.toLowerCase())
+    if (fiscalFilter !== 'all') {
+      data = data.filter(c => c.fiscal_regime === fiscalFilter)
     }
     exportToExcel(data, customerColumns, `clientes_${new Date().toISOString().slice(0, 10)}`)
   }
@@ -108,23 +109,23 @@ export default function CustomersPage() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Clientes</h1>
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[11px] font-semibold text-indigo-700">
+            <h1 className="text-xl font-bold text-foreground tracking-tight">Clientes</h1>
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--accent-bg)] px-1.5 text-[11px] font-semibold text-[var(--accent)]">
               {stats.total}
             </span>
           </div>
-          <p className="mt-0.5 text-[13px] text-zinc-400">Gestiona tu ciclo completo de ventas y clientes.</p>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">Gestiona tu ciclo completo de ventas y clientes.</p>
         </div>
         <button
           onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-[13px] font-semibold text-white shadow-sm shadow-[var(--accent-glow)]/20 hover:opacity-90 transition-opacity"
         >
           + Nuevo Cliente
         </button>
       </div>
 
       {/* ── Tabs ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1 border-b border-zinc-200">
+      <div className="flex items-center gap-1 border-b border-[var(--glass-border)]">
         {TABS.map((tab) => (
           <Link
             key={tab.label}
@@ -132,13 +133,13 @@ export default function CustomersPage() {
             className={cn(
               'flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px transition-colors',
               tab.active
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:border-zinc-300'
+                ? 'border-[var(--accent)] text-[var(--accent)]'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-[var(--glass-border)]'
             )}
           >
             {tab.label}
             {tab.active && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-100 px-1 text-[10px] font-semibold text-indigo-600">
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent-bg)] px-1 text-[10px] font-semibold text-[var(--accent)]">
                 {stats.total}
               </span>
             )}
@@ -154,43 +155,35 @@ export default function CustomersPage() {
             value: stats.total,
             sub: '100% del total',
             icon: Users,
-            iconBg: 'bg-indigo-50',
-            iconColor: 'text-indigo-600',
           },
           {
             label: 'Clientes Activos',
             value: stats.activos,
             sub: stats.total > 0 ? `${Math.round((stats.activos / stats.total) * 100)}% del total` : '—',
             icon: UserCheck,
-            iconBg: 'bg-emerald-50',
-            iconColor: 'text-emerald-600',
           },
           {
             label: 'Con Crédito',
             value: stats.credito,
             sub: stats.total > 0 ? `${Math.round((stats.credito / stats.total) * 100)}% del total` : '—',
             icon: CreditCard,
-            iconBg: 'bg-amber-50',
-            iconColor: 'text-amber-600',
           },
           {
             label: 'Saldo Total',
             value: '—',
             sub: 'COP',
             icon: DollarSign,
-            iconBg: 'bg-violet-50',
-            iconColor: 'text-violet-600',
           },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+          <div key={stat.label} className="rounded-xl glass-surface p-4">
             <div className="flex items-center gap-3">
-              <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', stat.iconBg)}>
-                <stat.icon className={cn('h-4.5 w-4.5', stat.iconColor)} style={{ height: 18, width: 18 }} />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-bg)]">
+                <stat.icon className="h-4.5 w-4.5 text-[var(--accent)]" style={{ height: 18, width: 18 }} />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-wide leading-none">{stat.label}</p>
-                <p className="mt-1 text-2xl font-bold text-zinc-900 leading-none">{stat.value}</p>
-                <p className="mt-1 text-[11px] text-zinc-400">{stat.sub}</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide leading-none">{stat.label}</p>
+                <p className="mt-1 text-2xl font-bold text-foreground leading-none">{stat.value}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{stat.sub}</p>
               </div>
             </div>
           </div>
@@ -215,9 +208,9 @@ export default function CustomersPage() {
         searchValue={searchValue}
         onSearchChange={setSearchValue}
         searchPlaceholder="Buscar por nombre, email, teléfono..."
-        filterOptions={PAYMENT_FILTER_OPTIONS}
-        filterValue={paymentFilter}
-        onFilterChange={setPaymentFilter}
+        filterOptions={FISCAL_FILTER_OPTIONS}
+        filterValue={fiscalFilter}
+        onFilterChange={setFiscalFilter}
       />
 
       {/* ── Tabla ─────────────────────────────────────────────── */}
@@ -225,7 +218,7 @@ export default function CustomersPage() {
         <CustomersTable
           onSelectionChange={setSelectedIds}
           globalFilter={searchValue}
-          paymentFilter={paymentFilter}
+          fiscalFilter={fiscalFilter}
         />
       )}
 

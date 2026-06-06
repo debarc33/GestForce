@@ -34,7 +34,7 @@ interface CustomersTableProps {
   companyId?: string
   onSelectionChange?: (ids: string[]) => void
   globalFilter?: string
-  paymentFilter?: string
+  fiscalFilter?: string
 }
 
 /* ── Helpers ─────────────────────────────────────────────────── */
@@ -78,7 +78,7 @@ export function CustomersTable({
   companyId,
   onSelectionChange,
   globalFilter = '',
-  paymentFilter = 'all',
+  fiscalFilter = 'all',
 }: CustomersTableProps) {
   const storeCompanyId  = useCompanyStore((state) => state.activeCompanyId)
   const activeCompanyId = companyId || storeCompanyId || undefined
@@ -96,7 +96,7 @@ export function CustomersTable({
     setRowSelection({})
     onSelectionChange?.([])
     setPageIndex(0)
-  }, [globalFilter, paymentFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [globalFilter, fiscalFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close "more" dropdown on outside click
   useEffect(() => {
@@ -121,11 +121,11 @@ export function CustomersTable({
         (c.referencia ?? '').toLowerCase().includes(q)
       )
     }
-    if (paymentFilter !== 'all') {
-      data = data.filter(c => (c.payment_type ?? '').toLowerCase() === paymentFilter.toLowerCase())
+    if (fiscalFilter !== 'all') {
+      data = data.filter(c => c.fiscal_regime === fiscalFilter)
     }
     return data
-  }, [customers, globalFilter, paymentFilter])
+  }, [customers, globalFilter, fiscalFilter])
 
   // Paginación
   const totalPages = Math.ceil(filteredData.length / pageSize)
