@@ -12,15 +12,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { registerReceiptPayment, usePaymentMethods, useReceiptPayments, type ReceiptWithDetails } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
-  pending:   { label: 'Pendiente', cls: 'bg-red-50 text-red-600' },
-  partial:   { label: 'Parcial',   cls: 'bg-amber-50 text-amber-700' },
-  paid:      { label: 'Pagado',    cls: 'bg-green-100 text-green-700' },
-  cancelled: { label: 'Cancelado', cls: 'bg-zinc-100 text-zinc-500' },
+  pending:   { label: 'Pendiente', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
+  partial:   { label: 'Parcial',   cls: 'bg-amber-500/10 border border-amber-500/20 text-amber-700' },
+  paid:      { label: 'Pagado',    cls: 'bg-green-500/10 border border-green-500/20 text-green-700' },
+  cancelled: { label: 'Cancelado', cls: 'bg-zinc-500/10 border border-zinc-500/20 text-muted-foreground' },
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 const today = () => new Date().toISOString().split('T')[0]
-const inputCls = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+const inputCls = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
 // ─── ReceiptDialog ─────────────────────────────────────────────────────────
 
@@ -152,9 +152,9 @@ function ReceiptDialog({
   const statusCfg = STATUS_CFG[receipt.status] ?? STATUS_CFG.pending
 
   return (
-    <div className="flex flex-col max-h-[80vh] border-2 border-blue-100 rounded-2xl overflow-hidden">
+    <div className="flex flex-col max-h-[80vh] border border-[var(--glass-border)] glass-surface rounded-2xl overflow-hidden">
       {/* ── Barra de título resaltada ── */}
-      <div className="bg-blue-600 px-5 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-primary px-5 py-3 flex items-center justify-between shrink-0">
         <div>
           <p className="text-[10px] font-bold tracking-[0.2em] text-blue-200 uppercase">Recibo de Cobro</p>
           <p className="text-lg font-bold font-mono text-white mt-0.5">{receipt.receipt_number}</p>
@@ -180,28 +180,28 @@ function ReceiptDialog({
       </div>
 
       {/* Scrollable body */}
-      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4 bg-white">
+      <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4 bg-transparent">
 
         {/* Cliente + Factura + Estado */}
         <div className="flex items-start justify-between gap-4">
           <div>
             {receipt.customer && (
-              <p className="font-semibold text-zinc-900">{receipt.customer.name}</p>
+              <p className="font-semibold text-foreground">{receipt.customer.name}</p>
             )}
-            {customerEmail && <p className="text-xs text-zinc-400">{customerEmail}</p>}
+            {customerEmail && <p className="text-xs text-muted-foreground">{customerEmail}</p>}
             {receipt.invoice_number && (
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Factura:{' '}
                 <button
                   onClick={() => { onClose(); router.push(`/sales/invoices/${receipt.invoice_id}`) }}
-                  className="font-mono font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+                  className="font-mono font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
                   {receipt.invoice_number}
                 </button>
               </p>
             )}
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xs text-zinc-400">{new Date().toLocaleDateString('es-CO')}</p>
+            <p className="text-xs text-muted-foreground">{new Date().toLocaleDateString('es-CO')}</p>
             <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusCfg.cls}`}>
               {statusCfg.label}
             </span>
@@ -209,25 +209,25 @@ function ReceiptDialog({
         </div>
 
         {/* Resumen de valores */}
-        <div className="rounded-lg border border-zinc-200 overflow-hidden">
+        <div className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-zinc-50 border-b border-zinc-100">
-                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Concepto</th>
-                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Valor</th>
+              <tr className="border-b border-[var(--glass-border)]">
+                <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Concepto</th>
+                <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Valor</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-zinc-100">
-                <td className="px-3 py-2 text-zinc-600">Total factura</td>
-                <td className="px-3 py-2 text-right font-medium text-zinc-900">{fmt(receipt.total_amount)}</td>
+              <tr className="border-t border-[var(--glass-border)]">
+                <td className="px-3 py-2 text-foreground">Total factura</td>
+                <td className="px-3 py-2 text-right font-medium text-foreground">{fmt(receipt.total_amount)}</td>
               </tr>
-              <tr className="border-t border-zinc-100">
-                <td className="px-3 py-2 text-zinc-600">Total pagado</td>
+              <tr className="border-t border-[var(--glass-border)]">
+                <td className="px-3 py-2 text-foreground">Total pagado</td>
                 <td className="px-3 py-2 text-right font-medium text-green-600">{fmt(receipt.amount_paid)}</td>
               </tr>
-              <tr className="border-t border-zinc-200 bg-blue-50">
-                <td className="px-3 py-2 font-semibold text-zinc-700">Saldo pendiente</td>
+              <tr className="border-t border-[var(--glass-border)] bg-[var(--glass-strong)]">
+                <td className="px-3 py-2 font-semibold text-foreground">Saldo pendiente</td>
                 <td className={`px-3 py-2 text-right font-bold ${receipt.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {fmt(receipt.balance)}
                 </td>
@@ -239,26 +239,26 @@ function ReceiptDialog({
         {/* Historial de pagos */}
         {payments.length > 0 && (
           <div>
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">Pagos registrados</p>
-            <div className="rounded-lg border border-zinc-100 overflow-hidden">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Pagos registrados</p>
+            <div className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-zinc-50 border-b border-zinc-100">
-                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Fecha</th>
-                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Medio</th>
-                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Ref.</th>
-                    <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-zinc-500">Monto</th>
+                  <tr className="border-b border-[var(--glass-border)]">
+                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Fecha</th>
+                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Medio</th>
+                    <th className="text-left px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Ref.</th>
+                    <th className="text-right px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Monto</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.map((p) => (
-                    <tr key={p.id} className="border-t border-zinc-100">
-                      <td className="px-3 py-2 text-xs text-zinc-600">
+                    <tr key={p.id} className="border-t border-[var(--glass-border)]">
+                      <td className="px-3 py-2 text-xs text-foreground">
                         {new Date(p.payment_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="px-3 py-2 text-xs font-medium text-zinc-700">{p.payment_method?.name ?? '—'}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-zinc-400">{p.reference ? '#' + p.reference : '—'}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-zinc-900 text-xs">{fmt(p.amount)}</td>
+                      <td className="px-3 py-2 text-xs font-medium text-foreground">{p.payment_method?.name ?? '—'}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{p.reference ? '#' + p.reference : '—'}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-foreground text-xs">{fmt(p.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -269,12 +269,12 @@ function ReceiptDialog({
 
         {/* Registrar abono form — only if not paid/cancelled */}
         {receipt.status !== 'paid' && receipt.status !== 'cancelled' && (
-          <div className="space-y-3 border-t border-zinc-100 pt-3">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Registrar abono</p>
+          <div className="space-y-3 border-t border-[var(--glass-border)] pt-3">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Registrar abono</p>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-zinc-500 mb-1">Monto</label>
+                <label className="block text-xs text-muted-foreground mb-1">Monto</label>
                 <input
                   type="number"
                   min={0.01}
@@ -287,13 +287,13 @@ function ReceiptDialog({
                 />
               </div>
               <div>
-                <label className="block text-xs text-zinc-500 mb-1">Fecha</label>
+                <label className="block text-xs text-muted-foreground mb-1">Fecha</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Medio de pago</label>
+              <label className="block text-xs text-muted-foreground mb-1">Medio de pago</label>
               <select value={methodId} onChange={(e) => setMethodId(e.target.value)} className={inputCls}>
                 <option value="">Selecciona...</option>
                 {paymentMethods.filter((m) => m.is_active).map((m) => (
@@ -301,14 +301,14 @@ function ReceiptDialog({
                 ))}
               </select>
               {paymentMethods.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-amber-700 mt-1">
                   No hay medios de pago configurados. Ve a Configuración → Medios de pago.
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs text-zinc-500 mb-1">Referencia / comprobante (opcional)</label>
+              <label className="block text-xs text-muted-foreground mb-1">Referencia / comprobante (opcional)</label>
               <input
                 type="text"
                 value={reference}
@@ -318,12 +318,12 @@ function ReceiptDialog({
               />
             </div>
 
-            {error && <p className="text-sm text-red-600 rounded-lg border border-red-200 bg-red-50 px-3 py-2">{error}</p>}
+            {error && <p className="text-sm text-red-600 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">{error}</p>}
 
             <button
               onClick={handleRegister}
               disabled={mutation.isPending}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-sm"
             >
               {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Registrar abono
@@ -383,13 +383,13 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
             <button
               onClick={() => setOpenReceipt(row.original)}
               className={`font-mono text-sm font-medium hover:underline transition-colors ${
-                isPendingOrPartial ? 'text-blue-600 hover:text-blue-800' : 'text-zinc-500 hover:text-zinc-700'
+                isPendingOrPartial ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {row.original.receipt_number}
             </button>
             {row.original.invoice_number && (
-              <p className="text-xs text-zinc-400 font-mono">{row.original.invoice_number}</p>
+              <p className="text-xs text-muted-foreground font-mono">{row.original.invoice_number}</p>
             )}
           </div>
         )
@@ -399,15 +399,15 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
       id: 'customer',
       header: 'Cliente',
       cell: ({ row }) => (
-        <span className="text-zinc-700">
-          {row.original.customer?.name ?? <span className="italic text-zinc-400">Sin cliente</span>}
+        <span className="text-foreground">
+          {row.original.customer?.name ?? <span className="italic text-muted-foreground">Sin cliente</span>}
         </span>
       ),
     },
     {
       accessorKey: 'total_amount',
       header: 'Total',
-      cell: ({ row }) => <span className="font-medium text-zinc-900">{fmt(row.original.total_amount)}</span>,
+      cell: ({ row }) => <span className="font-medium text-foreground">{fmt(row.original.total_amount)}</span>,
     },
     {
       accessorKey: 'amount_paid',
@@ -418,7 +418,7 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
       accessorKey: 'balance',
       header: 'Saldo',
       cell: ({ row }) => (
-        <span className={row.original.balance > 0 ? 'text-red-600 font-medium' : 'text-zinc-400'}>
+        <span className={row.original.balance > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
           {fmt(row.original.balance)}
         </span>
       ),
@@ -437,13 +437,13 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
 
   return (
     <>
-      <div className="rounded-xl border border-zinc-100 bg-white shadow-md overflow-hidden">
+      <div className="rounded-2xl glass-surface overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50">
+          <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="border-zinc-200 hover:bg-zinc-50">
+              <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
                 {hg.headers.map((h) => (
-                  <TableHead key={h.id} className="py-4 px-4 font-semibold text-zinc-700 text-[12px] uppercase tracking-wide">
+                  <TableHead key={h.id} className="py-4 px-4 font-semibold text-muted-foreground text-[11px] uppercase tracking-wide">
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
                 ))}
@@ -453,7 +453,7 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} className="border-zinc-100 hover:bg-zinc-50/60 transition-colors">
+                <TableRow key={row.id} className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -464,7 +464,7 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-40 text-center">
-                  <div className="flex flex-col items-center gap-3 text-zinc-400">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <Wallet className="h-10 w-10 opacity-30" />
                     <p className="text-sm font-medium">
                       {globalFilter || statusFilter !== 'all' ? 'Ningún recibo coincide' : 'No hay recibos — se crean al remitir una factura'}
