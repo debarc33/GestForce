@@ -35,9 +35,9 @@ const FISCAL_LABELS: Record<string, string> = {
 }
 
 const inputCls =
-  'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+  'rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 const fieldCls = 'w-full ' + inputCls
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1.5'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1.5'
 
 // ─── Fila editable de medio de pago ────────────────────────────────────────
 
@@ -63,7 +63,7 @@ function PaymentMethodRow({
   })
 
   return (
-    <div className="flex items-center gap-2 p-3 rounded-xl border border-blue-200 bg-blue-50/30">
+    <div className="flex items-center gap-2 p-3 rounded-xl glass-surface border border-primary/20">
       <input type="text" value={name} onChange={e => setName(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && mutation.mutate()}
         placeholder="Ej. Efectivo, Nequi, Daviplata..."
@@ -74,10 +74,10 @@ function PaymentMethodRow({
         ))}
       </select>
       <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-        className="rounded-lg p-2 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-40">
+        className="rounded-lg p-2 text-green-600 hover:bg-green-500/10 transition-colors disabled:opacity-40">
         <Check className="h-4 w-4" />
       </button>
-      <button onClick={onDone} className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 transition-colors">
+      <button onClick={onDone} className="rounded-lg p-2 text-muted-foreground hover:bg-[var(--glass)] transition-colors">
         <X className="h-4 w-4" />
       </button>
       {error && <p className="text-xs text-red-600">{error}</p>}
@@ -88,21 +88,21 @@ function PaymentMethodRow({
 // ─── Badge de estado DIAN ──────────────────────────────────────────────────
 
 function DianRangeBadge({ alert }: { alert: 'warning' | 'critical' | null }) {
-  if (!alert) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700"><Check className="h-3 w-3" />Vigente</span>
-  if (alert === 'warning') return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" />Por agotar</span>
-  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700"><AlertCircle className="h-3 w-3" />Crítico</span>
+  if (!alert) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-700"><Check className="h-3 w-3" />Vigente</span>
+  if (alert === 'warning') return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-700"><AlertTriangle className="h-3 w-3" />Por agotar</span>
+  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-700"><AlertCircle className="h-3 w-3" />Crítico</span>
 }
 
 function DianExpiryBadge({ alert }: { alert: 'warning' | 'expired' | null }) {
-  if (!alert) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700"><Check className="h-3 w-3" />Vigente</span>
-  if (alert === 'warning') return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" />Por vencer</span>
-  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700"><AlertCircle className="h-3 w-3" />Vencida</span>
+  if (!alert) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-700"><Check className="h-3 w-3" />Vigente</span>
+  if (alert === 'warning') return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-700"><AlertTriangle className="h-3 w-3" />Por vencer</span>
+  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-700"><AlertCircle className="h-3 w-3" />Vencida</span>
 }
 
 function FEBadge({ configured, testMode }: { configured: boolean; testMode: boolean }) {
-  if (!configured) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-zinc-100 text-zinc-500"><Settings2 className="h-3 w-3" />Sin configurar</span>
-  if (testMode)    return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700"><Zap className="h-3 w-3" />Habilitación</span>
-  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700"><ShieldCheck className="h-3 w-3" />Producción</span>
+  if (!configured) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground"><Settings2 className="h-3 w-3" />Sin configurar</span>
+  if (testMode)    return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-700"><Zap className="h-3 w-3" />Habilitación</span>
+  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-700"><ShieldCheck className="h-3 w-3" />Producción</span>
 }
 
 // ─── Página principal ──────────────────────────────────────────────────────
