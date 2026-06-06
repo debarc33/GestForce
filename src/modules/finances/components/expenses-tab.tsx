@@ -35,8 +35,8 @@ const FREQ_LABEL: Record<string, string> = {
   semestral: 'Semestral', anual: 'Anual',
 }
 
-const inp = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -128,17 +128,17 @@ function RecurringForm({
         </div>
       </div>
       {mut.isError && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-600">
           {mut.error instanceof Error ? mut.error.message : 'Error al guardar'}
         </p>
       )}
-      <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
+      <div className="flex justify-end gap-2 pt-2 border-t border-[var(--glass-border)]">
         <button type="button" onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50">
+          className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass)]">
           Cancelar
         </button>
         <button type="submit" disabled={mut.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+          className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {mut.isPending ? 'Guardando...' : 'Crear plantilla'}
         </button>
       </div>
@@ -227,22 +227,22 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* KPI cards */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-zinc-500 mb-1">Gastos fijos</p>
-          <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(totalFijo)}</p>
-          <p className="text-xs text-zinc-400 mt-0.5">Arriendo, seguros, suscripciones…</p>
+        <div className="rounded-2xl glass-surface p-4">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Gastos fijos</p>
+          <p className="text-xl font-bold text-foreground tabular-nums">{fmtCOP(totalFijo)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Arriendo, seguros, suscripciones…</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium text-zinc-500 mb-1">Gastos variables</p>
-          <p className="text-xl font-bold text-zinc-900 tabular-nums">{fmtCOP(totalVariable)}</p>
-          <p className="text-xs text-zinc-400 mt-0.5">Servicios, mantenimiento, viáticos…</p>
+        <div className="rounded-2xl glass-surface p-4">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Gastos variables</p>
+          <p className="text-xl font-bold text-foreground tabular-nums">{fmtCOP(totalVariable)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Servicios, mantenimiento, viáticos…</p>
         </div>
-        <div className={`rounded-xl border p-4 shadow-sm ${totalDirecto > 0 ? 'border-amber-200 bg-amber-50/40' : 'border-zinc-200 bg-white'}`}>
-          <p className="text-xs font-medium text-zinc-500 mb-1">Total gastos directos</p>
-          <p className={`text-xl font-bold tabular-nums ${totalDirecto > 0 ? 'text-amber-700' : 'text-zinc-900'}`}>
+        <div className={`rounded-2xl p-4 ${totalDirecto > 0 ? 'glass-surface border border-amber-500/20 bg-amber-500/5' : 'glass-surface'}`}>
+          <p className="text-xs font-medium text-muted-foreground mb-1">Total gastos directos</p>
+          <p className={`text-xl font-bold tabular-nums ${totalDirecto > 0 ? 'text-amber-600' : 'text-foreground'}`}>
             {fmtCOP(totalDirecto)}
           </p>
-          <p className="text-xs text-zinc-400 mt-0.5">En el período seleccionado</p>
+          <p className="text-xs text-muted-foreground mt-0.5">En el período seleccionado</p>
         </div>
       </div>
 
@@ -250,25 +250,25 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-sm transition-colors">
+          className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
           <Plus className="h-3.5 w-3.5" />
           Nuevo gasto
         </button>
 
-        <div className="flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-white px-1 py-1 shadow-sm">
+        <div className="flex items-center gap-0.5 rounded-lg glass-surface px-1 py-1">
           <button onClick={handleExport} title="Exportar Excel"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors">
+            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
             <Download className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {/* Búsqueda */}
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por descripción o categoría..."
-            className="w-full rounded-lg border border-zinc-200 bg-white pl-8 pr-3 py-[7px] text-[13px] text-zinc-800 placeholder:text-zinc-400 shadow-sm focus:border-zinc-400 focus:outline-none transition-all"
+            className="w-full rounded-lg glass-surface border border-[var(--glass-border)] pl-8 pr-3 py-[7px] text-[13px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-all"
           />
         </div>
 
@@ -276,7 +276,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
         <select
           value={typeFilter}
           onChange={e => setTypeFilter(e.target.value as typeof typeFilter)}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-[7px] text-sm text-zinc-700 shadow-sm focus:outline-none"
+          className="rounded-lg glass-surface border border-[var(--glass-border)] px-3 py-[7px] text-sm text-foreground focus:outline-none focus:border-primary"
         >
           <option value="all">Todos los tipos</option>
           <option value="fijo">Solo fijos</option>
@@ -286,65 +286,65 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* Tabla */}
       {isLoading ? (
-        <div className="h-48 animate-pulse rounded-xl bg-zinc-100" />
+        <div className="h-48 animate-pulse rounded-2xl glass-surface" />
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
-          <p className="text-sm text-zinc-400">No hay gastos registrados en este período.</p>
+        <div className="rounded-2xl glass-surface py-16 text-center">
+          <p className="text-sm text-muted-foreground">No hay gastos registrados en este período.</p>
           <button onClick={() => setShowForm(true)}
-            className="mt-3 text-xs text-blue-600 hover:underline">
+            className="mt-3 text-xs text-primary hover:underline">
             Registrar primer gasto →
           </button>
         </div>
       ) : (
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-2xl glass-surface overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50/70 border-b border-zinc-200">
+            <thead className="border-b border-[var(--glass-border)]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Categoría</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Descripción</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">Monto</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Estado</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-zinc-500">Soporte</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categoría</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Descripción</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Monto</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Estado</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">Soporte</th>
                 <th className="px-4 py-3 w-20" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody className="divide-y divide-[var(--glass-border)]">
               {filtered.map(e => (
-                <tr key={e.id} className="hover:bg-zinc-50/60 transition-colors">
-                  <td className="px-4 py-3 text-sm text-zinc-500 whitespace-nowrap">
+                <tr key={e.id} className="hover:bg-[var(--glass)] transition-colors">
+                  <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                     {fmtDate(e.expense_date)}
                   </td>
                   <td className="px-4 py-3">
                     {e.category ? (
                       <div className="flex items-center gap-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
                           e.category.type === 'fijo'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-orange-100 text-orange-700'
+                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                            : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
                         }`}>
                           {e.category.type === 'fijo' ? 'Fijo' : 'Variable'}
                         </span>
-                        <span className="text-sm text-zinc-700">{e.category.name}</span>
+                        <span className="text-sm text-foreground">{e.category.name}</span>
                       </div>
                     ) : (
-                      <span className="text-zinc-300 text-sm">—</span>
+                      <span className="text-muted-foreground/50 text-sm">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-zinc-800 max-w-xs truncate">
+                  <td className="px-4 py-3 text-sm text-foreground max-w-xs truncate">
                     {e.description}
                     {e.recurring_expense_id && (
-                      <span className="ml-1.5 text-[10px] text-indigo-500 font-medium">↻ recurrente</span>
+                      <span className="ml-1.5 text-[10px] text-primary font-medium">↻ recurrente</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">
+                  <td className="px-4 py-3 text-right font-semibold tabular-nums text-foreground">
                     {fmtCOP(e.amount)}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium border ${
                       e.status === 'pagado'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-amber-100 text-amber-700'
+                        ? 'bg-green-500/10 border-green-500/20 text-green-600'
+                        : 'bg-amber-500/10 border-amber-500/20 text-amber-600'
                     }`}>
                       {e.status === 'pagado' ? 'Pagado' : 'Pendiente'}
                     </span>
@@ -353,15 +353,15 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                     {e.receipt_url ? (
                       <a href={e.receipt_url} target="_blank" rel="noreferrer"
                         title="Ver soporte"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 transition-colors">
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary hover:bg-primary/10 transition-colors">
                         <Paperclip className="h-3.5 w-3.5" />
                       </a>
                     ) : (
-                      <span className="text-zinc-200">—</span>
+                      <span className="text-muted-foreground/20">—</span>
                     )}
                     {e.journal_entry_id && (
                       <span title="Comprobante contable registrado"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-indigo-400">
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary/60">
                         <FileText className="h-3.5 w-3.5" />
                       </span>
                     )}
@@ -369,12 +369,12 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-0.5">
                       <button onClick={() => setEditingExpense(e)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors"
                         title="Editar">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button onClick={() => setConfirmDelete(e.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
                         title="Eliminar">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -383,12 +383,12 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t-2 border-zinc-200 bg-zinc-50">
+            <tfoot className="border-t-2 border-[var(--glass-border)] bg-[var(--glass)]">
               <tr>
-                <td colSpan={3} className="px-4 py-3 text-xs font-medium text-zinc-500">
+                <td colSpan={3} className="px-4 py-3 text-xs font-medium text-muted-foreground">
                   {filtered.length} gasto{filtered.length !== 1 ? 's' : ''}
                 </td>
-                <td className="px-4 py-3 text-right font-bold tabular-nums text-zinc-900">
+                <td className="px-4 py-3 text-right font-bold tabular-nums text-foreground">
                   {fmtCOP(filtered.reduce((s, e) => s + e.amount, 0))}
                 </td>
                 <td colSpan={3} />
@@ -399,60 +399,60 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
       )}
 
       {/* Sección de Gastos Recurrentes */}
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="rounded-2xl glass-surface">
         <button
           onClick={() => setShowRecurring(v => !v)}
-          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-zinc-50/50 transition-colors rounded-xl"
+          className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[var(--glass)] transition-colors"
         >
           <div className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-indigo-500" />
-            <span className="text-sm font-semibold text-zinc-800">Gastos recurrentes</span>
+            <RefreshCw className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Gastos recurrentes</span>
             {recurrentes.length > 0 && (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-100 px-1.5 text-[10px] font-semibold text-indigo-700">
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
                 {recurrentes.length}
               </span>
             )}
           </div>
-          <ChevronDown className={`h-4 w-4 text-zinc-400 transition-transform ${showRecurring ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showRecurring ? 'rotate-180' : ''}`} />
         </button>
 
         {showRecurring && (
-          <div className="border-t border-zinc-100 p-4 space-y-3">
+          <div className="border-t border-[var(--glass-border)] p-4 space-y-3">
             <div className="flex justify-end">
               <button
                 onClick={() => setShowRecurringForm(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition-colors">
+                className="flex items-center gap-1.5 rounded-lg glass-surface border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
                 <Plus className="h-3.5 w-3.5" />
                 Nueva plantilla
               </button>
             </div>
 
             {recurrentes.length === 0 ? (
-              <p className="py-8 text-center text-sm text-zinc-400">
+              <p className="py-8 text-center text-sm text-muted-foreground">
                 No hay plantillas de gastos recurrentes configuradas.
               </p>
             ) : (
               <div className="space-y-2">
                 {recurrentes.map(rec => (
                   <div key={rec.id}
-                    className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50/60 px-4 py-3">
+                    className="flex items-center gap-3 rounded-lg glass-surface border border-[var(--glass-border)] px-4 py-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-zinc-800 text-sm">{rec.description}</span>
+                        <span className="font-medium text-foreground text-sm">{rec.description}</span>
                         {rec.category && (
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium border ${
                             rec.category.type === 'fijo'
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-orange-100 text-orange-700'
+                              ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                              : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
                           }`}>
                             {rec.category.name}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {fmtCOP(rec.amount)} · {FREQ_LABEL[rec.frequency]} día {rec.day_of_month}
                         {' · '}
-                        <span className="text-indigo-600 font-medium">
+                        <span className="text-primary font-medium">
                           Próxima: {fmtDate(nextDueDate(rec))}
                         </span>
                       </p>
@@ -462,14 +462,14 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                         onClick={() => generateMut.mutate(rec)}
                         disabled={generateMut.isPending}
                         title="Generar gasto hoy"
-                        className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors">
+                        className="flex items-center gap-1 rounded-lg glass-surface border border-green-500/30 px-2.5 py-1.5 text-xs font-medium text-green-600 hover:bg-green-500/10 disabled:opacity-50 transition-colors">
                         <RefreshCw className="h-3 w-3" />
                         Generar
                       </button>
                       <button
                         onClick={() => toggleMut.mutate({ id: rec.id, active: false })}
                         title="Desactivar plantilla"
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors">
                         <ToggleLeft className="h-4 w-4" />
                       </button>
                     </div>
@@ -485,9 +485,9 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* Nuevo gasto */}
       <Dialog open={showForm} onOpenChange={v => { if (!v) setShowForm(false) }}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-2xl rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-zinc-900">Registrar gasto</DialogTitle>
+            <DialogTitle className="text-base font-semibold text-foreground">Registrar gasto</DialogTitle>
           </DialogHeader>
           <ExpenseForm
             companyId={companyId}
@@ -500,9 +500,9 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* Editar gasto */}
       <Dialog open={!!editingExpense} onOpenChange={v => { if (!v) setEditingExpense(null) }}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-2xl rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-zinc-900">Editar gasto</DialogTitle>
+            <DialogTitle className="text-base font-semibold text-foreground">Editar gasto</DialogTitle>
           </DialogHeader>
           {editingExpense && (
             <ExpenseForm
@@ -518,9 +518,9 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* Nueva plantilla recurrente */}
       <Dialog open={showRecurringForm} onOpenChange={v => { if (!v) setShowRecurringForm(false) }}>
-        <DialogContent className="sm:max-w-2xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-2xl rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-zinc-900">Nueva plantilla recurrente</DialogTitle>
+            <DialogTitle className="text-base font-semibold text-foreground">Nueva plantilla recurrente</DialogTitle>
           </DialogHeader>
           <RecurringForm
             companyId={companyId}
@@ -533,14 +533,14 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
       {/* Confirmar eliminar */}
       <Dialog open={!!confirmDelete} onOpenChange={v => { if (!v) setConfirmDelete(null) }}>
-        <DialogContent className="sm:max-w-sm rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-sm rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold text-zinc-900">¿Eliminar este gasto?</DialogTitle>
+            <DialogTitle className="text-base font-semibold text-foreground">¿Eliminar este gasto?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-zinc-500">Esta acción no se puede deshacer.</p>
+          <p className="text-sm text-muted-foreground">Esta acción no se puede deshacer.</p>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setConfirmDelete(null)}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-50">
+              className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass)]">
               Cancelar
             </button>
             <button
