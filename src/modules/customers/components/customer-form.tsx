@@ -34,9 +34,9 @@ interface CustomerFormProps {
 }
 
 const inp =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all shadow-sm'
-const lbl = 'block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1'
-const err = 'mt-0.5 text-[11px] text-red-500 font-medium'
+  'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all'
+const lbl = 'block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1'
+const err = 'mt-0.5 text-[11px] text-red-600 font-medium'
 
 export function CustomerForm({ customer, onSuccess, onCancel }: CustomerFormProps) {
   const queryClient = useQueryClient()
@@ -198,26 +198,26 @@ export function CustomerForm({ customer, onSuccess, onCancel }: CustomerFormProp
           className={inp + ' uppercase'}
           placeholder="Ej. placa, código, característica especial"
         />
-        <p className="mt-0.5 text-[11px] text-zinc-400">
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
           Campo libre para identificar al cliente según tu negocio.
         </p>
       </div>
 
       {mutation.isError && (
-        <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-600 font-medium">
+        <p className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-[12px] text-red-600 font-medium">
           {mutation.error instanceof Error ? mutation.error.message : 'Error al guardar'}
         </p>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2 pt-2 border-t border-[var(--glass-border)]">
         {onCancel && (
           <button type="button" onClick={onCancel}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+            className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-[13px] font-medium text-muted-foreground hover:bg-[var(--glass)] transition-colors">
             Cancelar
           </button>
         )}
         <button type="submit" disabled={mutation.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-[13px] font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm shadow-blue-600/20 hover:shadow-md hover:shadow-blue-600/25">
+          className="rounded-lg bg-primary px-5 py-2 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
           {mutation.isPending ? 'Guardando...' : customer ? 'Guardar cambios' : 'Crear cliente'}
         </button>
       </div>

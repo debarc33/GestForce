@@ -22,8 +22,8 @@ interface SupplierFormProps {
 }
 
 const inp =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
+  'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1'
 
 type Tab = 'general' | 'pago'
 
@@ -139,15 +139,15 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
     <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-0">
 
       {/* Pestañas */}
-      <div className="flex gap-0.5 border-b border-zinc-200 mb-4">
+      <div className="flex gap-0.5 border-b border-[var(--glass-border)] mb-4">
         {tabs.map(t => (
           <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
             className={`relative flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === t.id ? 'text-blue-600' : 'text-zinc-500 hover:text-zinc-700'
+              activeTab === t.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}>
             {t.icon}{t.label}
             {activeTab === t.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
             )}
           </button>
         ))}
