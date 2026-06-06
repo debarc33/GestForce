@@ -369,7 +369,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className="mb-8">
+      <div className="mb-8 -mx-8 -mt-8 px-8 py-6 glass-surface border-b border-[var(--glass-border)] rounded-b-2xl">
         <h1 className="text-xl font-bold text-foreground tracking-tight">Configuración</h1>
         <p className="mt-0.5 text-[13px] text-muted-foreground">Personaliza el comportamiento de GestForce para tu empresa.</p>
       </div>
