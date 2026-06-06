@@ -18,7 +18,9 @@
       "Bash(mkdir -p \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\src\\\\app\\\\api\\\\superadmin\\\\companies\\\\[id]\\\\users\")",
       "Bash(ls -la \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\\" | grep -E \"^d\")",
       "Bash(git add *)",
-      "Bash(git commit -m 'feat\\(ui\\): glass shell tokens + design system \\(fase 1 part 1\\) *)"
+      "Bash(git commit -m 'feat\\(ui\\): glass shell tokens + design system \\(fase 1 part 1\\) *)",
+      "Bash(cd \"C:\\\\Users\\\\usuario\\\\GestForce1\" && cp production/components/ui/*.tsx src/components/ui/ && ls -la src/components/ui/ | grep -E \"glass|metric|command|background|status|toolbar|pagination\")",
+      "Bash(git commit -m 'feat\\(ui\\): glass shell foundation complete \\(fase 1 part 2\\) *)"
     ]
   }
 }
