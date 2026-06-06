@@ -73,12 +73,12 @@ export function SuppliersTable({
         <input type="checkbox" checked={table.getIsAllPageRowsSelected()}
           ref={el => { if (el) el.indeterminate = table.getIsSomePageRowsSelected() }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
       cell: ({ row }) => (
         <input type="checkbox" checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
       ),
       size: 40,
     },
@@ -89,15 +89,15 @@ export function SuppliersTable({
         <div>
           <button
             onClick={() => setEditingSupplier(row.original)}
-            className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left transition-colors"
+            className="font-medium text-primary hover:text-primary/80 hover:underline text-left transition-colors"
           >
             {row.original.name}
           </button>
           {row.original.city && (
-            <p className="text-xs text-zinc-400">{row.original.city}{row.original.department ? `, ${row.original.department}` : ''}</p>
+            <p className="text-xs text-muted-foreground">{row.original.city}{row.original.department ? `, ${row.original.department}` : ''}</p>
           )}
           {row.original.contact_name && (
-            <p className="text-xs text-zinc-400">Contacto: {row.original.contact_name}</p>
+            <p className="text-xs text-muted-foreground">Contacto: {row.original.contact_name}</p>
           )}
         </div>
       ),
@@ -107,11 +107,11 @@ export function SuppliersTable({
       header: 'Documento',
       cell: ({ row }) => (
         <div>
-          <span className="text-xs font-semibold text-zinc-500">{row.original.doc_type}</span>
+          <span className="text-xs font-semibold text-muted-foreground">{row.original.doc_type}</span>
           {row.original.doc_number && (
-            <span className="ml-1 text-sm text-zinc-700">{row.original.doc_number}</span>
+            <span className="ml-1 text-sm text-foreground">{row.original.doc_number}</span>
           )}
-          {!row.original.doc_number && <span className="text-zinc-400 text-xs ml-1">—</span>}
+          {!row.original.doc_number && <span className="text-muted-foreground text-xs ml-1">—</span>}
         </div>
       ),
     },
@@ -120,9 +120,9 @@ export function SuppliersTable({
       header: 'Contacto',
       cell: ({ row }) => (
         <div>
-          {row.original.email && <p className="text-sm text-zinc-600">{row.original.email}</p>}
-          {row.original.phone && <p className="text-xs text-zinc-400">{row.original.phone}</p>}
-          {!row.original.email && !row.original.phone && <span className="text-zinc-400">—</span>}
+          {row.original.email && <p className="text-sm text-foreground">{row.original.email}</p>}
+          {row.original.phone && <p className="text-xs text-muted-foreground">{row.original.phone}</p>}
+          {!row.original.email && !row.original.phone && <span className="text-muted-foreground">—</span>}
         </div>
       ),
     },
@@ -130,7 +130,7 @@ export function SuppliersTable({
       id: 'fiscal',
       header: 'Régimen',
       cell: ({ row }) => (
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-muted-foreground">
           {FISCAL_LABEL[row.original.fiscal_regime] ?? row.original.fiscal_regime}
         </span>
       ),
@@ -139,7 +139,7 @@ export function SuppliersTable({
       id: 'pago',
       header: 'Días pago',
       cell: ({ row }) => (
-        <span className="text-sm text-zinc-600">
+        <span className="text-sm text-foreground">
           {row.original.payment_days != null ? `${row.original.payment_days} días` : '—'}
         </span>
       ),
@@ -154,26 +154,26 @@ export function SuppliersTable({
   })
 
   if (isLoading) return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center shadow-sm">
-      <div className="animate-pulse text-zinc-400">Cargando proveedores...</div>
+    <div className="rounded-2xl glass-surface p-12 text-center">
+      <div className="animate-pulse text-muted-foreground">Cargando proveedores...</div>
     </div>
   )
 
   if (isError) return (
-    <div className="rounded-xl border border-red-200 bg-red-50 p-12 text-center text-red-700 shadow-sm">
+    <div className="rounded-2xl glass-surface border border-red-500/20 bg-red-500/10 p-12 text-center text-red-600">
       Error al cargar proveedores. Intenta recargar la página.
     </div>
   )
 
   return (
     <>
-      <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl glass-surface overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-50/50">
+          <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id} className="border-zinc-200 hover:bg-zinc-50/30">
+              <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
                 {hg.headers.map(h => (
-                  <TableHead key={h.id} className="py-3 font-semibold text-zinc-600 text-xs uppercase tracking-wide">
+                  <TableHead key={h.id} className="py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </TableHead>
                 ))}
@@ -185,7 +185,7 @@ export function SuppliersTable({
               table.getRowModel().rows.map(row => (
                 <TableRow key={row.id}
                   data-state={row.getIsSelected() ? 'selected' : undefined}
-                  className="border-zinc-100 hover:bg-zinc-50/60 data-[state=selected]:bg-blue-50/50 transition-colors">
+                  className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id} className="py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -196,7 +196,7 @@ export function SuppliersTable({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-40 text-center">
-                  <div className="flex flex-col items-center gap-3 text-zinc-400">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <Building2 className="h-10 w-10 opacity-30" />
                     <div>
                       <p className="text-sm font-medium">
@@ -220,9 +220,9 @@ export function SuppliersTable({
 
       {/* Modal de edición */}
       <Dialog open={!!editingSupplier} onOpenChange={(v) => { if (!v) setEditingSupplier(null) }}>
-        <DialogContent className="sm:max-w-3xl rounded-2xl shadow-xl border-zinc-100">
+        <DialogContent className="sm:max-w-3xl rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
           <DialogHeader>
-            <DialogTitle>Editar proveedor</DialogTitle>
+            <DialogTitle className="text-foreground">Editar proveedor</DialogTitle>
           </DialogHeader>
           {editingSupplier && (
             <SupplierForm
