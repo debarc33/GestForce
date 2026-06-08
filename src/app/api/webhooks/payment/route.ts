@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       }
 
       const stripe = new Stripe(stripeProvider.config.secret_key || '', {
-        apiVersion: '2024-04-10',
+        apiVersion: '2023-10-16',
       })
 
       try {
