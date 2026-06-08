@@ -111,7 +111,7 @@ export async function POST(
     // Procesar según el proveedor activo
     if (provider.name === 'stripe') {
       const stripe = new Stripe(provider.config.secret_key || '', {
-        apiVersion: '2024-04-10',
+        apiVersion: '2023-10-16',
       })
 
       const session = await stripe.checkout.sessions.create({
