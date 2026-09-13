@@ -10,7 +10,7 @@
  */
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useCompanyStore } from '@/store/useCompanyStore'
 
 interface CompanyGuardProps {
@@ -19,14 +19,19 @@ interface CompanyGuardProps {
 
 export function CompanyGuard({ children }: CompanyGuardProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { activeCompanyId } = useCompanyStore()
 
   useEffect(() => {
     // Si no hay empresa activa, redirigir a selección
+    // Se conserva la ruta original en `redirect` para volver ahí después
+    // de seleccionar/auto-seleccionar la empresa (en vez de perder el lugar
+    // donde estaba el usuario y mandarlo siempre al dashboard).
     if (activeCompanyId === null) {
-      router.replace('/select-company')
+      const redirectTo = pathname && pathname !== '/' ? `?redirect=${encodeURIComponent(pathname)}` : ''
+      router.replace(`/select-company${redirectTo}`)
     }
-  }, [activeCompanyId, router])
+  }, [activeCompanyId, pathname, router])
 
   // Mientras no hay empresa, no renderizar el contenido del dashboard
   if (activeCompanyId === null) {
