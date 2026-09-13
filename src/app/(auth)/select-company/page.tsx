@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Building2, ChevronRight, AlertCircle, Loader2 } from 'lucide-react'
 import { getUserCompanies } from '@/modules/auth/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -12,9 +12,33 @@ type Company = {
   companies: { id: string; name: string }
 }
 
+function SelectCompanyFallback() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <div className="flex flex-col items-center gap-4 text-zinc-400">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <p className="text-sm">Cargando empresas...</p>
+      </div>
+    </main>
+  )
+}
+
 export default function SelectCompanyPage() {
+  return (
+    <Suspense fallback={<SelectCompanyFallback />}>
+      <SelectCompanyContent />
+    </Suspense>
+  )
+}
+
+function SelectCompanyContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { setActiveCompany } = useCompanyStore()
+
+  // Ruta a la que volver una vez seleccionada/auto-seleccionada la empresa.
+  // Viene de CompanyGuard cuando redirige aquí desde una página distinta al dashboard.
+  const redirectTo = searchParams.get('redirect') || '/'
 
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,7 +50,7 @@ export default function SelectCompanyPage() {
         if (data.length === 1) {
           const c = data[0]
           setActiveCompany(c.company_id, c.companies.name, c.role)
-          router.replace('/')
+          router.replace(redirectTo)
           return
         }
         setCompanies(data)
@@ -36,11 +60,12 @@ export default function SelectCompanyPage() {
         setError(err.message)
         setLoading(false)
       })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, setActiveCompany])
 
   function handleSelect(company: Company) {
     setActiveCompany(company.company_id, company.companies.name, company.role)
-    router.push('/')
+    router.push(redirectTo)
   }
 
   if (loading) {
