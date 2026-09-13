@@ -30,7 +30,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           variant === 'strong'  && 'glass-surface-strong',
           variant === 'flat'    && 'border border-[var(--glass-border)] bg-card shadow-[var(--shadow-glass)]',
           padded && 'p-5',
-          hoverable && 'hover:bg-[var(--glass-hover)] hover:border-[var(--glass-border-strong)]',
+          hoverable && 'hover:bg-[var(--glass-hover)] hover:border-[var(--accent-border)] hover:shadow-[var(--shadow-accent)]',
           className
         )}
         {...props}

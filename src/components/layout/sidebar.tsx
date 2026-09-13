@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
@@ -40,6 +41,13 @@ export function Sidebar() {
     (m) => !enabledModules || enabledModules.has(m.id)
   )
 
+  const filtered = visibleModules.filter(m => m.id !== 'settings')
+  // Mover Tablero al final
+  const dashboardModule = filtered.find(m => m.id === 'dashboard')
+  const otherModules = filtered.filter(m => m.id !== 'dashboard')
+  const mainModules = dashboardModule ? [...otherModules, dashboardModule] : otherModules
+  const settingsModule = visibleModules.find(m => m.id === 'settings')
+
   function isGroupActive(module: ModuleDefinition): boolean {
     if (!module.children) return false
     return module.children.some(child => pathname.startsWith(child.href.split('?')[0]))
@@ -73,22 +81,23 @@ export function Sidebar() {
       {/* Brand */}
       <div className={cn(
         'relative flex items-center gap-2.5 px-2 pb-3.5 mb-2.5 border-b border-[var(--glass-border)]',
-        collapsed && 'justify-center'
+        collapsed ? 'justify-center' : 'justify-between'
       )}>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-fuchsia-500 text-[11px] font-bold text-white shadow-[0_4px_12px_oklch(0.5_0.25_280/0.35)]">
-          GF
+        <div className="h-10 flex-1 relative">
+          <Image
+            src="/logo.png"
+            alt="GestForce"
+            fill
+            sizes="200px"
+            className="object-contain object-left"
+            priority
+          />
         </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1 animate-[fadeIn_200ms_ease]">
-            <p className="text-[13.5px] font-semibold text-foreground leading-none tracking-tight">GestForce</p>
-            <p className="mt-1 text-[11px] text-muted-foreground leading-none">ERP · Multiempresa</p>
-          </div>
-        )}
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
             title="Colapsar"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground border border-transparent hover:bg-[var(--glass-strong)] hover:text-foreground hover:border-[var(--glass-border)] transition-colors"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground border border-transparent hover:bg-[var(--glass-strong)] hover:text-foreground hover:border-[var(--glass-border)] transition-colors shrink-0"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
@@ -112,7 +121,7 @@ export function Sidebar() {
             Módulos
           </div>
         )}
-        {visibleModules.map((item) => {
+        {mainModules.map((item) => {
           if (item.children) {
             const groupActive = isGroupActive(item)
             const isExpanded = expandedGroups.has(item.id)
@@ -196,6 +205,39 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Administración (separado al final) */}
+      {settingsModule && (
+        <div className="border-t border-[var(--glass-border)] pt-2.5 mt-2.5 space-y-1">
+          {!collapsed && (
+            <div className="px-2.5 pb-1.5 text-[10.5px] font-semibold tracking-[0.07em] uppercase text-muted-foreground/60">
+              Administración
+            </div>
+          )}
+          <Link
+            href={settingsModule.href!}
+            title={collapsed ? settingsModule.name : undefined}
+            className={cn(
+              'group relative flex items-center gap-2.5 rounded-md py-1.5 text-[13px] font-medium transition-all',
+              collapsed ? 'justify-center px-0' : 'px-2.5',
+              pathname.startsWith(settingsModule.href!)
+                ? 'bg-[var(--glass-strong)] text-foreground font-semibold border border-[var(--glass-border)] shadow-[var(--shadow-glass)]'
+                : 'border border-transparent text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground'
+            )}
+          >
+            {pathname.startsWith(settingsModule.href!) && !collapsed && (
+              <span className="absolute -left-2.5 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-primary shadow-[0_0_12px_var(--ring)]" />
+            )}
+            <settingsModule.icon className={cn(
+              'h-4 w-4 shrink-0',
+              pathname.startsWith(settingsModule.href!)
+                ? 'text-primary'
+                : 'text-muted-foreground group-hover:text-foreground'
+            )} />
+            {!collapsed && <span className="truncate">{settingsModule.name}</span>}
+          </Link>
+        </div>
+      )}
 
       {/* Empresa activa */}
       <button

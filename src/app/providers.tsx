@@ -21,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+      <NextThemesProvider attribute="class" defaultTheme="dark" storageKey="theme-preference" disableTransitionOnChange>
         <AppearanceProvider>
           {children}
         </AppearanceProvider>

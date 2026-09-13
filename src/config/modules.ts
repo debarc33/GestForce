@@ -73,7 +73,7 @@ export interface ModuleDefinition {
 export const MODULE_REGISTRY: ModuleDefinition[] = [
   {
     id: 'dashboard',
-    name: 'Dashboard',
+    name: 'Tablero',
     href: '/',
     icon: LayoutDashboard,
     alwaysOn: true,

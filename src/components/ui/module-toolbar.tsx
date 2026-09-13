@@ -50,8 +50,8 @@ export function ModuleToolbar({
     'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
 
   const iconBtn = cn(
-    'flex h-7 w-7 items-center justify-center rounded-md text-zinc-400',
-    'hover:bg-zinc-100 hover:text-zinc-700 transition-colors'
+    'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground',
+    'hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors'
   )
 
   return (
@@ -61,10 +61,10 @@ export function ModuleToolbar({
         <div className="flex items-end justify-between">
           <div>
             {title && (
-              <h1 className="text-xl font-bold text-zinc-900 tracking-tight">{title}</h1>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">{title}</h1>
             )}
             {subtitle && (
-              <p className="mt-0.5 text-[12px] text-zinc-400">{subtitle}</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p>
             )}
           </div>
         </div>
@@ -85,7 +85,7 @@ export function ModuleToolbar({
         )}
 
         {/* Acciones secundarias: eliminar, imprimir, import, export */}
-        <div className="flex items-center gap-0.5 rounded-lg border border-zinc-200 bg-white px-1 py-1 shadow-sm">
+        <div className="flex items-center gap-0.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-1 py-1 shadow-sm">
           {onDelete && (
             <>
               <button
@@ -102,7 +102,7 @@ export function ModuleToolbar({
                 <Trash2 className="h-3.5 w-3.5" />
                 {selectedCount > 0 && <span>{selectedCount}</span>}
               </button>
-              <div className="mx-0.5 h-4 w-px bg-zinc-100" />
+              <div className="mx-0.5 h-4 w-px bg-[var(--glass-border)]" />
             </>
           )}
 
@@ -130,7 +130,7 @@ export function ModuleToolbar({
 
           {extraButtons && (
             <>
-              <div className="mx-0.5 h-4 w-px bg-zinc-100" />
+              <div className="mx-0.5 h-4 w-px bg-[var(--glass-border)]" />
               {extraButtons}
             </>
           )}
@@ -139,15 +139,15 @@ export function ModuleToolbar({
         {/* Buscador */}
         {onSearchChange && (
           <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
               className={cn(
-                'w-full rounded-lg border border-zinc-200 bg-white pl-8 pr-3 py-[7px]',
-                'text-[13px] text-zinc-800 placeholder:text-zinc-400',
+                'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] pl-8 pr-3 py-[7px]',
+                'text-[13px] text-foreground placeholder:text-muted-foreground',
                 'shadow-sm focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/10 transition-all'
               )}
             />
@@ -157,13 +157,13 @@ export function ModuleToolbar({
         {/* Filtro */}
         {filterOptions && filterOptions.length > 0 && onFilterChange && (
           <div className="relative shrink-0">
-            <SlidersHorizontal className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
+            <SlidersHorizontal className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
             <select
               value={filterValue}
               onChange={(e) => onFilterChange(e.target.value)}
               className={cn(
-                'appearance-none rounded-lg border border-zinc-200 bg-white pl-7 pr-7 py-[7px]',
-                'text-[13px] text-zinc-700 shadow-sm cursor-pointer',
+                'appearance-none rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] pl-7 pr-7 py-[7px]',
+                'text-[13px] text-foreground shadow-sm cursor-pointer',
                 'focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/10 transition-all'
               )}
             >
@@ -171,7 +171,7 @@ export function ModuleToolbar({
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-zinc-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
           </div>
         )}
       </div>

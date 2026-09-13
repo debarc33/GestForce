@@ -18,12 +18,17 @@
   /* Fondo base: NO negro puro. Un azul-noche muy oscuro para que el glow se vea. */
   --app-bg: oklch(0.96 0.005 275);          /* claro */
 
-  /* Glass tokens - Light Mode */
+  /* Glass tokens - Light Mode (valores de production/globals.patch.css) */
   --glass: oklch(1 0 0 / 0.55);
   --glass-hover: oklch(1 0 0 / 0.78);
-  --glass-strong: oklch(1 0 0 / 0.9);
-  --glass-border: oklch(0.2 0.02 275 / 0.1);
-  --glass-border-strong: oklch(0.2 0.02 275 / 0.18);
+  --glass-strong: oklch(1 0 0 / 0.92);
+  --glass-border: oklch(0.13 0.01 260 / 0.08);
+  --glass-border-strong: oklch(0.13 0.01 260 / 0.14);
+
+  /* Glows ambientales tintados por el acento (referencia) */
+  --bg-glow-1: oklch(0.65 0.22 270 / 0.10);
+  --bg-glow-2: oklch(0.68 0.18 220 / 0.07);
+  --bg-glow-3: oklch(0.7  0.20 320 / 0.06);
 
   /* Acento Principal - Púrpura */
   --accent: #8b5cff;
@@ -50,19 +55,28 @@
   /* Fondos ambientales */
   --amb-1: rgba(139, 92, 255, 0.18);        /* glow principal */
 
-  /* Sombras */
+  /* Sombras (valores de production/globals.patch.css) */
   --shadow-glass: 0 1px 0 oklch(1 0 0 / 0.7) inset,
-                  0 0 0 1px oklch(0.2 0.02 275 / 0.04),
-                  0 8px 24px oklch(0.2 0.02 275 / 0.08);
+                  0 0 0 1px oklch(0.13 0.01 260 / 0.04),
+                  0 8px 24px oklch(0.13 0.01 260 / 0.06);
   --shadow-float: 0 1px 0 oklch(1 0 0 / 0.7) inset,
-                  0 0 0 1px oklch(0.2 0.02 275 / 0.06),
-                  0 20px 40px -16px oklch(0.2 0.02 275 / 0.16);
+                  0 0 0 1px oklch(0.13 0.01 260 / 0.06),
+                  0 20px 40px -16px oklch(0.13 0.01 260 / 0.12);
   --shadow-pop: 0 1px 0 oklch(1 0 0 / 0.7) inset,
-                0 0 0 1px oklch(0.2 0.02 275 / 0.08),
-                0 24px 48px oklch(0.2 0.02 275 / 0.22);
+                0 0 0 1px oklch(0.13 0.01 260 / 0.08),
+                0 24px 48px oklch(0.13 0.01 260 / 0.18),
+                0 0 80px -20px var(--bg-glow-1);
+  --shadow-accent: 0 1px 0 oklch(1 0 0 / 0.5) inset,
+                   0 8px 24px -8px var(--accent-glow);
 
-  --glass-blur: 24px;
-  --glass-saturate: 180%;
+  /* Antes: 24px. El blur alto apilado en varias superficies (sidebar, header,
+     cards, tabla) mientras se abre un modal (que también aplica su propio
+     backdrop-blur) obliga a Chrome a recomponer varias capas con blur a la
+     vez. En equipos sin aceleración de GPU sólida esto congela la pestaña
+     varios segundos al abrir cualquier Dialog. 8px se ve casi igual y es
+     mucho más barato de renderizar. */
+  --glass-blur: 8px;
+  --glass-saturate: 140%;
 
   /* Timing */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -100,26 +114,34 @@
 }
 
 .dark {
-  --app-bg: oklch(0.17 0.02 270);           /* azul-noche, NO #000 */
+  --app-bg: oklch(0.14 0.01 285);           /* casi-negro profundo (≈ #0a0a10), para que glass y glows resalten */
 
-  /* Glass tokens - Dark Mode */
-  --glass: oklch(0.24 0.02 270 / 0.5);
-  --glass-hover: oklch(0.28 0.02 270 / 0.68);
-  --glass-strong: oklch(0.26 0.02 270 / 0.8);
+  /* Glass tokens - Dark Mode (valores de production/globals.patch.css) */
+  --glass: oklch(0.18 0.005 285 / 0.55);
+  --glass-hover: oklch(0.22 0.005 285 / 0.7);
+  --glass-strong: oklch(0.22 0.005 285 / 0.85);
   --glass-border: oklch(1 0 0 / 0.08);
-  --glass-border-strong: oklch(1 0 0 / 0.16);
+  --glass-border-strong: oklch(1 0 0 / 0.14);
+
+  /* Glows ambientales (referencia) */
+  --bg-glow-1: oklch(0.65 0.25 270 / 0.18);
+  --bg-glow-2: oklch(0.65 0.20 220 / 0.10);
+  --bg-glow-3: oklch(0.6  0.22 320 / 0.07);
 
   --amb-1: rgba(139, 92, 255, 0.35);
 
   --shadow-glass: 0 1px 0 oklch(1 0 0 / 0.05) inset,
                   0 0 0 1px oklch(1 0 0 / 0.04),
-                  0 20px 50px oklch(0 0 0 / 0.45);
+                  0 20px 50px oklch(0 0 0 / 0.4);
   --shadow-float: 0 1px 0 oklch(1 0 0 / 0.06) inset,
                   0 0 0 1px oklch(1 0 0 / 0.06),
-                  0 30px 60px -20px oklch(0 0 0 / 0.6);
+                  0 30px 60px -20px oklch(0 0 0 / 0.55);
   --shadow-pop: 0 1px 0 oklch(1 0 0 / 0.08) inset,
                 0 0 0 1px oklch(1 0 0 / 0.08),
-                0 24px 48px oklch(0 0 0 / 0.55);
+                0 24px 48px oklch(0 0 0 / 0.5),
+                0 0 80px -20px var(--bg-glow-1);
+  --shadow-accent: 0 1px 0 oklch(1 0 0 / 0.15) inset,
+                   0 8px 24px -8px var(--accent-glow);
 
   /* Para compatibilidad */
   --background: var(--app-bg);
@@ -245,4 +267,29 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--glass-border-strong);
+}
+
+/* ── Panel de contenido con scroll propio (look premium) ──────────────────── */
+/* Scrollbar fino y translúcido, despegado del borde para no chocar con las cards. */
+.content-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-border-strong) transparent;
+}
+.content-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.content-scroll::-webkit-scrollbar-thumb {
+  background: var(--glass-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+}
+.content-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-border);
+  background-clip: padding-box;
 }

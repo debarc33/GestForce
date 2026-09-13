@@ -39,7 +39,13 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // Antes tenía "supports-backdrop-filter:backdrop-blur-xs": ese blur se
+        // sumaba a los backdrop-filter ya activos en sidebar/header/cards
+        // (glass-surface) y hacía que Chrome recompusiera varias capas con
+        // blur en el mismo frame al abrir el modal, congelando la pestaña en
+        // equipos sin buena aceleración por GPU. Un overlay sólido semi-
+        // transparente (sin blur) se ve casi igual y es prácticamente gratis.
+        "fixed inset-0 isolate z-50 bg-black/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
