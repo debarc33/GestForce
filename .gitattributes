@@ -1,0 +1,13 @@
+# Normaliza saltos de linea a LF para todo archivo de texto.
+# Evita diffs "fantasma" (CRLF vs LF) al editar en Windows.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
