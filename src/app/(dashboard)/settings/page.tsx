@@ -21,6 +21,9 @@ import {
 } from '@/modules/company/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { AppearanceTab } from '@/modules/settings/appearance-tab'
+import { UsersTable } from '@/modules/team'
+import { SettingsAccordion } from '@/components/settings/settings-accordion'
+import { SubscriptionSection } from '@/components/settings/subscription-section'
 
 // ─── Constantes ────────────────────────────────────────────────────────────
 
@@ -123,7 +126,7 @@ export default function SettingsPage() {
   const [editingPayroll, setEditingPayroll]     = useState(false)
   const [editingLogo, setEditingLogo]           = useState(false)
   const [editingPrint, setEditingPrint]         = useState(false)
-  const [activeSection, setActiveSection]       = useState('empresa')
+  const [activeGroup, setActiveGroup]           = useState('Empresa')
   const [companyForm, setCompanyForm]       = useState<CompanyProfileUpdate>({})
   const [companyError, setCompanyError]     = useState<string | null>(null)
 
@@ -145,6 +148,19 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!activeCompanyId) router.replace('/select-company')
   }, [activeCompanyId, router])
+
+  // Al volver de la pasarela de pago (?payment=success|cancelled), abrir Suscripción.
+  // Corre después del efecto de SubscriptionSection (hijo), que lee el mismo parámetro.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const payment = params.get('payment')
+    if (payment === 'success' || payment === 'cancelled') {
+      setActiveGroup('Suscripción')
+      params.delete('payment')
+      const qs = params.toString()
+      window.history.replaceState(null, '', window.location.pathname + (qs ? `?${qs}` : ''))
+    }
+  }, [])
 
   const { data: company, isLoading: loadingCompany } = useCompany(activeCompanyId)
   const { data: paymentMethods = [], isLoading } = usePaymentMethods(activeCompanyId ?? undefined)
@@ -314,18 +330,17 @@ export default function SettingsPage() {
   const ivaMode    = isIvaResponsible(company?.fiscal_regime)
   const { rangeAlert, expiryAlert, feConfigured } = getDianAlerts(company)
 
-  const SectionHeader = ({ title, sub, editing, onEdit, onSave, onCancel, badge }: {
-    title: string; sub: string; editing: boolean
+  // El título de cada sección lo provee el acordeón (SettingsAccordion); aquí
+  // solo mostramos la descripción + badge + acciones para no repetir el nombre.
+  const SectionHeader = ({ sub, editing, onEdit, onSave, onCancel, badge }: {
+    title?: string; sub: string; editing: boolean
     onEdit: () => void; onSave: () => void; onCancel: () => void
     badge?: React.ReactNode
   }) => (
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-foreground">{title}</h2>
-          {badge}
-        </div>
-        <p className="text-sm text-muted-foreground mt-0.5">{sub}</p>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <p className="text-sm text-muted-foreground">{sub}</p>
+        {badge}
       </div>
       {!editing ? (
         <button onClick={onEdit}
@@ -357,60 +372,51 @@ export default function SettingsPage() {
       { id: 'dian',        label: 'Resolución DIAN' },
       { id: 'fe',          label: 'Facturación Electrónica' },
       { id: 'ica',         label: 'ICA municipal' },
+      { id: 'umbrales',    label: 'Umbrales' },
+    ]},
+    { label: 'Equipo', items: [
+      { id: 'usuarios',    label: 'Usuarios y roles' },
+      { id: 'nomina',      label: 'Valores de nómina' },
     ]},
     { label: 'Documentos', items: [
       { id: 'impresion',   label: 'Formatos de impresión' },
       { id: 'medios_pago', label: 'Medios de pago' },
-      { id: 'umbrales',    label: 'Umbrales' },
     ]},
-    { label: 'Nómina', items: [
-      { id: 'nomina',      label: 'Valores de nómina' },
+    { label: 'Suscripción', items: [
+      { id: 'suscripcion', label: 'Plan y pagos' },
     ]},
-    { label: 'Interfaz', items: [
+    { label: 'Personalización', items: [
       { id: 'apariencia',  label: 'Apariencia' },
     ]},
   ]
 
   return (
     <div>
-      <div className="mb-8 -mx-8 -mt-8 px-8 py-6 glass-surface border-b border-[var(--glass-border)] rounded-b-2xl">
-        <h1 className="text-xl font-bold text-foreground tracking-tight">Configuración</h1>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">Personaliza el comportamiento de GestForce para tu empresa.</p>
-      </div>
-
       <div className="flex gap-8 items-start">
 
         {/* ── Navegación lateral ─────────────────────────────────────── */}
-        <nav className="w-48 shrink-0 sticky top-6 rounded-xl border border-[var(--glass-border)] glass-surface p-3 space-y-4">
+        <nav className="w-48 shrink-0 sticky top-6 rounded-xl border border-[var(--glass-border)] glass-surface p-3 space-y-1">
           {NAV_GROUPS.map(group => (
-            <div key={group.label}>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2 mb-1">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      activeSection === item.id
-                        ? 'bg-primary/10 text-primary font-semibold'
-                        : 'text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <button
+              key={group.label}
+              onClick={() => setActiveGroup(group.label)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeGroup === group.label
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
+              }`}
+            >
+              {group.label}
+            </button>
           ))}
         </nav>
 
         {/* ── Contenido ──────────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0 max-w-2xl">
+        <div className="flex-1 min-w-0">
 
       {/* ══ 1. Perfil de empresa ══════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'empresa' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Empresa' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Perfil" defaultOpen>
         <SectionHeader
           title="Perfil de empresa" sub="Datos que aparecen en documentos y facturas."
           editing={editingCompany}
@@ -463,7 +469,7 @@ export default function SettingsPage() {
                   className={fieldCls} placeholder="Ej. 4711" maxLength={10} />
               </div>
             </div>
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
@@ -490,7 +496,7 @@ export default function SettingsPage() {
                   {company.ciiu_code && (<div><p className="text-xs text-muted-foreground">CIIU</p><p className="text-foreground font-mono">{company.ciiu_code}</p></div>)}
                 </div>
                 {!company.nit && (
-                  <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100">
+                  <p className="text-xs text-[var(--warning)] bg-[var(--warning-bg)] rounded-lg px-3 py-2 border border-[var(--warning-border)]">
                     Completa el perfil para que tus datos aparezcan en los documentos.
                   </p>
                 )}
@@ -500,10 +506,12 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 2. Resolución DIAN ═══════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'dian' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Resolución DIAN" defaultOpen>
         <SectionHeader
           title="Resolución DIAN"
           sub="Rango de numeración autorizado y vigencia. Aplica para todos los regímenes que emitan facturas."
@@ -545,7 +553,7 @@ export default function SettingsPage() {
               <div><label className={lbl}>Vigencia hasta</label>
                 <input type="date" value={companyForm.dian_validity_to ?? ''} onChange={cf('dian_validity_to')} className={fieldCls} /></div>
             </div>
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
@@ -567,10 +575,12 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 3. Facturación Electrónica ═══════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'fe' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Facturación Electrónica">
           <SectionHeader
             title="Facturación Electrónica"
             sub="Credenciales de tu Proveedor Tecnológico (PT) autorizado por la DIAN para emitir facturas electrónicas."
@@ -589,12 +599,12 @@ export default function SettingsPage() {
                 <div className="flex gap-3">
                   <button type="button"
                     onClick={() => cfBool('fe_test_mode', true)}
-                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${companyForm.fe_test_mode ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
+                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${companyForm.fe_test_mode ? 'border-[var(--warning-border)] bg-[var(--warning-bg)] text-[var(--warning)]' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
                     🔶 Habilitación (pruebas)
                   </button>
                   <button type="button"
                     onClick={() => cfBool('fe_test_mode', false)}
-                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${!companyForm.fe_test_mode ? 'border-green-300 bg-green-50 text-green-700' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
+                    className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${!companyForm.fe_test_mode ? 'border-[var(--success-border)] bg-[var(--success-bg)] text-[var(--success)]' : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'}`}>
                     ✅ Producción
                   </button>
                 </div>
@@ -615,7 +625,7 @@ export default function SettingsPage() {
                 El CUFE y el XML UBL 2.1 se calculan automáticamente al emitir cada factura.
                 La transmisión a la DIAN se realiza a través de tu Proveedor Tecnológico.
               </p>
-              {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+              {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
             </div>
           ) : (
             <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
@@ -633,10 +643,12 @@ export default function SettingsPage() {
               )}
             </div>
           )}
+        </SettingsAccordion>
         </section>
 
       {/* ══ 4. ICA municipal ════════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'ica' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="ICA municipal">
         <SectionHeader
           title="ICA municipal"
           sub="Tasa del Impuesto de Industria y Comercio según tu municipio y actividad económica."
@@ -667,7 +679,7 @@ export default function SettingsPage() {
                 Consulta la tarifa con tu contador o en el sitio web de tu alcaldía.
               </p>
             </div>
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
@@ -679,10 +691,31 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
-      {/* ══ 5. Nómina ═══════════════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'nomina' ? ' hidden' : ''}`}>
+      {/* ══ 5. Usuarios y roles ══════════════════════════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Equipo' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Usuarios y roles" defaultOpen>
+        <p className="text-sm text-muted-foreground">Gestiona los usuarios de tu empresa y sus permisos.</p>
+        {activeCompanyId && (
+          <>
+            <div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent-bg)] p-4 text-sm text-foreground">
+              <p className="font-medium">ℹ️ Gestiona tu equipo aquí</p>
+              <p className="mt-1 text-muted-foreground">Invita colaboradores a tu empresa, asigna roles y permisos. Usa el botón &quot;Invitar colaborador&quot; para comenzar.</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Usuarios actuales</h3>
+              <UsersTable companyId={activeCompanyId} />
+            </div>
+          </>
+        )}
+        </SettingsAccordion>
+      </section>
+
+      {/* ══ 6. Nómina ═══════════════════════════════════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Equipo' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Valores de nómina">
         <SectionHeader
           title="Nómina"
           sub="Valores legales de nómina. Actualizar cada año según decreto del gobierno."
@@ -712,7 +745,7 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
@@ -732,10 +765,12 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 6. Formatos de impresión ════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'impresion' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Documentos' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Formatos de impresión" defaultOpen>
         <SectionHeader
           title="Formatos de impresión"
           sub="Tamaño de papel, logo y textos legales que aparecen al pie de facturas y cotizaciones."
@@ -845,7 +880,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4 space-y-3">
@@ -858,13 +893,13 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between text-sm border-t border-[var(--glass-border)]/50 pt-3">
               <span className="text-muted-foreground">Logo en documentos</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_show_logo !== false ? 'bg-green-100 text-green-700' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_show_logo !== false ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
                 {company?.print_show_logo !== false ? 'Activado' : 'Desactivado'}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm border-t border-[var(--glass-border)]/50 pt-3">
               <span className="text-muted-foreground">Resolución DIAN automática</span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_auto_dian_footer !== false ? 'bg-green-100 text-green-700' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${company?.print_auto_dian_footer !== false ? 'bg-[var(--success-bg)] text-[var(--success)]' : 'bg-[var(--glass-hover)] text-muted-foreground'}`}>
                 {company?.print_auto_dian_footer !== false ? 'Activado' : 'Desactivado'}
               </span>
             </div>
@@ -880,10 +915,12 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 7. Logo y documentos ════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'logo' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Empresa' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Logo y documentos">
         <SectionHeader
           title="Logo y documentos"
           sub="Logo de la empresa y textos que aparecen en facturas y cotizaciones."
@@ -975,7 +1012,7 @@ export default function SettingsPage() {
               />
             </div>
 
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-4">
@@ -1013,17 +1050,16 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 7. Cuentas bancarias ═════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'bancos' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Empresa' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Cuentas bancarias">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Cuentas bancarias</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Cuentas de la empresa para recibir pagos. Aparecen en el pie de facturas.
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Cuentas de la empresa para recibir pagos. Aparecen en el pie de facturas.
+          </p>
           {!addingBank && (
             <button
               onClick={() => { setAddingBank(true); setBankError(null) }}
@@ -1093,7 +1129,7 @@ export default function SettingsPage() {
                 <span className="text-xs text-muted-foreground">Marcar como cuenta principal</span>
               </label>
             </div>
-            {bankError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{bankError}</p>}
+            {bankError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{bankError}</p>}
             <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={() => bankCreateMut.mutate()}
@@ -1167,15 +1203,14 @@ export default function SettingsPage() {
             ))}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 8. Medios de pago ════════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'medios_pago' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Documentos' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Medios de pago">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Medios de pago</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Métodos disponibles al registrar pagos en recibos.</p>
-          </div>
+          <p className="text-sm text-muted-foreground">Métodos disponibles al registrar pagos en recibos.</p>
           {!addingNew && (
             <button onClick={() => setAddingNew(true)}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm">
@@ -1230,10 +1265,12 @@ export default function SettingsPage() {
             })}
           </div>
         )}
+        </SettingsAccordion>
       </section>
 
       {/* ══ 9. Umbrales y comportamiento ════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'umbrales' ? ' hidden' : ''}`}>
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Umbrales">
         <SectionHeader
           title="Umbrales y comportamiento"
           sub="Límites que activan advertencias y validaciones automáticas."
@@ -1256,7 +1293,7 @@ export default function SettingsPage() {
                 La DIAN exige identificar al comprador cuando el monto supera ~$212.000 COP.
               </p>
             </div>
-            {companyError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{companyError}</p>}
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
           <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
@@ -1268,10 +1305,18 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+        </SettingsAccordion>
+      </section>
+
+      {/* ══ 10. Suscripción ═════════════════════════════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Suscripción' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Plan y pagos" defaultOpen>
+          {activeCompanyId && <SubscriptionSection companyId={activeCompanyId} />}
+        </SettingsAccordion>
       </section>
 
       {/* ══ Apariencia ═════════════════════════════════════════════════════════ */}
-      <section className={`space-y-4${activeSection !== 'apariencia' ? ' hidden' : ''}`}>
+      <section className={`space-y-4${activeGroup !== 'Personalización' ? ' hidden' : ''}`}>
         <div>
           <h2 className="text-base font-semibold text-foreground">Apariencia</h2>
           <p className="text-sm text-muted-foreground mt-0.5">

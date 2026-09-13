@@ -18,11 +18,11 @@ interface EmailParams {
 export async function sendEmail({ to, template, data }: EmailParams) {
   try {
     const templates = {
-      welcome: getWelcomeTemplate(data),
-      payment_completed: getPaymentCompletedTemplate(data),
-      payment_failed: getPaymentFailedTemplate(data),
-      trial_expiring: getTrialExpiringTemplate(data),
-      subscription_expired: getSubscriptionExpiredTemplate(data),
+      welcome: getWelcomeTemplate(data as any),
+      payment_completed: getPaymentCompletedTemplate(data as any),
+      payment_failed: getPaymentFailedTemplate(data as any),
+      trial_expiring: getTrialExpiringTemplate(data as any),
+      subscription_expired: getSubscriptionExpiredTemplate(data as any),
     }
 
     const { html, subject } = templates[template]

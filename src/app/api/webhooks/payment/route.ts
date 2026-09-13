@@ -157,7 +157,7 @@ async function handleStripeWebhook(event: any, admin: any) {
 
     const sessionId = charge.payment_intent as string
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2024-04-10',
+      apiVersion: '2023-10-16',
     })
 
     const session = await stripe.checkout.sessions.retrieve(sessionId as string, {
@@ -190,7 +190,7 @@ async function handleStripeWebhook(event: any, admin: any) {
 
     const sessionId = charge.payment_intent as string
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2024-04-10',
+      apiVersion: '2023-10-16',
     })
 
     const session = await stripe.checkout.sessions.retrieve(sessionId as string, {
@@ -325,9 +325,29 @@ async function processPaymentSuccess(
     })
     .eq('id', orderId)
 
-  // Calcular nueva fecha de vencimiento
+  // Fecha base del nuevo período: si la suscripción actual aún no ha vencido
+  // (p. ej. el cliente paga durante el trial), el período pagado arranca al
+  // vencer la suscripción actual para no perder los días restantes. Si ya
+  // venció, arranca hoy.
   const today = new Date()
-  const newExpiry = new Date(today)
+  today.setHours(0, 0, 0, 0)
+
+  const { data: currentCompany } = await admin
+    .from('companies')
+    .select('subscription_end')
+    .eq('id', companyId)
+    .single()
+
+  let baseDate = today
+  if (currentCompany?.subscription_end) {
+    const currentEnd = new Date(currentCompany.subscription_end + 'T00:00:00')
+    if (currentEnd.getTime() > today.getTime()) {
+      baseDate = currentEnd
+    }
+  }
+
+  const newStart = new Date(baseDate)
+  const newExpiry = new Date(baseDate)
 
   if (subscriptionPeriod === '3_months') {
     newExpiry.setMonth(newExpiry.getMonth() + 3)
@@ -343,7 +363,7 @@ async function processPaymentSuccess(
     .update({
       subscription_status: 'active',
       subscription_end: newExpiry.toISOString().split('T')[0],
-      subscription_start: today.toISOString().split('T')[0],
+      subscription_start: newStart.toISOString().split('T')[0],
       subscription_period: subscriptionPeriod,
     })
     .eq('id', companyId)

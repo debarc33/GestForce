@@ -54,6 +54,13 @@ export default function SubscriptionPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<'3_months' | '6_months' | '1_year'>('1_year')
 
+  // Edición manual de fechas (inicio + días de prueba/gracia)
+  const [editingDates, setEditingDates] = useState(false)
+  const [startInput, setStartInput] = useState('')
+  const [trialDaysInput, setTrialDaysInput] = useState(15)
+  const [savingDates, setSavingDates] = useState(false)
+  const [datesError, setDatesError] = useState<string | null>(null)
+
   useEffect(() => {
     fetchData()
   }, [companyId])
@@ -76,6 +83,63 @@ export default function SubscriptionPage() {
       console.error('Error fetching subscription data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Calcula la fecha de vencimiento a partir de inicio + días
+  function computeEnd(startISO: string, days: number): string {
+    const d = new Date(startISO + 'T00:00:00')
+    d.setDate(d.getDate() + days)
+    return d.toISOString().split('T')[0]
+  }
+
+  function openDatesEditor() {
+    if (!subscription) return
+    const start = subscription.subscription_start
+      ? new Date(subscription.subscription_start).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0]
+    // Días actuales entre inicio y vencimiento (para precargar)
+    let days = 15
+    if (subscription.subscription_start && subscription.subscription_end) {
+      const diff = Math.round(
+        (new Date(subscription.subscription_end).getTime() -
+          new Date(subscription.subscription_start).getTime()) / 86_400_000
+      )
+      if (diff > 0) days = diff
+    }
+    setStartInput(start)
+    setTrialDaysInput(days)
+    setDatesError(null)
+    setEditingDates(true)
+  }
+
+  async function handleSaveDates() {
+    if (!startInput) { setDatesError('La fecha de inicio es requerida'); return }
+    if (!Number.isFinite(trialDaysInput) || trialDaysInput < 1) {
+      setDatesError('Los días deben ser un número mayor a 0'); return
+    }
+    try {
+      setSavingDates(true)
+      setDatesError(null)
+      const res = await fetch(`/api/superadmin/companies/${companyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription_start: startInput,
+          subscription_end: computeEnd(startInput, trialDaysInput),
+          subscription_status: 'active',
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'No se pudieron guardar las fechas')
+      }
+      setEditingDates(false)
+      await fetchData()
+    } catch (e) {
+      setDatesError(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setSavingDates(false)
     }
   }
 
@@ -195,6 +259,82 @@ export default function SubscriptionPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Ajustar fechas manualmente */}
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Ajustar fechas</h2>
+            <p className="mt-0.5 text-sm text-zinc-400">
+              Define el inicio y los días gratis (prueba/cortesía). El vencimiento se calcula solo.
+            </p>
+          </div>
+          {!editingDates && (
+            <button
+              onClick={openDatesEditor}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-zinc-600 transition-colors"
+            >
+              Editar fechas
+            </button>
+          )}
+        </div>
+
+        {editingDates && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-2">FECHA DE INICIO</label>
+                <input
+                  type="date"
+                  value={startInput}
+                  onChange={(e) => setStartInput(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-2">DÍAS GRATIS (PRUEBA)</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={trialDaysInput}
+                  onChange={(e) => setTrialDaysInput(Number(e.target.value))}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {startInput && trialDaysInput >= 1 && (
+              <p className="text-xs text-zinc-400">
+                Vencimiento resultante:{' '}
+                <span className="text-zinc-200 font-medium">
+                  {new Date(computeEnd(startInput, trialDaysInput) + 'T00:00:00').toLocaleDateString('es-CO')}
+                </span>
+              </p>
+            )}
+
+            {datesError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{datesError}</p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveDates}
+                disabled={savingDates}
+                className="flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
+              >
+                {savingDates && <Loader2 className="h-4 w-4 animate-spin" />}
+                {savingDates ? 'Guardando...' : 'Guardar fechas'}
+              </button>
+              <button
+                onClick={() => { setEditingDates(false); setDatesError(null) }}
+                className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Renovar suscripción */}
