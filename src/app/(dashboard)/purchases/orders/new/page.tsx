@@ -30,7 +30,7 @@ function recalc(item: PurchaseItemValues): PurchaseItemValues {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
 // ─── Página ───────────────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ export default function NewPurchaseOrderPage() {
                     onFocus={() => setShowSupplierDrop(true)}
                     onBlur={() => setTimeout(() => setShowSupplierDrop(false), 150)}
                     placeholder="Buscar proveedor..."
-                    className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors" />
+                    className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors" />
                 </div>
                 {showSupplierDrop && supplierResults.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-0.5 z-30 rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden max-h-52 overflow-y-auto">
@@ -287,7 +287,7 @@ export default function NewPurchaseOrderPage() {
                     onFocus={() => setShowDropdown(true)}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                     placeholder="Buscar producto por nombre o referencia para agregar..."
-                    className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors"
+                    className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors"
                   />
                 </div>
                 {showDropdown && searchResults.length > 0 && (
@@ -350,7 +350,7 @@ export default function NewPurchaseOrderPage() {
           Cancelar
         </button>
         <button onClick={handleSave} disabled={mutation.isPending}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm">
+          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-sm">
           {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Crear orden de compra
         </button>

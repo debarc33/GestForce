@@ -112,8 +112,8 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
 
   const barColor =
     doc.type === 'credit_note' ? 'bg-orange-600' :
-    doc.type === 'debit_note'  ? 'bg-blue-700' :
-                                 'bg-blue-600'
+    doc.type === 'debit_note'  ? 'bg-primary' :
+                                 'bg-primary'
 
   const STATUS_ES: Record<string, string> = {
     draft: 'BORRADOR', sent: 'ENVIADA', approved: 'APROBADA',
@@ -582,7 +582,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
           <div className="flex items-center gap-1.5">
             {doc.customer?.email && (
               <button onClick={handleEmail}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors border border-blue-200">
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-blue-50 transition-colors border border-blue-200">
                 <Mail className="h-3.5 w-3.5" />
                 Enviar al correo
               </button>

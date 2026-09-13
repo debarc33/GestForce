@@ -220,7 +220,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
               <input {...form.register('department')} className={inp} placeholder="Cundinamarca" />
             </div>
             <div>
-              <label className={lbl}>Dirección <span className="text-zinc-400 font-normal">(opcional)</span></label>
+              <label className={lbl}>Dirección <span className="text-muted-foreground font-normal">(opcional)</span></label>
               <input {...form.register('address')} className={inp} placeholder="Calle 80 # 45-20" />
             </div>
           </div>
@@ -244,7 +244,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
 
           {/* Fila 5: Notas */}
           <div>
-            <label className={lbl}>Notas internas <span className="text-zinc-400 font-normal">(opcional)</span></label>
+            <label className={lbl}>Notas internas <span className="text-muted-foreground font-normal">(opcional)</span></label>
             <textarea {...form.register('notes')} rows={2}
               className={`${inp} resize-none`}
               placeholder="Condiciones especiales, observaciones..." />
@@ -256,55 +256,55 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
       {activeTab === 'pago' && (
         <div className="space-y-4">
 
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Configura los medios de pago aceptados por este proveedor.
           </p>
 
           {/* Efectivo */}
-          <label className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-3 cursor-pointer hover:bg-zinc-50 transition-colors">
+          <label className="flex items-start gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-3 cursor-pointer hover:bg-[var(--glass-hover)] transition-colors">
             <input type="checkbox" {...form.register('payment_cash')}
-              className="mt-0.5 h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+              className="mt-0.5 h-4 w-4 rounded border-[var(--glass-border)] accent-blue-600 cursor-pointer" />
             <div>
-              <p className="text-sm font-medium text-zinc-900">💵 Efectivo</p>
-              <p className="text-xs text-zinc-500">Pago en efectivo al proveedor o al mensajero al momento de la entrega.</p>
+              <p className="text-sm font-medium text-foreground">💵 Efectivo</p>
+              <p className="text-xs text-muted-foreground">Pago en efectivo al proveedor o al mensajero al momento de la entrega.</p>
             </div>
           </label>
 
           {/* Transferencia bancaria */}
-          <div className="rounded-xl border border-zinc-200 overflow-hidden">
-            <label className="flex items-start gap-3 bg-white p-3 cursor-pointer hover:bg-zinc-50 transition-colors">
+          <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden">
+            <label className="flex items-start gap-3 bg-[var(--glass)] p-3 cursor-pointer hover:bg-[var(--glass-hover)] transition-colors">
               <input type="checkbox" {...form.register('payment_transfer')}
-                className="mt-0.5 h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+                className="mt-0.5 h-4 w-4 rounded border-[var(--glass-border)] accent-blue-600 cursor-pointer" />
               <div>
-                <p className="text-sm font-medium text-zinc-900">🏦 Transferencia bancaria</p>
-                <p className="text-xs text-zinc-500">Pago por PSE, transferencia entre cuentas o consignación.</p>
+                <p className="text-sm font-medium text-foreground">🏦 Transferencia bancaria</p>
+                <p className="text-xs text-muted-foreground">Pago por PSE, transferencia entre cuentas o consignación.</p>
               </div>
             </label>
 
             {/* Cuentas bancarias — solo si transferencia está marcada */}
             {watchTransfer && (
-              <div className="border-t border-zinc-100 bg-zinc-50/60 p-3 space-y-3">
-                <p className="text-xs font-medium text-zinc-600 uppercase tracking-wide">
+              <div className="border-t border-[var(--glass-border)] bg-zinc-50/60 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Cuentas bancarias del proveedor
                 </p>
 
                 {bankAccounts.length === 0 && (
-                  <p className="text-xs text-zinc-400 text-center py-2">
+                  <p className="text-xs text-muted-foreground text-center py-2">
                     Sin cuentas registradas. Agrega una usando el botón de abajo.
                   </p>
                 )}
 
                 {bankAccounts.map((acct, idx) => (
                   <div key={acct._key}
-                    className="rounded-lg border border-zinc-200 bg-white p-3 space-y-2 relative">
+                    className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] p-3 space-y-2 relative">
 
                     {/* Encabezado de cuenta */}
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-zinc-500">
+                      <span className="text-xs font-semibold text-muted-foreground">
                         Cuenta {idx + 1}
                       </span>
                       <button type="button" onClick={() => removeAccount(acct._key)}
-                        className="text-zinc-400 hover:text-red-500 transition-colors p-0.5 rounded">
+                        className="text-muted-foreground hover:text-red-500 transition-colors p-0.5 rounded">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -346,7 +346,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
 
                     {/* Etiqueta opcional */}
                     <div>
-                      <label className={lbl}>Etiqueta <span className="text-zinc-400 font-normal">(opcional)</span></label>
+                      <label className={lbl}>Etiqueta <span className="text-muted-foreground font-normal">(opcional)</span></label>
                       <input
                         value={acct.label}
                         onChange={e => updateAccount(acct._key, 'label', e.target.value)}
@@ -360,7 +360,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
                 <button
                   type="button"
                   onClick={addAccount}
-                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors py-1">
+                  className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors py-1">
                   <Plus className="h-3.5 w-3.5" />
                   Agregar cuenta bancaria
                 </button>
@@ -370,7 +370,7 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
 
           {/* Estado vacío */}
           {!watchTransfer && !form.watch('payment_cash') && (
-            <p className="text-xs text-center text-zinc-400 py-2">
+            <p className="text-xs text-center text-muted-foreground py-2">
               No se ha configurado ningún medio de pago aún.
             </p>
           )}
@@ -385,15 +385,15 @@ export function SupplierForm({ supplier, onSuccess, onCancel }: SupplierFormProp
       )}
 
       {/* Acciones */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100 mt-4">
+      <div className="flex justify-end gap-2 pt-4 border-t border-[var(--glass-border)] mt-4">
         {onCancel && (
           <button type="button" onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
+            className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors">
             Cancelar
           </button>
         )}
         <button type="submit" disabled={mutation.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {mutation.isPending ? 'Guardando...' : supplier ? 'Guardar cambios' : 'Crear proveedor'}
         </button>
       </div>

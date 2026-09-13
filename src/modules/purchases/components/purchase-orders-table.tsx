@@ -12,7 +12,7 @@ import type { PurchaseOrderWithSupplier } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
   draft:     { label: 'Borrador', cls: 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground' },
-  sent:      { label: 'Enviada',  cls: 'bg-blue-500/10 border border-blue-500/20 text-blue-600' },
+  sent:      { label: 'Enviada',  cls: 'bg-blue-500/10 border border-blue-500/20 text-primary' },
   received:  { label: 'Recibida', cls: 'bg-green-500/10 border border-green-500/20 text-green-600' },
   cancelled: { label: 'Anulada',  cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
 }

@@ -160,7 +160,7 @@ export default function EditInvoicePage() {
     return (
       <div className="flex flex-col items-center justify-center h-60 gap-3 text-zinc-400">
         <p className="text-sm">Factura no encontrada.</p>
-        <button onClick={() => router.push('/sales')} className="text-xs text-blue-600 underline">Volver</button>
+        <button onClick={() => router.push('/sales')} className="text-xs text-primary underline">Volver</button>
       </div>
     )
   }
@@ -200,7 +200,7 @@ export default function EditInvoicePage() {
                 Nota Crédito
               </button>
               <button onClick={() => setNoteType('debit')}
-                className="flex items-center gap-1.5 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+                className="flex items-center gap-1.5 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-primary hover:bg-blue-50 transition-colors">
                 <FilePlus className="h-4 w-4" />
                 Nota Débito
               </button>

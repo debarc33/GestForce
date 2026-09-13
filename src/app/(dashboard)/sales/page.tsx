@@ -452,7 +452,7 @@ function SalesPageInner() {
                       const band = cxcAgingBand(row.dias_vencido)
                       return (
                         <tr key={row.id} className="hover:bg-zinc-50/60 transition-colors">
-                          <td className="px-4 py-3 font-mono text-sm text-blue-600">{row.invoice_number}</td>
+                          <td className="px-4 py-3 font-mono text-sm text-primary">{row.invoice_number}</td>
                           <td className="px-4 py-3 font-medium text-zinc-800">{row.customer}</td>
                           <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.issue_date)}</td>
                           <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.due_date)}</td>

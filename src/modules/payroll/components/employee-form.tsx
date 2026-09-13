@@ -18,8 +18,8 @@ interface EmployeeFormProps {
   onCancel?: () => void
 }
 
-const inp = 'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
-const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
+const lbl = 'block text-xs font-medium text-muted-foreground mb-1'
 
 type Tab = 'personal' | 'laboral' | 'seguridad' | 'pago'
 
@@ -92,15 +92,15 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
     <form onSubmit={form.handleSubmit(v => mutation.mutate(v))}>
 
       {/* Tabs */}
-      <div className="flex gap-0.5 border-b border-zinc-200 mb-4">
+      <div className="flex gap-0.5 border-b border-[var(--glass-border)] mb-4">
         {tabs.map(t => (
           <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
             className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
-              activeTab === t.id ? 'text-blue-600' : 'text-zinc-500 hover:text-zinc-700'
+              activeTab === t.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}>
             {t.icon}{t.label}
             {activeTab === t.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />
             )}
           </button>
         ))}
@@ -129,11 +129,11 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
             </div>
           </div>
           <div>
-            <label className={lbl}>Fecha de nacimiento <span className="text-zinc-400 font-normal">(opcional)</span></label>
+            <label className={lbl}>Fecha de nacimiento <span className="text-muted-foreground font-normal">(opcional)</span></label>
             <input type="date" {...form.register('birth_date')} className={inp} />
           </div>
           <div>
-            <label className={lbl}>Notas internas <span className="text-zinc-400 font-normal">(opcional)</span></label>
+            <label className={lbl}>Notas internas <span className="text-muted-foreground font-normal">(opcional)</span></label>
             <textarea {...form.register('notes')} rows={2} className={`${inp} resize-none`}
               placeholder="Observaciones del empleado..." />
           </div>
@@ -141,7 +141,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" {...form.register('is_active')}
               className="h-4 w-4 rounded border-zinc-300 accent-blue-600" />
-            <span className="text-sm text-zinc-700">Empleado activo</span>
+            <span className="text-sm text-foreground">Empleado activo</span>
           </label>
         </div>
       )}
@@ -190,7 +190,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
                   />
                   <span className="text-sm font-medium text-zinc-500 shrink-0">%</span>
                 </div>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Porcentaje sobre el total neto de cada factura que se asigne a este agente.
                 </p>
               </div>
@@ -207,7 +207,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
               {form.formState.errors.salary && (
                 <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.salary.message}</p>
               )}
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 El auxilio de transporte se agrega automáticamente si el salario es ≤ 2 SMLV.
               </p>
             </div>
@@ -292,12 +292,12 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
       <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100 mt-4">
         {onCancel && (
           <button type="button" onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
+            className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors">
             Cancelar
           </button>
         )}
         <button type="submit" disabled={mutation.isPending}
-          className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+          className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
           {mutation.isPending ? 'Guardando...' : employee ? 'Guardar cambios' : 'Crear empleado'}
         </button>
       </div>

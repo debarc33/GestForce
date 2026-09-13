@@ -73,7 +73,7 @@ export default function PurchaseOrderDetailPage() {
     return (
       <div className="text-center py-20 text-zinc-500">
         Orden de compra no encontrada.{' '}
-        <button onClick={() => router.push('/purchases')} className="text-blue-600 hover:underline">Volver</button>
+        <button onClick={() => router.push('/purchases')} className="text-primary hover:underline">Volver</button>
       </div>
     )
   }

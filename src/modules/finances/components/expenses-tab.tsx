@@ -320,7 +320,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                       <div className="flex items-center gap-1.5">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
                           e.category.type === 'fijo'
-                            ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                            ? 'bg-blue-500/10 border-blue-500/20 text-primary'
                             : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
                         }`}>
                           {e.category.type === 'fijo' ? 'Fijo' : 'Variable'}
@@ -442,7 +442,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                         {rec.category && (
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium border ${
                             rec.category.type === 'fijo'
-                              ? 'bg-blue-500/10 border-blue-500/20 text-blue-600'
+                              ? 'bg-blue-500/10 border-blue-500/20 text-primary'
                               : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
                           }`}>
                             {rec.category.name}

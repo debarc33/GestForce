@@ -48,7 +48,7 @@ const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFrac
 const today = () => new Date().toISOString().split('T')[0]
 
 const inp =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 const lbl = 'block text-xs font-medium text-zinc-500 mb-1'
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export function CreditDebitNoteForm({ invoice, invoiceItems, noteType, companyId
   const reasons = noteType === 'credit' ? CREDIT_REASONS : DEBIT_REASONS
   const accentColor = noteType === 'credit'
     ? { bar: 'bg-orange-600', btn: 'bg-orange-600 hover:bg-orange-700', border: 'border-orange-200 bg-orange-50/20' }
-    : { bar: 'bg-blue-700',   btn: 'bg-blue-700 hover:bg-blue-800',   border: 'border-blue-200 bg-blue-50/20' }
+    : { bar: 'bg-primary',   btn: 'bg-primary hover:bg-blue-800',   border: 'border-blue-200 bg-blue-50/20' }
 
   const [reason, setReason]       = useState(reasons[0].value)
   const [issueDate, setIssueDate] = useState(today())

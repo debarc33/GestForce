@@ -97,7 +97,7 @@ export default function ProductsPage() {
   })
 
   const inputClass =
-    'w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+    'w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
   return (
     <div className="space-y-6">
@@ -179,7 +179,7 @@ export default function ProductsPage() {
               <Button
                 onClick={() => categoryMutation.mutate()}
                 disabled={!categoryName.trim() || categoryMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-white"
               >
                 {categoryMutation.isPending ? 'Guardando...' : 'Crear'}
               </Button>

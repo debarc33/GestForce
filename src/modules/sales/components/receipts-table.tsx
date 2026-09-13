@@ -479,7 +479,7 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
 
       {/* Receipt dialog */}
       <Dialog open={!!openReceipt} onOpenChange={(open) => !open && setOpenReceipt(null)}>
-        <DialogContent className="sm:max-w-[560px] rounded-2xl shadow-xl border-zinc-100 p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[560px] rounded-2xl shadow-xl border-[var(--glass-border)] p-0 overflow-hidden">
           <DialogTitle className="sr-only">Recibo de pago</DialogTitle>
           {openReceipt && (
             <ReceiptDialog

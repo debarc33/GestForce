@@ -12,7 +12,7 @@ import { type InvoiceWithCustomer } from '../queries'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
   draft:     { label: 'Borrador', cls: 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground' },
-  issued:    { label: 'Emitida',  cls: 'bg-blue-500/10 border border-blue-500/20 text-blue-600' },
+  issued:    { label: 'Emitida',  cls: 'bg-blue-500/10 border border-blue-500/20 text-primary' },
   cancelled: { label: 'Anulada', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
 }
 
@@ -68,12 +68,12 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
         <input type="checkbox" checked={table.getIsAllPageRowsSelected()}
           ref={(el) => { if (el) el.indeterminate = table.getIsSomePageRowsSelected() }}
           onChange={table.getToggleAllPageRowsSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-blue-600 cursor-pointer" />
       ),
       cell: ({ row }) => (
         <input type="checkbox" checked={row.getIsSelected()}
           onChange={row.getToggleSelectedHandler()}
-          className="h-4 w-4 rounded border-zinc-300 accent-blue-600 cursor-pointer" />
+          className="h-4 w-4 rounded border-[var(--glass-border)] accent-blue-600 cursor-pointer" />
       ),
     },
     {
@@ -91,7 +91,7 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
           <span className={`text-xs font-medium rounded-full px-1.5 py-0.5 ${
             row.original.document_type === 'ticket'
               ? 'bg-amber-500/10 border border-amber-500/20 text-amber-700'
-              : 'bg-blue-500/10 border border-blue-500/20 text-blue-600'
+              : 'bg-blue-500/10 border border-blue-500/20 text-primary'
           }`}>
             {row.original.document_type === 'ticket' ? 'Ticket' : 'Factura'}
           </span>
@@ -111,7 +111,7 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
       accessorKey: 'issue_date',
       header: 'Fecha',
       cell: ({ row }) => (
-        <span className="text-zinc-500 text-sm">
+        <span className="text-muted-foreground text-sm">
           {new Date(row.original.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
         </span>
       ),
@@ -127,12 +127,12 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
     {
       accessorKey: 'total',
       header: 'Total',
-      cell: ({ row }) => <span className="font-medium text-zinc-900">{fmt(row.original.total)}</span>,
+      cell: ({ row }) => <span className="font-medium text-foreground">{fmt(row.original.total)}</span>,
     },
     {
       accessorKey: 'balance_due',
       header: 'Saldo',
-      cell: ({ row }) => <span className="text-zinc-600 text-sm">{fmt(row.original.balance_due)}</span>,
+      cell: ({ row }) => <span className="text-muted-foreground text-sm">{fmt(row.original.balance_due)}</span>,
     },
   ]
 
@@ -174,7 +174,7 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-40 text-center">
-                  <div className="flex flex-col items-center gap-3 text-zinc-400">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <ReceiptText className="h-10 w-10 opacity-30" />
                     <p className="text-sm font-medium">
                       {globalFilter || statusFilter !== 'all' ? 'Ninguna factura coincide' : 'No hay facturas — aprueba una cotización primero'}

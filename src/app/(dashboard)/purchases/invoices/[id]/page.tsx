@@ -23,7 +23,7 @@ const STATUS_CFG: Record<string, { label: string; cls: string }> = {
 const today = () => new Date().toISOString().split('T')[0]
 
 const inputCls =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
 export default function SupplierInvoiceDetailPage() {
   const router = useRouter()
@@ -88,7 +88,7 @@ export default function SupplierInvoiceDetailPage() {
     return (
       <div className="text-center py-20 text-zinc-500">
         Factura no encontrada.{' '}
-        <button onClick={() => router.push('/purchases')} className="text-blue-600 hover:underline">Volver</button>
+        <button onClick={() => router.push('/purchases')} className="text-primary hover:underline">Volver</button>
       </div>
     )
   }
@@ -113,7 +113,7 @@ export default function SupplierInvoiceDetailPage() {
         </div>
         {canPay && (
           <button onClick={() => setShowPayForm(!showPayForm)}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 transition-colors">
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors">
             <CreditCard className="h-3.5 w-3.5" />
             Registrar pago
           </button>
@@ -126,7 +126,7 @@ export default function SupplierInvoiceDetailPage() {
           <Link2 className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
           <span>Generada desde:</span>
           <Link href={`/purchases/orders/${invoice.order_id}`}
-            className="font-semibold font-mono text-blue-600 hover:underline">
+            className="font-semibold font-mono text-primary hover:underline">
             {invoice.order_number}
           </Link>
         </div>
@@ -183,7 +183,7 @@ export default function SupplierInvoiceDetailPage() {
               Cancelar
             </button>
             <button onClick={() => payMut.mutate()} disabled={payMut.isPending}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
               {payMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Guardar pago
             </button>

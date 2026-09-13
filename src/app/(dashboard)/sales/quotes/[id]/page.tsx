@@ -39,7 +39,7 @@ function recalc(item: SaleItemValues): SaleItemValues {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors'
+  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 const inputRoCls =
   'w-full rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 cursor-default'
 
@@ -226,7 +226,7 @@ export default function EditQuotePage() {
     return (
       <div className="flex flex-col items-center justify-center h-60 gap-3 text-zinc-400">
         <p className="text-sm">Cotización no encontrada.</p>
-        <button onClick={() => router.push('/sales')} className="text-xs text-blue-600 underline">Volver</button>
+        <button onClick={() => router.push('/sales')} className="text-xs text-primary underline">Volver</button>
       </div>
     )
   }
@@ -258,7 +258,7 @@ export default function EditQuotePage() {
               <button
                 onClick={() => approveMut.mutate('ticket')}
                 disabled={approveMut.isPending}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm">
                 {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
                 Ticket POS
               </button>
@@ -291,7 +291,7 @@ export default function EditQuotePage() {
           <span className="text-xs text-zinc-400">Relacionado:</span>
           <button
             onClick={() => router.push(`/sales/invoices/${relatedInvoice.id}`)}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-mono font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-mono font-medium text-primary bg-blue-50 hover:bg-blue-100 transition-colors">
             <FileText className="h-3 w-3" />
             {relatedInvoice.invoice_number}
             {relatedInvoice.document_type === 'ticket' && <span className="ml-1 text-[10px] font-sans text-blue-400">· Ticket</span>}
@@ -444,7 +444,7 @@ export default function EditQuotePage() {
                       onFocus={() => setShowDropdown(true)}
                       onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                       placeholder="Buscar producto por nombre o referencia para agregar..."
-                      className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15 transition-colors"
+                      className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors"
                     />
                   </div>
                   {showDropdown && searchResults.length > 0 && (
@@ -514,7 +514,7 @@ export default function EditQuotePage() {
         </button>
         {editable && (
           <button onClick={handleSave} disabled={mutation.isPending}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-sm">
+            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-sm">
             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Guardar cambios
           </button>

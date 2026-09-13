@@ -177,13 +177,13 @@ export function ExpenseForm({
             </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setShowNewCategory(false)}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50">
+                className="rounded-lg border border-[var(--glass-border)] px-3 py-1.5 text-xs text-muted-foreground hover:bg-[var(--glass-hover)]">
                 Cancelar
               </button>
               <button type="button"
                 onClick={catForm.handleSubmit(v => catMut.mutate(v))}
                 disabled={catMut.isPending}
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50">
                 {catMut.isPending ? 'Guardando...' : 'Crear categoría'}
               </button>
             </div>
@@ -231,13 +231,13 @@ export function ExpenseForm({
         <div>
           <label className={lbl}>Soporte / Recibo</label>
           {expense?.receipt_url ? (
-            <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
-              <Paperclip className="h-4 w-4 text-zinc-400 shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--glass-hover)] px-3 py-2">
+              <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
               <a href={expense.receipt_url} target="_blank" rel="noreferrer"
-                className="text-sm text-blue-600 hover:underline truncate">
+                className="text-sm text-primary hover:underline truncate">
                 Ver recibo actual
               </a>
-              <span className="text-xs text-zinc-400">(subir nuevo reemplazará el anterior)</span>
+              <span className="text-xs text-muted-foreground">(subir nuevo reemplazará el anterior)</span>
             </div>
           ) : null}
           <div className="mt-1 flex items-center gap-2">
@@ -248,7 +248,7 @@ export function ExpenseForm({
             </label>
             {receiptFile && (
               <button type="button" onClick={() => setReceiptFile(null)}
-                className="text-zinc-400 hover:text-red-500">
+                className="text-muted-foreground hover:text-red-500">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -259,7 +259,7 @@ export function ExpenseForm({
 
         {/* Notas */}
         <div>
-          <label className={lbl}>Notas <span className="text-zinc-400 font-normal">(opcional)</span></label>
+          <label className={lbl}>Notas <span className="text-muted-foreground font-normal">(opcional)</span></label>
           <textarea {...form.register('notes')} rows={2}
             className={`${inp} resize-none`} placeholder="Observaciones adicionales..." />
         </div>
@@ -270,10 +270,10 @@ export function ExpenseForm({
           {watchStatus === 'pagado' && !expense && (
             <label className="flex items-start gap-2.5 cursor-pointer">
               <input type="checkbox" {...form.register('create_journal_entry')}
-                className="mt-0.5 h-4 w-4 rounded border-zinc-300 accent-indigo-600" />
+                className="mt-0.5 h-4 w-4 rounded border-[var(--glass-border)] accent-indigo-600" />
               <div>
-                <p className="text-sm text-zinc-700 font-medium">Crear comprobante contable</p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-sm text-foreground font-medium">Crear comprobante contable</p>
+                <p className="text-xs text-muted-foreground">
                   Genera automáticamente un comprobante en Contabilidad (débito cuenta gasto / crédito bancos).
                 </p>
               </div>
@@ -284,10 +284,10 @@ export function ExpenseForm({
           {!expense && (
             <label className="flex items-start gap-2.5 cursor-pointer">
               <input type="checkbox" {...form.register('is_recurring')}
-                className="mt-0.5 h-4 w-4 rounded border-zinc-300 accent-indigo-600" />
+                className="mt-0.5 h-4 w-4 rounded border-[var(--glass-border)] accent-indigo-600" />
               <div>
-                <p className="text-sm text-zinc-700 font-medium">Configurar como recurrente</p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-sm text-foreground font-medium">Configurar como recurrente</p>
+                <p className="text-xs text-muted-foreground">
                   Crea una plantilla para generar este gasto automáticamente en los períodos futuros.
                 </p>
               </div>
@@ -310,10 +310,10 @@ export function ExpenseForm({
                   <label className={lbl}>Día del mes</label>
                   <input type="number" min="1" max="28"
                     {...form.register('day_of_month')} className={inp} placeholder="1" />
-                  <p className="mt-0.5 text-xs text-zinc-400">Del 1 al 28</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Del 1 al 28</p>
                 </div>
                 <div>
-                  <label className={lbl}>Fecha fin <span className="text-zinc-400 font-normal">(opcional)</span></label>
+                  <label className={lbl}>Fecha fin <span className="text-muted-foreground font-normal">(opcional)</span></label>
                   <input type="date" {...form.register('end_date')} className={inp} />
                 </div>
               </div>
@@ -331,11 +331,11 @@ export function ExpenseForm({
         {/* Acciones */}
         <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
           <button type="button" onClick={onCancel}
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
+            className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors">
             Cancelar
           </button>
           <button type="submit" disabled={mut.isPending}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
             {mut.isPending ? 'Guardando...' : expense ? 'Guardar cambios' : 'Registrar gasto'}
           </button>
         </div>

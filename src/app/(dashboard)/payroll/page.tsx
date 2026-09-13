@@ -68,7 +68,7 @@ const ABSENCE_COLOR: Record<string, string> = {
   vacaciones:            'bg-purple-100 text-purple-700',
 }
 
-const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15'
 
 function absenceLabel(type: string) {
   return ABSENCE_TYPES.find(t => t.value === type)?.label ?? type
@@ -216,7 +216,7 @@ export default function PayrollPage() {
       cell: ({ row }) => (
         <div>
           <button onClick={() => setEditingEmployee(row.original)}
-            className="font-medium text-blue-600 hover:underline text-left">
+            className="font-medium text-primary hover:underline text-left">
             {row.original.name}
           </button>
           {row.original.position && (
@@ -279,10 +279,10 @@ export default function PayrollPage() {
           <button key={tab.id} type="button"
             onClick={() => { setActiveTab(tab.id); setSearch('') }}
             className={`relative px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
-              activeTab === tab.id ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground'
+              activeTab === tab.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}>
             {tab.label}
-            {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
+            {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
           </button>
         ))}
       </div>
@@ -294,7 +294,7 @@ export default function PayrollPage() {
             <div className="flex items-center gap-2">
               <input type="search" placeholder="Buscar empleado, cargo..."
                 value={search} onChange={e => setSearch(e.target.value)}
-                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none w-56" />
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none w-56" />
               {selectedIds.length > 0 && (
                 <button onClick={() => setShowDeleteConfirm(true)}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
@@ -316,7 +316,7 @@ export default function PayrollPage() {
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />Exportar
               </button>
               <button onClick={() => setIsNewEmployeeOpen(true)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
                 + Nuevo empleado
               </button>
             </div>
@@ -390,7 +390,7 @@ export default function PayrollPage() {
               </select>
             </div>
             <button onClick={handleOpenPeriod} disabled={loadingGenerate}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 shadow-sm">
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 shadow-sm">
               <RefreshCw className={`h-4 w-4 ${loadingGenerate ? 'animate-spin' : ''}`} />
               {activePeriodId ? 'Regenerar' : 'Abrir nómina'}
             </button>
@@ -450,7 +450,7 @@ export default function PayrollPage() {
                             <td className="px-3 py-3">
                               {!periodClosed && (
                                 <button onClick={() => setEditingItem(item)}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-blue-600 transition-colors">
+                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-primary transition-colors">
                                   <Pencil className="h-3.5 w-3.5" />
                                 </button>
                               )}
@@ -519,7 +519,7 @@ export default function PayrollPage() {
                       </TableCell>
                       <TableCell className="py-3">
                         <button onClick={() => setHistPeriodId(period.id)}
-                          className="text-xs text-blue-600 hover:underline">
+                          className="text-xs text-primary hover:underline">
                           Ver detalle
                         </button>
                       </TableCell>
@@ -621,7 +621,7 @@ export default function PayrollPage() {
               </select>
             </div>
             <button onClick={() => setIsNewAbsenceOpen(true)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
               + Registrar ausencia
             </button>
           </div>
@@ -921,7 +921,7 @@ function AbsenciaDialog({
     onSuccess: onSaved,
   })
 
-  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
+  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -990,7 +990,7 @@ function AbsenciaDialog({
               Cancelar
             </button>
             <button type="submit" disabled={mutation.isPending}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
               {mutation.isPending ? 'Guardando...' : 'Registrar'}
             </button>
           </div>
@@ -1046,7 +1046,7 @@ function NovedadesDialog({
     onSuccess: onSaved,
   })
 
-  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
+  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -1138,7 +1138,7 @@ function NovedadesDialog({
               Cancelar
             </button>
             <button type="submit" disabled={mutation.isPending}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
               {mutation.isPending ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

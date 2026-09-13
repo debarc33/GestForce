@@ -15,7 +15,7 @@ import { approveQuote, updateQuoteStatus, type QuoteWithCustomer } from '../quer
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
   draft:    { label: 'Borrador',  cls: 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground' },
-  sent:     { label: 'Enviada',   cls: 'bg-blue-500/10 border border-blue-500/20 text-blue-600' },
+  sent:     { label: 'Enviada',   cls: 'bg-blue-500/10 border border-blue-500/20 text-primary' },
   approved: { label: 'Aprobada',  cls: 'bg-green-500/10 border border-green-500/20 text-green-600' },
   rejected: { label: 'Rechazada', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
   expired:  { label: 'Caducada',  cls: 'bg-amber-500/10 border border-amber-500/20 text-amber-600' },
@@ -25,7 +25,7 @@ const fmt = (n: number) =>
   '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 function Badge({ status }: { status: string }) {
-  const cfg = STATUS_CFG[status] ?? { label: status, cls: 'bg-zinc-100 text-zinc-600' }
+  const cfg = STATUS_CFG[status] ?? { label: status, cls: 'bg-[var(--glass-hover)] text-muted-foreground' }
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.cls}`}>
       {cfg.label}
@@ -150,7 +150,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
     {
       accessorKey: 'total',
       header: 'Total',
-      cell: ({ row }) => <span className="font-medium text-zinc-900">{fmt(row.original.total)}</span>,
+      cell: ({ row }) => <span className="font-medium text-foreground">{fmt(row.original.total)}</span>,
     },
     {
       id: 'actions',
@@ -252,7 +252,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
-                  className="border-zinc-100 hover:bg-zinc-50/60 data-[state=selected]:bg-blue-50/50 transition-colors">
+                  className="border-[var(--glass-border)] hover:bg-[var(--glass-hover)] data-[state=selected]:bg-primary/10 transition-colors">
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-4 px-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

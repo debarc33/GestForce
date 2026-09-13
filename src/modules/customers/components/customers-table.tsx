@@ -359,12 +359,12 @@ export function CustomersTable({
                     </div>
                     <div>
                       <p className="text-[13px] font-medium text-foreground">
-                        {globalFilter || paymentFilter !== 'all'
+                        {globalFilter || fiscalFilter !== 'all'
                           ? 'Ningún cliente coincide con la búsqueda'
                           : 'No hay clientes registrados'}
                       </p>
                       <p className="text-[12px] text-muted-foreground mt-0.5">
-                        {globalFilter || paymentFilter !== 'all'
+                        {globalFilter || fiscalFilter !== 'all'
                           ? 'Intenta con otros términos de búsqueda.'
                           : 'Usa el botón Nuevo para agregar tu primer cliente.'}
                       </p>

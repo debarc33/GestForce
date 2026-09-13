@@ -38,12 +38,12 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
 }
 
 const ACCOUNT_TYPE_COLOR: Record<string, string> = {
-  activo:     'bg-blue-100 text-blue-700',
-  pasivo:     'bg-red-100 text-red-700',
-  patrimonio: 'bg-purple-100 text-purple-700',
-  ingreso:    'bg-green-100 text-green-700',
-  gasto:      'bg-orange-100 text-orange-700',
-  costo:      'bg-amber-100 text-amber-700',
+  activo:     'bg-[var(--info-bg)] text-[var(--info)] border border-[var(--info-border)]',
+  pasivo:     'bg-[var(--danger-bg)] text-[var(--danger)] border border-[var(--danger-border)]',
+  patrimonio: 'bg-[var(--accent-bg)] text-[var(--accent)] border border-[var(--accent-border)]',
+  ingreso:    'bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success-border)]',
+  gasto:      'bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning-border)]',
+  costo:      'bg-[var(--warning-bg)] text-[var(--warning)] border border-[var(--warning-border)]',
 }
 
 const ENTRY_TYPE_LABEL: Record<string, string> = {
@@ -54,7 +54,7 @@ const ENTRY_TYPE_LABEL: Record<string, string> = {
   adjustment: 'Ajuste',
 }
 
-const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/15'
+const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -130,10 +130,10 @@ export default function AccountingPage() {
           <button key={tab.id} type="button"
             onClick={() => { setActiveTab(tab.id); setSearch('') }}
             className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.id ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground'
+              activeTab === tab.id ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             }`}>
             {tab.label}
-            {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t" />}
+            {activeTab === tab.id && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
           </button>
         ))}
       </div>
@@ -144,7 +144,7 @@ export default function AccountingPage() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <input type="search" placeholder="Buscar por código o nombre..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none w-64" />
+              className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none w-64" />
             <div className="flex gap-2">
               <button onClick={() => exportToExcel(filteredAccounts, [
                 { header: 'Código',  key: 'code',         width: 12 },
@@ -156,15 +156,15 @@ export default function AccountingPage() {
                 Exportar
               </button>
               <button onClick={() => setShowNewAccount(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
                 <Plus className="h-4 w-4" />Nueva cuenta
               </button>
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-100 px-3 py-2.5">
-            <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-700">
+          <div className="flex items-start gap-2 rounded-lg bg-[var(--info-bg)] border border-[var(--info-border)] px-3 py-2.5">
+            <Info className="h-4 w-4 text-[var(--info)] mt-0.5 shrink-0" />
+            <p className="text-xs text-foreground/80">
               Plan Único de Cuentas (PUC) pre-cargado con las cuentas NIIF PYMES más usadas. Las cuentas del sistema no pueden eliminarse. Puedes agregar sub-cuentas propias.
             </p>
           </div>
@@ -228,13 +228,13 @@ export default function AccountingPage() {
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground text-xs font-medium">Desde:</span>
               <input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)}
-                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-primary focus:outline-none" />
               <span className="text-muted-foreground">→</span>
               <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
-                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none" />
+                className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-primary focus:outline-none" />
             </div>
             <button onClick={() => setShowNewEntry(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
               <Plus className="h-4 w-4" />Asiento manual
             </button>
           </div>
@@ -271,7 +271,7 @@ export default function AccountingPage() {
                       <TableCell className="py-3 text-sm text-muted-foreground">—</TableCell>
                       <TableCell className="py-3">
                         <button onClick={() => setSelectedEntry(entry)}
-                          className="text-blue-600 hover:underline text-xs flex items-center gap-1">
+                          className="text-primary hover:underline text-xs flex items-center gap-1">
                           Ver <ChevronRight className="h-3 w-3" />
                         </button>
                       </TableCell>
@@ -287,9 +287,9 @@ export default function AccountingPage() {
       {/* ══ INFORMES ══════════════════════════════════════════════════════ */}
       {activeTab === 'informes' && (
         <div className="space-y-5">
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-2">
-            <Info className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-amber-800">
+          <div className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-bg)] px-4 py-3 flex items-start gap-2">
+            <Info className="h-4 w-4 text-[var(--warning)] mt-0.5 shrink-0" />
+            <p className="text-xs text-foreground/80">
               Los informes financieros completos (Balance General y Estado de Resultados con saldos reales) estarán disponibles una vez que los comprobantes automáticos estén activos.
               Por ahora puedes ver la estructura del plan de cuentas y los comprobantes manuales que registres.
             </p>
@@ -298,12 +298,12 @@ export default function AccountingPage() {
           {/* Vista del plan de cuentas agrupado por tipo */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { label: 'Activos', type: 'activo', accounts: balances.activo, cls: 'border-blue-200 bg-blue-50/30' },
-              { label: 'Pasivos', type: 'pasivo', accounts: balances.pasivo, cls: 'border-red-200 bg-red-50/30' },
-              { label: 'Patrimonio', type: 'patrimonio', accounts: balances.patrimonio, cls: 'border-purple-200 bg-purple-50/30' },
-              { label: 'Ingresos', type: 'ingreso', accounts: balances.ingreso, cls: 'border-green-200 bg-green-50/30' },
-              { label: 'Gastos', type: 'gasto', accounts: balances.gasto, cls: 'border-orange-200 bg-orange-50/30' },
-              { label: 'Costo de ventas', type: 'costo', accounts: balances.costo, cls: 'border-amber-200 bg-amber-50/30' },
+              { label: 'Activos', type: 'activo', accounts: balances.activo, cls: 'border-[var(--info-border)] bg-[var(--info-bg)]' },
+              { label: 'Pasivos', type: 'pasivo', accounts: balances.pasivo, cls: 'border-[var(--danger-border)] bg-[var(--danger-bg)]' },
+              { label: 'Patrimonio', type: 'patrimonio', accounts: balances.patrimonio, cls: 'border-[var(--accent-border)] bg-[var(--accent-bg)]' },
+              { label: 'Ingresos', type: 'ingreso', accounts: balances.ingreso, cls: 'border-[var(--success-border)] bg-[var(--success-bg)]' },
+              { label: 'Gastos', type: 'gasto', accounts: balances.gasto, cls: 'border-[var(--warning-border)] bg-[var(--warning-bg)]' },
+              { label: 'Costo de ventas', type: 'costo', accounts: balances.costo, cls: 'border-[var(--warning-border)] bg-[var(--warning-bg)]' },
             ].map(group => (
               <div key={group.type} className={`rounded-xl border p-4 ${group.cls}`}>
                 <h3 className="text-sm font-semibold text-foreground mb-3">
@@ -441,7 +441,7 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
     }
   }
 
-  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-blue-500 focus:outline-none'
+  const inp2 = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -487,11 +487,11 @@ function NewAccountDialog({ companyId, accounts, onClose, onSaved }: {
               className="h-4 w-4 accent-blue-600" />
             <span className="text-sm text-foreground">Cuenta auxiliar (acepta movimientos)</span>
           </label>
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={onClose} className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)]">Cancelar</button>
             <button onClick={handle} disabled={saving}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
               {saving ? 'Guardando...' : 'Crear cuenta'}
             </button>
           </div>
@@ -548,7 +548,7 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
     }
   }
 
-  const inp2 = 'rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none w-full'
+  const inp2 = 'rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-primary focus:outline-none w-full'
 
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose() }}>
@@ -625,22 +625,22 @@ function NewJournalEntryDialog({ companyId, accounts, onClose, onSaved }: {
           </div>
 
           <button onClick={() => setLines(prev => [...prev, { account_code: '', description: '', debit: '', credit: '' }])}
-            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800">
+            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80">
             <Plus className="h-3.5 w-3.5" />Agregar línea
           </button>
 
           {!balanced && totalDebit > 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="text-xs text-[var(--warning)] bg-[var(--warning-bg)] border border-[var(--warning-border)] rounded-lg px-3 py-2">
               El asiento no cuadra. Diferencia: $ {Math.abs(totalDebit - totalCredit).toLocaleString('es-CO')}
             </p>
           )}
 
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          {error && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{error}</p>}
 
           <div className="flex justify-end gap-2">
             <button onClick={onClose} className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)]">Cancelar</button>
             <button onClick={handle} disabled={saving || !balanced}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50">
               {saving ? 'Guardando...' : 'Registrar asiento'}
             </button>
           </div>
