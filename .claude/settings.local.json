@@ -34,7 +34,22 @@
       "Bash(taskkill /PID 2800 /F)",
       "Bash(taskkill /PID 9120 /F)",
       "Bash(curl -s http://localhost:3000/login)",
-      "Bash(tee server.log)"
+      "Bash(tee server.log)",
+      "Bash(git commit -m 'docs: Add integration status and planning documents *)",
+      "Bash(git commit -m 'feat\\(modules/ventas/clientes\\): Apply glass design with fiscal regime filter *)",
+      "Bash(git commit -m 'refactor: Replace hardcoded Tailwind colors with CSS variables in 5 critical files *)",
+      "Bash(git commit -m 'fix: Update Stripe API version in webhook handler *)",
+      "Bash(git commit -m 'fix: Update Stripe API version in payment webhook handler *)",
+      "PowerShell(Remove-Item -Path \"C:\\\\Users\\\\usuario\\\\GestForce1\\\\docs\\\\Arquitectura\\\\ADR-001.txt\" -Confirm:$false)",
+      "Bash(cd \"C:\\\\Proyectos\\\\Parqueomaster-Monety\" && find src -type f | head -100)",
+      "Bash(cd \"C:/Proyectos/Parqueomaster-Monety\" && grep -n \"CreditCard\" src/app/page.tsx | head -3)",
+      "Bash(echo \"EXIT:$?\")",
+      "Read(//tmp/**)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"dev_server:%{http_code}\\\\n\" http://localhost:9002 --max-time 3)",
+      "Bash(grep -oE 'function m\\\\\\([^\\)]*\\\\\\)\\\\{.{0,400}' /tmp/bold-lib.js)",
+      "Bash(grep -oE 'function w\\\\\\([^\\)]*\\\\\\)\\\\{.{0,500}' /tmp/bold-lib.js)",
+      "Bash(curl -s -o /dev/null -w \"dev_server:%{http_code}\\\\n\" http://localhost:9002 --max-time 15)"
     ]
   }
 }
