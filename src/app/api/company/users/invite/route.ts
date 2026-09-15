@@ -1,14 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireCompanyAdmin } from '@/lib/auth/require-company-admin'
+
+const VALID_ROLES = ['admin', 'contador', 'vendedor', 'readonly']
 
 /**
  * POST /api/company/users/invite
- * Invita un usuario a una empresa
+ * Invita un colaborador a la empresa.
  *
- * NOTA: Sistema actual:
- * - Solo valida que el admin existe y tiene permisos
- * - Retorna éxito si el email es válido
- * - En una versión futura: enviar emails de invitación, tabla de invitaciones pendientes, etc.
+ * - Si el email es nuevo: se crea la cuenta vía
+ *   supabase.auth.admin.inviteUserByEmail (Supabase envía el correo con
+ *   el link para definir contraseña) y se vincula a la empresa.
+ * - Si el email ya tiene cuenta en Supabase Auth: se vincula a la empresa
+ *   Y ADEMÁS se le envía un correo de restablecimiento de contraseña
+ *   (resetPasswordForEmail). Esto es necesario porque `inviteUserByEmail`
+ *   falla con "email_exists" para cualquier cuenta ya registrada — no hay
+ *   forma de "reinvitar" a alguien así — y un usuario puede quedar
+ *   registrado pero SIN contraseña utilizable si el link de invitación
+ *   anterior expiró o se usó sin completar el paso de crear contraseña
+ *   (bug real encontrado en testing: el usuario quedaba con la cuenta
+ *   confirmada pero sin poder entrar nunca). Enviar el correo de reset es
+ *   inofensivo para alguien que sí recuerda su contraseña — puede
+ *   simplemente ignorarlo.
+ *
+ * Ambos casos usan el mismo destino: /auth/callback, que ahora reconoce
+ * los links de invitación Y de recuperación (token_hash + type), y manda
+ * al usuario a /auth/set-password antes de dejarlo entrar.
+ *
+ * Antes esta ruta era un stub: validaba permisos y devolvía éxito sin
+ * crear ni vincular nada. Ahora sí crea la cuenta/vínculo real.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,59 +41,100 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validar email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
+    }
+
+    if (!VALID_ROLES.includes(role)) {
+      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
+    }
+
+    // Verifica sesión + que sea admin de ESTA empresa (nunca confiar en
+    // companyId del cliente sin esto).
+    const check = await requireCompanyAdmin(companyId)
+    if (!check.ok) {
+      return NextResponse.json({ error: check.error }, { status: check.status })
+    }
+
+    const admin = createAdminClient()
+
+    // Buscar si el email ya tiene cuenta en Supabase Auth.
+    // NOTA: el SDK no filtra listUsers() por email; con el volumen de
+    // usuarios esperado (SaaS pequeño/mediano) es aceptable — mismo
+    // patrón ya usado en /api/superadmin/companies/[id]/users.
+    const { data: authUsers, error: listError } = await admin.auth.admin.listUsers()
+    if (listError) {
       return NextResponse.json(
-        { error: 'Email inválido' },
-        { status: 400 }
+        { error: 'Error al consultar usuarios en Auth: ' + listError.message },
+        { status: 500 }
       )
     }
 
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    let userId = authUsers.users.find(u => u.email === email)?.id
+    let createdNewAccount = false
+    let sentPasswordReset = false
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    if (!userId) {
+      const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${appUrl}/auth/callback`,
+      })
+
+      if (inviteError || !invited?.user) {
+        return NextResponse.json(
+          { error: 'No se pudo enviar la invitación: ' + (inviteError?.message ?? 'error desconocido') },
+          { status: 500 }
+        )
+      }
+
+      userId = invited.user.id
+      createdNewAccount = true
+    } else {
+      // Cuenta ya existente: le mandamos un correo de restablecimiento de
+      // contraseña por si nunca llegó a fijar una (ver comentario arriba).
+      // Si falla, no bloqueamos el flujo — igual se agrega a la empresa.
+      const { error: resetError } = await admin.auth.resetPasswordForEmail(email, {
+        redirectTo: `${appUrl}/auth/callback`,
+      })
+      sentPasswordReset = !resetError
     }
 
-    // Verificar que el usuario es admin de la empresa
-    const { data: userCompany, error: checkError } = await supabase
+    // ¿Ya pertenece a esta empresa?
+    const { data: existing } = await admin
       .from('company_users')
-      .select('role')
+      .select('id')
       .eq('company_id', companyId)
-      .eq('user_id', user.id)
-      .single()
+      .eq('user_id', userId)
+      .maybeSingle()
 
-    if (checkError || !userCompany || userCompany.role !== 'admin') {
+    if (existing) {
       return NextResponse.json(
-        { error: 'Solo administradores pueden invitar usuarios' },
-        { status: 403 }
+        { error: 'Este usuario ya pertenece a esta empresa' },
+        { status: 409 }
       )
     }
 
-    // TODO: Implementar en futuro
-    // - Validar límite de usuarios según suscripción de la empresa
-    //   * Obtener subscription de la empresa
-    //   * Contar usuarios actuales
-    //   * Comparar contra plan.max_users
-    //   * Si alcanza límite → error 402 (payment required)
-    // - Crear tabla user_invitations con code de invitación única
-    // - Enviar email con link de invitación
-    // - Validar que el email no existe en Auth
-    // Por ahora, simplemente confirmamos que la invitación se envió (simulado)
+    const { error: insertError } = await admin
+      .from('company_users')
+      .insert([{ user_id: userId, company_id: companyId, role }])
+
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
       email,
       role,
-      message: `Invitación enviada a ${email}. El colaborador podrá acceder con su cuenta cuando se registre.`,
+      message: createdNewAccount
+        ? `Se envió un correo de invitación a ${email} para que cree su contraseña y acceda.`
+        : sentPasswordReset
+          ? `${email} ya tenía cuenta en GestForce — se agregó a la empresa y se le envió un correo para (re)establecer su contraseña, por si no la recuerda o nunca la había definido.`
+          : `${email} ya tenía cuenta en GestForce — se agregó directamente a la empresa.`,
     })
   } catch (error) {
     console.error('Error en invite route:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }

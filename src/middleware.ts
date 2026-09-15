@@ -30,9 +30,12 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isLoginRoute = pathname.startsWith('/login')
   const isSuperadminRoute = pathname.startsWith('/superadmin')
+  // Destino del link de invitacion/confirmacion de Supabase Auth: debe
+  // quedar accesible sin sesion, es justamente lo que la crea.
+  const isAuthCallback = pathname.startsWith('/auth/callback')
 
   // 1. Usuario no autenticado → redirigir a /login (excepto si ya está en /login)
-  if (!user && !isLoginRoute) {
+  if (!user && !isLoginRoute && !isAuthCallback) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
