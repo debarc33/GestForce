@@ -10,19 +10,23 @@ export interface CompanyUser {
 }
 
 /**
- * Obtener usuarios de una empresa
+ * Obtener usuarios de una empresa (con email resuelto)
+ *
+ * Antes esto consultaba company_users directo desde el cliente, que no
+ * tiene forma de hacer join contra auth.users (el email vive ahí, no en
+ * company_users) — por eso la tabla de Equipo mostraba el UUID crudo.
+ * Ahora pasa por /api/company/users, que resuelve el email con el admin
+ * client en el servidor.
  */
 export async function getCompanyUsers(companyId: string): Promise<CompanyUser[]> {
-  const supabase = createClient()
+  const response = await fetch(`/api/company/users?companyId=${encodeURIComponent(companyId)}`)
 
-  const { data, error } = await supabase
-    .from('company_users')
-    .select('id, user_id, company_id, role, created_at')
-    .eq('company_id', companyId)
-    .order('created_at', { ascending: false })
+  if (!response.ok) {
+    const { error } = await response.json().catch(() => ({ error: null }))
+    throw new Error(error || 'Error al cargar los usuarios de la empresa')
+  }
 
-  if (error) throw new Error(error.message)
-  return data ?? []
+  return response.json()
 }
 
 /**

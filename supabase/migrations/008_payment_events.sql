@@ -16,7 +16,7 @@ ALTER TABLE payment_events ENABLE ROW LEVEL SECURITY;
 -- RLS Policy: Superadmin only
 CREATE POLICY "superadmin_payment_events" ON payment_events
   FOR ALL USING (
-    auth.jwt() ->> 'app_metadata'::text ->> 'is_superadmin'::text = 'true'
+    (auth.jwt() -> 'app_metadata' ->> 'is_superadmin') = 'true'
   );
 
 -- Índices

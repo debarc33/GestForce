@@ -46,6 +46,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
   const inviteUserMutation = useMutation({
     mutationFn: () => inviteUserToCompany(companyId, inviteEmail, inviteRole),
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['company_users', companyId] })
       setInviteEmail('')
       setInviteRole('vendedor')
       setInviteError(null)
@@ -176,7 +177,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--glass-border)]">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Email/ID Usuario</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Email</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Rol</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Registrado</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Acciones</th>
@@ -186,7 +187,13 @@ export function UsersTable({ companyId }: UsersTableProps) {
                 {users.map(user => (
                   <tr key={user.id} className="border-b border-[var(--glass-border)] hover:bg-[var(--glass-hover)] transition-colors">
                     <td className="px-4 py-3 text-sm text-foreground">
-                      <code className="bg-[var(--glass-hover)] px-2 py-1 rounded text-xs">{user.user_id}</code>
+                      {user.user_email ? (
+                        <span>{user.user_email}</span>
+                      ) : (
+                        <code className="bg-[var(--glass-hover)] px-2 py-1 rounded text-xs" title="No se pudo resolver el email de este usuario">
+                          {user.user_id}
+                        </code>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <select

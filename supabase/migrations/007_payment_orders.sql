@@ -32,7 +32,7 @@ ALTER TABLE payment_orders ENABLE ROW LEVEL SECURITY;
 -- RLS Policy: Superadmin only
 CREATE POLICY "superadmin_payment_orders" ON payment_orders
   FOR ALL USING (
-    auth.jwt() ->> 'app_metadata'::text ->> 'is_superadmin'::text = 'true'
+    (auth.jwt() -> 'app_metadata' ->> 'is_superadmin') = 'true'
   );
 
 -- Índices
