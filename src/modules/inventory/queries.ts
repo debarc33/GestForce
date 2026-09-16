@@ -49,7 +49,7 @@ export type InventoryMovement = {
     sku: string | null
     unit: string | null
     stock: number
-    min_stock: number | null
+    stock_minimum: number | null
   }
 }
 
@@ -68,7 +68,7 @@ export function useInventoryMovements(
         .from('inventory_movements')
         .select(`
           *,
-          product:products ( id, name, sku, unit, stock, min_stock )
+          product:products ( id, name, sku, unit, stock, stock_minimum )
         `)
         .eq('company_id', companyId!)
         .order('created_at', { ascending: false })

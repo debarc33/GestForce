@@ -28,12 +28,12 @@ type Tab = 'productos' | 'movimientos' | 'kardex' | 'ajustes'
 
 type ProductStock = {
   id: string; name: string; sku: string | null
-  unit: string | null; stock: number; min_stock: number | null
+  unit: string | null; stock: number; stock_minimum: number | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const fmt = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
+const fmt = (n: number | null | undefined) => n == null ? '—' : n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
 
 const fmtDateTime = (s: string) =>
   new Date(s).toLocaleString('es-CO', {
@@ -48,9 +48,8 @@ function useProductsStock(companyId?: string | null) {
       const supabase = createClient()
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, sku, unit, stock, min_stock')
+        .select('id, name, sku, unit, stock, stock_minimum')
         .eq('company_id', companyId!)
-        .eq('is_active', true)
         .order('name')
       if (error) throw new Error(error.message)
       return (data ?? []) as ProductStock[]
@@ -422,15 +421,15 @@ function KardexTab({ companyId }: { companyId: string }) {
                   <div className="flex items-center gap-3 mt-1">
                     {product.sku  && <span className="text-xs font-mono text-muted-foreground">SKU: {product.sku}</span>}
                     {product.unit && <span className="text-xs text-muted-foreground">Unidad: {product.unit}</span>}
-                    {product.min_stock != null && (
-                      <span className="text-xs text-muted-foreground">Stock mín.: {fmt(product.min_stock)}</span>
+                    {product.stock_minimum != null && (
+                      <span className="text-xs text-muted-foreground">Stock mín.: {fmt(product.stock_minimum)}</span>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground mb-0.5">Stock actual</p>
                   <p className={`text-2xl font-bold tabular-nums ${
-                    product.min_stock != null && product.stock <= product.min_stock
+                    product.stock_minimum != null && product.stock <= product.stock_minimum
                       ? 'text-red-600' : 'text-foreground'
                   }`}>
                     {fmt(product.stock)}
@@ -527,6 +526,7 @@ function AjustesTab({ companyId }: { companyId: string }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory_movements', companyId] })
       queryClient.invalidateQueries({ queryKey: ['products_inventory', companyId] })
+      queryClient.invalidateQueries({ queryKey: ['products', companyId] })
       setNewQty(''); setNotes(''); setError(null); setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     },

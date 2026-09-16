@@ -96,7 +96,7 @@ export default function DashboardPage() {
         {[
           { label: 'Nueva cotización', href: '/sales?tab=quotes',    color: 'indigo' },
           { label: 'Registrar compra', href: '/purchases?tab=orders', color: 'violet' },
-          { label: 'Ver inventario',   href: '/inventory',            color: 'emerald' },
+          { label: 'Ver inventario',   href: '/inventario',           color: 'emerald' },
         ].map((action) => (
           <a
             key={action.href}
