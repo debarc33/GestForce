@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCompanyAdmin } from '@/lib/auth/require-company-admin'
+import { checkCanAddUserWithRole } from '@/lib/auth/company-admin-guard'
 
 const VALID_ROLES = ['admin', 'contador', 'vendedor', 'readonly']
 
@@ -58,6 +59,13 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
+
+    // Regla: no se puede agregar un usuario con rol distinto de 'admin'
+    // si la empresa todavía no tiene ningún administrador registrado.
+    const blockReason = await checkCanAddUserWithRole(admin, companyId, role)
+    if (blockReason) {
+      return NextResponse.json({ error: blockReason }, { status: 400 })
+    }
 
     // Buscar si el email ya tiene cuenta en Supabase Auth.
     // NOTA: el SDK no filtra listUsers() por email; con el volumen de

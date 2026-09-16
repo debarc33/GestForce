@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkCanAddUserWithRole } from '@/lib/auth/company-admin-guard'
 
 async function requireSuperadmin() {
   const supabase = await createClient()
@@ -49,6 +50,13 @@ export async function POST(
   }
 
   const admin = createAdminClient()
+
+  // Regla: no se puede agregar un usuario con rol distinto de 'admin'
+  // si la empresa todavía no tiene ningún administrador registrado.
+  const blockReason = await checkCanAddUserWithRole(admin, id, role)
+  if (blockReason) {
+    return NextResponse.json({ error: blockReason }, { status: 400 })
+  }
 
   // 1. Buscar user_id por email en auth.users
   const { data: authUsers, error: authError } = await admin.auth.admin.listUsers()
