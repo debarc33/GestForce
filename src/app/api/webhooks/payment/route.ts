@@ -230,14 +230,16 @@ async function handleStripeWebhook(event: any, admin: any) {
 async function handleBoldWebhook(event: any, admin: any) {
   const { mapBoldStatus } = await import('@/services/bold')
 
-  // Bold event structure: { id, event_type, transaction_id, reference, status, amount, ... }
-  const eventType = event.event_type || ''
-  const transactionId = event.transaction_id
-  const reference = event.reference // order_id
-  const boldStatus = event.status
+  // Estructura real de Bold (estilo CloudEvents):
+  // { id, type: 'SALE_APPROVED' | 'SALE_REJECTED' | 'VOID_APPROVED' | 'VOID_REJECTED',
+  //   data: { payment_id, bold_code, metadata: { reference }, amount: { currency, total }, ... } }
+  const eventType = event.type || ''
+  const transactionId = event.data?.payment_id || event.data?.bold_code
+  const reference = event.data?.metadata?.reference // nuestro payment_orders.id
+  const boldStatus = eventType
 
-  // Solo procesar eventos de pago completado o fallido
-  if (!eventType.includes('success') && !eventType.includes('failed')) {
+  // Solo procesar ventas aprobadas o rechazadas (ignorar VOID_* por ahora)
+  if (eventType !== 'SALE_APPROVED' && eventType !== 'SALE_REJECTED') {
     console.log('Ignoring Bold event:', eventType)
     return NextResponse.json({ received: true })
   }

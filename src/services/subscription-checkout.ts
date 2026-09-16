@@ -120,10 +120,12 @@ export async function createSubscriptionCheckout(opts: {
       .update({ provider_id: session.id })
       .eq('id', paymentOrder.id)
   } else if (provider.name === 'bold') {
-    const { createBoldTransaction } = await import('@/services/bold')
+    const boldModule = await import('@/services/bold')
 
-    const boldTransaction = await createBoldTransaction({
-      amount: SUBSCRIPTION_PRICES[subscriptionPeriod],
+    // Bold espera total_amount en PESOS enteros, no en "centavos" (la unidad
+    // interna de SUBSCRIPTION_PRICES) -- por eso se divide entre 100 aqui.
+    const boldTransaction = await boldModule.createBoldTransaction({
+      amount: SUBSCRIPTION_PRICES[subscriptionPeriod] / 100,
       currency: 'COP',
       description: `Suscripción GestForce - ${company.name}`,
       reference: paymentOrder.id,
@@ -132,7 +134,6 @@ export async function createSubscriptionCheckout(opts: {
         name: company.name,
       },
       redirect_url: successUrl,
-      webhook_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/webhooks/payment`,
       metadata: {
         company_id: companyId,
         order_id: paymentOrder.id,
@@ -141,7 +142,29 @@ export async function createSubscriptionCheckout(opts: {
     })
 
     if (!boldTransaction) {
-      return { ok: false, status: 500, error: 'Failed to create Bold transaction' }
+      // TEMPORAL: se incluye el detalle real de Bold en el mensaje de error
+      // para diagnostico. Se lee boldModule.lastBoldError DESPUES de llamar
+      // createBoldTransaction (no destructurado antes, que capturaba el
+      // valor viejo). Quitar este detalle del mensaje una vez que el pago
+      // funcione (no debe llegar a produccion con detalle interno).
+      const detail = boldModule.lastBoldError
+
+      // La orden ya se creo en BD (arriba) antes de intentar Bold -- si no
+      // se marca como failed aqui, se queda "pending" para siempre y
+      // aparece como un intento fantasma en el historial de pagos.
+      await admin
+        .from('payment_orders')
+        .update({
+          payment_status: 'failed',
+          provider_response: { error: detail || 'Failed to create Bold transaction' },
+        })
+        .eq('id', paymentOrder.id)
+
+      return {
+        ok: false,
+        status: 500,
+        error: `Failed to create Bold transaction${detail ? ` -- ${detail}` : ' (sin detalle adicional)'}`,
+      }
     }
 
     checkoutUrl = boldTransaction.payment_url || ''
