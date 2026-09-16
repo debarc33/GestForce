@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/services/email'
 import { getAllPaymentProviders } from '@/services/payment-provider'
+import { provisionModulesForPlan } from '@/services/subscription-provisioning'
 import Stripe from 'stripe'
 
 /**
@@ -168,6 +169,7 @@ async function handleStripeWebhook(event: any, admin: any) {
       company_id?: string
       order_id?: string
       subscription_period?: string
+      plan_id?: string
     }
 
     if (!metadata.company_id || !metadata.order_id) {
@@ -179,6 +181,7 @@ async function handleStripeWebhook(event: any, admin: any) {
       metadata.order_id,
       metadata.company_id,
       metadata.subscription_period,
+      metadata.plan_id,
       charge.amount / 100,
       event.id,
       charge
@@ -235,7 +238,7 @@ async function handleBoldWebhook(event: any, admin: any) {
   //   data: { payment_id, bold_code, metadata: { reference }, amount: { currency, total }, ... } }
   const eventType = event.type || ''
   const transactionId = event.data?.payment_id || event.data?.bold_code
-  const reference = event.data?.metadata?.reference // nuestro payment_orders.id
+  const reference = event.data?.metadata?.reference // payment_orders.id U one_time_purchases.id
   const boldStatus = eventType
 
   // Solo procesar ventas aprobadas o rechazadas (ignorar VOID_* por ahora)
@@ -249,52 +252,83 @@ async function handleBoldWebhook(event: any, admin: any) {
     return NextResponse.json({ error: 'Missing data' }, { status: 400 })
   }
 
-  // Obtener la orden de pago
-  const { data: paymentOrder } = await admin
-    .from('payment_orders')
-    .select('id, company_id, amount, subscription_period')
-    .eq('id', reference)
-    .single()
-
-  if (!paymentOrder) {
-    console.error('Payment order not found:', reference)
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-  }
-
   const paymentStatus = mapBoldStatus(boldStatus)
 
-  if (paymentStatus === 'completed') {
-    return processPaymentSuccess(
-      admin,
-      paymentOrder.id,
-      paymentOrder.company_id,
-      paymentOrder.subscription_period,
-      paymentOrder.amount,
-      event.id,
-      event
-    )
-  } else if (paymentStatus === 'failed') {
-    await admin
-      .from('payment_orders')
-      .update({
-        payment_status: 'failed',
-        provider_response: event as unknown as Record<string, unknown>,
-      })
-      .eq('id', paymentOrder.id)
+  // 1. ¿Es una orden de suscripción (plan + período)?
+  const { data: paymentOrder } = await admin
+    .from('payment_orders')
+    .select('id, company_id, amount, subscription_period, plan_id')
+    .eq('id', reference)
+    .maybeSingle()
 
-    await admin.from('payment_events').insert([
-      {
-        order_id: paymentOrder.id,
-        event_type: 'payment_failed',
-        provider_event_id: event.id,
-        provider_event_data: event as unknown as Record<string, unknown>,
-      },
-    ])
+  if (paymentOrder) {
+    if (paymentStatus === 'completed') {
+      return processPaymentSuccess(
+        admin,
+        paymentOrder.id,
+        paymentOrder.company_id,
+        paymentOrder.subscription_period,
+        paymentOrder.plan_id,
+        paymentOrder.amount,
+        event.id,
+        event
+      )
+    } else if (paymentStatus === 'failed') {
+      await admin
+        .from('payment_orders')
+        .update({
+          payment_status: 'failed',
+          provider_response: event as unknown as Record<string, unknown>,
+        })
+        .eq('id', paymentOrder.id)
+
+      await admin.from('payment_events').insert([
+        {
+          order_id: paymentOrder.id,
+          event_type: 'payment_failed',
+          provider_event_id: event.id,
+          provider_event_data: event as unknown as Record<string, unknown>,
+        },
+      ])
+
+      return NextResponse.json({ success: true })
+    }
+
+    return NextResponse.json({ received: true })
+  }
+
+  // 2. ¿Es una compra única (paquete de facturas DIAN)?
+  const { data: purchase } = await admin
+    .from('one_time_purchases')
+    .select('id, company_id')
+    .eq('id', reference)
+    .maybeSingle()
+
+  if (purchase) {
+    if (paymentStatus === 'completed') {
+      await admin
+        .from('one_time_purchases')
+        .update({
+          payment_status: 'completed',
+          completed_at: new Date().toISOString(),
+          provider_response: event as unknown as Record<string, unknown>,
+        })
+        .eq('id', purchase.id)
+    } else if (paymentStatus === 'failed') {
+      await admin
+        .from('one_time_purchases')
+        .update({
+          payment_status: 'failed',
+          provider_response: event as unknown as Record<string, unknown>,
+        })
+        .eq('id', purchase.id)
+    }
 
     return NextResponse.json({ success: true })
   }
 
-  return NextResponse.json({ received: true })
+  console.error('Payment order / purchase not found:', reference)
+  return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 }
 
 async function handleWompiWebhook(event: any, admin: any) {
@@ -313,6 +347,7 @@ async function processPaymentSuccess(
   orderId: string,
   companyId: string,
   subscriptionPeriod: string | undefined,
+  planId: string | undefined,
   amount: number,
   eventId: string,
   providerData: any
@@ -359,18 +394,30 @@ async function processPaymentSuccess(
     newExpiry.setFullYear(newExpiry.getFullYear() + 1)
   }
 
-  // Actualizar empresa
+  // Actualizar empresa (incluye el plan comprado, si se especificó uno)
+  const companyUpdate: Record<string, unknown> = {
+    subscription_status: 'active',
+    subscription_end: newExpiry.toISOString().split('T')[0],
+    subscription_start: newStart.toISOString().split('T')[0],
+    subscription_period: subscriptionPeriod,
+  }
+  if (planId) {
+    companyUpdate.plan_id = planId
+  }
+
   const { data: company } = await admin
     .from('companies')
-    .update({
-      subscription_status: 'active',
-      subscription_end: newExpiry.toISOString().split('T')[0],
-      subscription_start: newStart.toISOString().split('T')[0],
-      subscription_period: subscriptionPeriod,
-    })
+    .update(companyUpdate)
     .eq('id', companyId)
     .select()
     .single()
+
+  // Aprovisionar los módulos del plan comprado (si se especificó uno --
+  // los pagos hechos antes de esta funcionalidad, o desde el checkout
+  // rápido de superadmin sin plan explícito, no tocan company_modules).
+  if (planId) {
+    await provisionModulesForPlan(admin, companyId, planId)
+  }
 
   // Registrar evento
   await admin.from('payment_events').insert([

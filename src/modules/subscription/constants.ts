@@ -1,16 +1,15 @@
 // ─── Suscripciones: constantes compartidas (server + client) ────────────────
 // Usado por el checkout superadmin, el checkout de empresa y la UI de Settings.
+//
+// Los PRECIOS reales viven en ./plans.ts (SUBSCRIPTION_PLANS), no aquí --
+// cada plan tiene su propio precio por período. Este archivo solo define los
+// períodos válidos y sus etiquetas.
 
 export type SubscriptionPeriod = '3_months' | '6_months' | '1_year'
 
 export type SubscriptionStatus = 'pending' | 'active' | 'expired' | 'suspended'
 
-/** Precios en centavos COP (29900 = $299 COP) — misma semántica que el checkout original */
-export const SUBSCRIPTION_PRICES: Record<SubscriptionPeriod, number> = {
-  '3_months': 29900,    // $299 COP (3 months)
-  '6_months': 49900,    // $499 COP (6 months) - 15% descuento
-  '1_year':   79900,    // $799 COP (1 year) - 20% descuento
-}
+export const SUBSCRIPTION_PERIODS: SubscriptionPeriod[] = ['3_months', '6_months', '1_year']
 
 export const PERIOD_LABELS: Record<SubscriptionPeriod, string> = {
   '3_months': '3 meses',
@@ -26,10 +25,5 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
 }
 
 export function isSubscriptionPeriod(value: unknown): value is SubscriptionPeriod {
-  return typeof value === 'string' && value in SUBSCRIPTION_PRICES
-}
-
-/** Precio en pesos COP (no centavos), listo para formatCOP() */
-export function getPeriodPriceCOP(period: SubscriptionPeriod): number {
-  return SUBSCRIPTION_PRICES[period] / 100
+  return typeof value === 'string' && (SUBSCRIPTION_PERIODS as string[]).includes(value)
 }

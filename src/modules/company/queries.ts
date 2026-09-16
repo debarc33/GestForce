@@ -46,6 +46,7 @@ export type CompanyProfile = {
   smlv:              number   // Salario mínimo legal vigente (actualizar cada enero)
   transport_allowance: number // Auxilio de transporte vigente
   // ── Suscripción (solo lectura — la escribe el webhook de pagos) ───
+  plan_id:              string | null   // 'nucleo' | 'comercial' | 'contable' | 'integral' | null
   subscription_period: '3_months' | '6_months' | '1_year' | null
   subscription_start:  string | null   // YYYY-MM-DD
   subscription_end:    string | null   // YYYY-MM-DD (calculada por trigger en BD)
@@ -53,7 +54,7 @@ export type CompanyProfile = {
 }
 
 export type CompanyProfileUpdate = Partial<Omit<CompanyProfile,
-  'id' | 'subscription_period' | 'subscription_start' | 'subscription_end' | 'subscription_status'
+  'id' | 'plan_id' | 'subscription_period' | 'subscription_start' | 'subscription_end' | 'subscription_status'
 >>
 
 /** Indica si el régimen fiscal requiere funciones de facturación electrónica DIAN */

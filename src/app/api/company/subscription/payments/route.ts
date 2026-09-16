@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient()
     const { data, error } = await admin
       .from('payment_orders')
-      .select('id, amount, currency, subscription_period, billing_start_date, billing_end_date, payment_status, completed_at, created_at')
+      .select('id, amount, currency, subscription_period, plan_id, billing_start_date, billing_end_date, payment_status, completed_at, created_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
 

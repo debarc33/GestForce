@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, CreditCard, AlertTriangle, AlertCircle, Check, ShieldCheck, Loader2 } from 'lucide-react'
+import { CalendarDays, CreditCard, AlertTriangle, AlertCircle, Check, ShieldCheck, Loader2, FileText } from 'lucide-react'
 import { useCompany } from '@/modules/company/queries'
 import {
-  PERIOD_LABELS, SUBSCRIPTION_STATUS_LABELS, SUBSCRIPTION_PRICES,
-  getPeriodPriceCOP, type SubscriptionPeriod, type SubscriptionStatus,
+  PERIOD_LABELS, SUBSCRIPTION_STATUS_LABELS,
+  type SubscriptionPeriod, type SubscriptionStatus,
 } from '@/modules/subscription/constants'
-import { useCompanyPayments, startSubscriptionCheckout } from '@/modules/subscription/queries'
+import { SUBSCRIPTION_PLANS, DEFAULT_PLAN_ID, DIAN_INVOICE_PACK, getPlan, type PlanId } from '@/modules/subscription/plans'
+import { useCompanyPayments, startSubscriptionCheckout, startInvoicePackCheckout } from '@/modules/subscription/queries'
 import { formatCOP, formatDate } from '@/lib/format-cop'
 
-const PERIODS = Object.keys(SUBSCRIPTION_PRICES) as SubscriptionPeriod[]
+const PERIODS = Object.keys(PERIOD_LABELS) as SubscriptionPeriod[]
 
 const STATUS_BADGE: Record<SubscriptionStatus, string> = {
   active:    'bg-green-500/10 border-green-500/20 text-green-700',
@@ -33,8 +34,11 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
   const { data: payments = [], isLoading: loadingPayments, error: paymentsError } = useCompanyPayments(companyId)
 
   const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null)
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
+  const [buyingInvoicePack, setBuyingInvoicePack] = useState(false)
+  const [invoicePackError, setInvoicePackError] = useState<string | null>(null)
   const [returnBanner, setReturnBanner] = useState<'success' | 'cancelled' | null>(null)
 
   // Banner al volver de la pasarela (?payment=success|cancelled).
@@ -55,16 +59,30 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
     : null
 
   const activePeriod = selectedPeriod ?? period ?? '1_year'
+  const activePlanId = selectedPlanId ?? (company?.plan_id as PlanId | null) ?? DEFAULT_PLAN_ID
+  const activePlan = getPlan(activePlanId)
 
   async function handlePay() {
     setPaying(true)
     setPayError(null)
     try {
-      const url = await startSubscriptionCheckout(companyId, activePeriod)
+      const url = await startSubscriptionCheckout(companyId, activePeriod, activePlanId)
       window.location.href = url
     } catch (e) {
       setPayError(e instanceof Error ? e.message : 'Error al iniciar el pago')
       setPaying(false)
+    }
+  }
+
+  async function handleBuyInvoicePack() {
+    setBuyingInvoicePack(true)
+    setInvoicePackError(null)
+    try {
+      const url = await startInvoicePackCheckout(companyId)
+      window.location.href = url
+    } catch (e) {
+      setInvoicePackError(e instanceof Error ? e.message : 'Error al iniciar el pago')
+      setBuyingInvoicePack(false)
     }
   }
 
@@ -101,9 +119,9 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
                 </span>
               )}
             </div>
-            {period && (
-              <span className="text-sm font-medium text-foreground">{PERIOD_LABELS[period]}</span>
-            )}
+            <span className="text-sm font-medium text-foreground">
+              {getPlan(company?.plan_id).name}{period && ` · ${PERIOD_LABELS[period]}`}
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm border-t border-[var(--glass-border)]/50 pt-3">
@@ -146,30 +164,58 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
       {/* ── Renovar / cambiar plan ──────────────────────────────────── */}
       <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-4">
         <h3 className="text-sm font-semibold text-foreground">Renovar o cambiar plan</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {PERIODS.map(p => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setSelectedPeriod(p)}
-              className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors text-center ${
-                activePeriod === p
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
-              }`}
-            >
-              <span className="block">{PERIOD_LABELS[p]}</span>
-              <span className="block text-xs mt-0.5 font-mono">{formatCOP(getPeriodPriceCOP(p))}</span>
-            </button>
-          ))}
+
+        {/* Paquete de módulos */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Paquete de módulos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {SUBSCRIPTION_PLANS.map(plan => (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => setSelectedPlanId(plan.id)}
+                className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                  activePlanId === plan.id
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
+                }`}
+              >
+                <span className="block text-sm font-medium">{plan.name}</span>
+                <span className="block text-xs mt-0.5 opacity-80">{plan.description}</span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Período de facturación */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Período de facturación</p>
+          <div className="grid grid-cols-3 gap-3">
+            {PERIODS.map(p => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setSelectedPeriod(p)}
+                className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors text-center ${
+                  activePeriod === p
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
+                }`}
+              >
+                <span className="block">{PERIOD_LABELS[p]}</span>
+                <span className="block text-xs mt-0.5 font-mono">{formatCOP(activePlan.prices[p])}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           onClick={handlePay}
           disabled={paying}
           className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-          {paying ? 'Redirigiendo...' : 'Proceder al pago'}
+          {paying ? 'Redirigiendo...' : `Proceder al pago · ${formatCOP(activePlan.prices[activePeriod])}`}
         </button>
         {payError && (
           <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{payError}</p>
@@ -177,6 +223,30 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
         <p className="text-xs text-muted-foreground">
           Serás redirigido a la pasarela segura de pago. GestForce no almacena datos de tarjetas.
         </p>
+      </div>
+
+      {/* ── Compra de facturas electrónicas DIAN ─────────────────────── */}
+      <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">Facturas electrónicas (DIAN)</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Paquete de {DIAN_INVOICE_PACK.quantity} facturas electrónicas ante la DIAN. Compra única, no es parte de la suscripción.
+        </p>
+        <button
+          onClick={handleBuyInvoicePack}
+          disabled={buyingInvoicePack}
+          className="flex items-center justify-center gap-2 w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+        >
+          {buyingInvoicePack ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+          {buyingInvoicePack
+            ? 'Redirigiendo...'
+            : `Comprar ${DIAN_INVOICE_PACK.quantity} facturas · ${formatCOP(DIAN_INVOICE_PACK.price)}`}
+        </button>
+        {invoicePackError && (
+          <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{invoicePackError}</p>
+        )}
       </div>
 
       {/* ── Historial de pagos ──────────────────────────────────────── */}
@@ -205,7 +275,7 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{formatCOP(order.amount)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {PERIOD_LABELS[order.subscription_period] ?? order.subscription_period} · {formatDate(order.created_at)}
+                      {getPlan(order.plan_id).name} · {PERIOD_LABELS[order.subscription_period] ?? order.subscription_period} · {formatDate(order.created_at)}
                     </p>
                   </div>
                   <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${st.cls}`}>
