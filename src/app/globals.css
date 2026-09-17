@@ -4,16 +4,16 @@
 
 /* Expose glass tokens to Tailwind 4 utilities */
 @theme inline {
-  /* Tokens shadcn/ui estandar. Antes solo se registraban los tokens
-     "glass" aqui, así que utilidades como bg-popover, bg-card, bg-primary,
-     text-foreground, border-border, etc. (usadas en decenas de componentes,
-     incluyendo Dialog, Button, Input, Card) no generaban NINGUNA regla CSS:
-     Tailwind 4 solo genera utilidades bg-*/text-*/border-* para variables
-     registradas bajo el namespace --color-* dentro de un bloque @theme.
+  /* Tokens shadcn ui estandar. Antes solo se registraban los tokens
+     glass aqui, asi que utilidades como bg-popover, bg-card, bg-primary,
+     text-foreground y border-border (usadas en decenas de componentes,
+     incluyendo Dialog, Button, Input, Card) no generaban ninguna regla CSS:
+     Tailwind 4 solo genera esas utilidades para variables registradas
+     bajo el namespace color- dentro de un bloque theme.
      Sin este registro, esas clases quedaban sin efecto (fondo transparente,
      texto sin color forzado), que es la causa del bug reportado: el modal
-     de "Nuevo producto" (y cualquier Dialog/Card que dependa de estos
-     tokens) se veía transparente con el texto del fondo mezclado encima. */
+     de Nuevo producto (y cualquier Dialog o Card que dependa de estos
+     tokens) se veia transparente con el texto del fondo mezclado encima. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
