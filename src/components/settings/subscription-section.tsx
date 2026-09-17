@@ -232,7 +232,7 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
           <h3 className="text-sm font-semibold text-foreground">Facturas electrónicas (DIAN)</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Paquete de {DIAN_INVOICE_PACK.quantity} facturas electrónicas ante la DIAN. Compra única, no es parte de la suscripción.
+          Incluye la habilitación de tu empresa como facturador electrónico ante la DIAN, la configuración de facturación electrónica dentro de GestForce, y {DIAN_INVOICE_PACK.quantity} facturas electrónicas. Compra única, no es parte de la suscripción.
         </p>
         <button
           onClick={handleBuyInvoicePack}
