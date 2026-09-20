@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2, X, Settings, CheckCircle2, Circle } from 'lucide-react'
+import { Loader2, X, Settings, CheckCircle2, Circle, Eye, EyeOff } from 'lucide-react'
 
 type PaymentProvider = {
   id: string
@@ -20,6 +20,9 @@ export default function PaymentProvidersPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editData, setEditData] = useState<Partial<PaymentProvider>>({})
   const [showConfig, setShowConfig] = useState<string | null>(null)
+  const [revealField, setRevealField] = useState<Record<string, boolean>>({})
+  const toggleReveal = (key: string) =>
+    setRevealField((prev) => ({ ...prev, [key]: !prev[key] }))
 
   useEffect(() => {
     fetchProviders()
@@ -124,15 +127,25 @@ export default function PaymentProvidersPage() {
                   <label className="mb-2 block text-xs font-medium text-zinc-400">
                     Webhook Secret
                   </label>
-                  <input
-                    type="password"
-                    value={editData.webhook_secret || provider.webhook_secret || ''}
-                    onChange={(e) =>
-                      setEditData({ ...editData, webhook_secret: e.target.value })
-                    }
-                    placeholder="Tu secret para validar webhooks"
-                    className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={revealField['webhook_secret'] ? 'text' : 'password'}
+                      value={editData.webhook_secret || provider.webhook_secret || ''}
+                      onChange={(e) =>
+                        setEditData({ ...editData, webhook_secret: e.target.value })
+                      }
+                      placeholder="Tu secret para validar webhooks"
+                      className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 pr-9 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleReveal('webhook_secret')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                      title={revealField['webhook_secret'] ? 'Ocultar' : 'Mostrar'}
+                    >
+                      {revealField['webhook_secret'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Credenciales dinámicas por proveedor */}
@@ -156,40 +169,60 @@ export default function PaymentProvidersPage() {
                       {provider.name === 'bold' && (
                         <>
                           <div>
-                            <label className="text-[10px] text-zinc-500">API Key</label>
-                            <input
-                              type="password"
-                              placeholder="Tu API Key de Bold"
-                              defaultValue={provider.config?.api_key || ''}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  config: {
-                                    ...(editData.config || provider.config || {}),
-                                    api_key: e.target.value,
-                                  },
-                                })
-                              }
-                              className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
-                            />
+                            <label className="text-[10px] text-zinc-500">API Key (llave de identidad de Bold)</label>
+                            <div className="relative mt-1">
+                              <input
+                                type={revealField['bold_api_key'] ? 'text' : 'password'}
+                                placeholder="Tu API Key de Bold"
+                                defaultValue={provider.config?.api_key || ''}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    config: {
+                                      ...(editData.config || provider.config || {}),
+                                      api_key: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 pr-7 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleReveal('bold_api_key')}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                                title={revealField['bold_api_key'] ? 'Ocultar' : 'Mostrar'}
+                              >
+                                {revealField['bold_api_key'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
                           </div>
                           <div>
-                            <label className="text-[10px] text-zinc-500">Secret Key</label>
-                            <input
-                              type="password"
-                              placeholder="Tu Secret Key de Bold"
-                              defaultValue={provider.config?.secret_key || ''}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  config: {
-                                    ...(editData.config || provider.config || {}),
-                                    secret_key: e.target.value,
-                                  },
-                                })
-                              }
-                              className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
-                            />
+                            <label className="text-[10px] text-zinc-500">Secret Key (llave secreta de Bold — de referencia, no usada aun por la integracion)</label>
+                            <div className="relative mt-1">
+                              <input
+                                type={revealField['bold_secret_key'] ? 'text' : 'password'}
+                                placeholder="Tu Secret Key de Bold"
+                                defaultValue={provider.config?.secret_key || ''}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    config: {
+                                      ...(editData.config || provider.config || {}),
+                                      secret_key: e.target.value,
+                                    },
+                                  })
+                                }
+                                className="w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 pr-7 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleReveal('bold_secret_key')}
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                                title={revealField['bold_secret_key'] ? 'Ocultar' : 'Mostrar'}
+                              >
+                                {revealField['bold_secret_key'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
                           </div>
                         </>
                       )}
