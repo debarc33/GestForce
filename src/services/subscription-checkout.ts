@@ -199,6 +199,116 @@ export async function createSubscriptionCheckout(opts: {
 }
 
 /**
+ * Cargo de prueba muy pequeño ($3.000 COP) para validar de punta a punta la
+ * integracion con Bold (llave de identidad + webhook) con dinero real pero
+ * minimo. Se modela igual que createInvoicePackCheckout: una fila en
+ * one_time_purchases (kind: 'test_payment'), sin tocar el plan ni las
+ * fechas de suscripcion de la empresa -- es puramente una prueba de la
+ * pasarela, no una compra ni una renovacion real.
+ */
+export async function createTestPaymentCheckout(opts: {
+  companyId: string
+  successUrl: string
+  cancelUrl: string
+}): Promise<CheckoutResult> {
+  const { companyId, successUrl, cancelUrl } = opts
+
+  const TEST_PAYMENT_AMOUNT_COP = 3_000
+
+  const admin = createAdminClient()
+  const { data: company, error: companyError } = await admin
+    .from('companies')
+    .select('id, name, email')
+    .eq('id', companyId)
+    .single()
+
+  if (companyError || !company) {
+    return { ok: false, status: 404, error: 'Company not found' }
+  }
+
+  const provider = await getActivePaymentProvider()
+  if (!provider) {
+    return { ok: false, status: 500, error: 'No payment provider configured' }
+  }
+
+  const { data: purchase, error: purchaseError } = await admin
+    .from('one_time_purchases')
+    .insert([
+      {
+        company_id: companyId,
+        kind: 'test_payment',
+        quantity: 1,
+        amount: TEST_PAYMENT_AMOUNT_COP,
+        currency: 'COP',
+        payment_status: 'pending',
+        provider: provider.name,
+      },
+    ])
+    .select()
+    .single()
+
+  if (purchaseError || !purchase) {
+    return { ok: false, status: 500, error: 'Failed to create test purchase order' }
+  }
+
+  let checkoutUrl = ''
+
+  if (provider.name === 'bold') {
+    const boldModule = await import('@/services/bold')
+
+    const boldTransaction = await boldModule.createBoldTransaction({
+      amount: TEST_PAYMENT_AMOUNT_COP,
+      currency: 'COP',
+      description: `Pago de prueba (integracion Bold) - ${company.name}`,
+      reference: purchase.id,
+      customer: {
+        email: company.email || undefined,
+        name: company.name,
+      },
+      redirect_url: successUrl,
+      metadata: {
+        company_id: companyId,
+        purchase_id: purchase.id,
+        kind: 'test_payment',
+      },
+    })
+
+    if (!boldTransaction) {
+      const detail = boldModule.lastBoldError
+
+      await admin
+        .from('one_time_purchases')
+        .update({
+          payment_status: 'failed',
+          provider_response: { error: detail || 'Failed to create Bold transaction' },
+        })
+        .eq('id', purchase.id)
+
+      return {
+        ok: false,
+        status: 500,
+        error: `Failed to create Bold transaction${detail ? ` -- ${detail}` : ' (sin detalle adicional)'}`,
+      }
+    }
+
+    checkoutUrl = boldTransaction.payment_url || ''
+
+    await admin
+      .from('one_time_purchases')
+      .update({ provider_id: boldTransaction.id })
+      .eq('id', purchase.id)
+  } else {
+    return {
+      ok: false,
+      status: 501,
+      error: `Pago de prueba no soportado todavia con el proveedor "${provider.name}"`,
+    }
+  }
+
+  return { ok: true, sessionUrl: checkoutUrl, orderId: purchase.id }
+}
+
+/**
  * Orquesta la compra única (no recurrente) del paquete de facturas
  * electrónicas DIAN. A diferencia de createSubscriptionCheckout, no toca
  * `payment_orders` ni `company_modules` ni las fechas de suscripción --
