@@ -11,6 +11,14 @@ import Stripe from 'stripe'
  * - Bold: `/api/webhooks/payment` con X-Bold-Signature header
  * - Wompi: `/api/webhooks/payment` con X-Wompi-Signature header
  */
+// Algunos proveedores (Bold incluido) hacen una verificacion GET a la URL
+// del webhook antes de aceptarla al guardarla en su dashboard. Sin este
+// handler, Next.js devuelve 405 Method Not Allowed para GET, y el
+// proveedor rechaza la URL aunque el endpoint real (POST) funcione bien.
+export async function GET() {
+  return NextResponse.json({ ok: true, service: 'gestforce-payment-webhook' })
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.text()
