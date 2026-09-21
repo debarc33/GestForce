@@ -52,7 +52,6 @@ export default function SubscriptionPage() {
   const [payments, setPayments] = useState<PaymentOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
-  const [testCheckoutLoading, setTestCheckoutLoading] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<'3_months' | '6_months' | '1_year'>('1_year')
 
   // Edición manual de fechas (inicio + días de prueba/gracia)
@@ -169,29 +168,6 @@ export default function SubscriptionPage() {
     }
   }
 
-  // Cargo de prueba muy pequeno ($3.000 COP) para validar Bold de punta a
-  // punta sin afectar el plan ni la fecha de vencimiento de la empresa.
-  async function handleTestCheckout() {
-    try {
-      setTestCheckoutLoading(true)
-      const res = await fetch(
-        `/api/superadmin/companies/${companyId}/payment/test-checkout`,
-        { method: 'POST' }
-      )
-
-      const data = await res.json()
-      if (data.sessionUrl) {
-        window.location.href = data.sessionUrl
-      } else {
-        console.error('Failed to create test checkout session:', data.error)
-      }
-    } catch (error) {
-      console.error('Test checkout error:', error)
-    } finally {
-      setTestCheckoutLoading(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -217,23 +193,6 @@ export default function SubscriptionPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">{subscription.company_name}</h1>
         <p className="mt-1 text-sm text-zinc-400">Gestión de suscripción</p>
-      </div>
-
-      {/* Pago de prueba -- solo para validar la pasarela (Bold), no afecta el plan */}
-      <div className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-6">
-        <h2 className="text-lg font-semibold text-white mb-1">Pago de prueba (integración)</h2>
-        <p className="text-sm text-zinc-400 mb-4">
-          Cobro real muy pequeño ($3.000 COP) para confirmar que Bold y el webhook funcionan de punta a punta.
-          No cambia el plan ni la fecha de vencimiento de esta empresa.
-        </p>
-        <button
-          onClick={handleTestCheckout}
-          disabled={testCheckoutLoading}
-          className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-        >
-          {testCheckoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-          {testCheckoutLoading ? 'Procesando...' : 'Pagar $3.000 COP de prueba'}
-        </button>
       </div>
 
       {/* Estado actual */}
