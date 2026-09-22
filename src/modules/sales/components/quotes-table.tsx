@@ -166,17 +166,21 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
               <button
                 onClick={() => {
                   const q = row.original
+                  if (!q.customer?.email) {
+                    window.alert('Este cliente no tiene un correo registrado. Agrega su correo en Clientes antes de enviarle la cotización.')
+                    return
+                  }
                   const companyName = 'GestForce'
                   const fmtMoney = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
                   const fmtD = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
                   const subject = encodeURIComponent(`Cotización ${q.quote_number} — ${companyName}`)
                   const body = encodeURIComponent(
                     `Estimado/a ${q.customer?.name ?? 'cliente'},\n\n` +
-                    `Adjuntamos la cotización ${q.quote_number} por valor de ${fmtMoney(q.total)}.\n\n` +
+                    `Te comparto la cotización ${q.quote_number} por valor de ${fmtMoney(q.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\n` +
                     `Esta cotización es válida ${q.expiry_date ? `hasta el ${fmtD(q.expiry_date)}` : 'por 30 días'}.\n\n` +
                     `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
                   )
-                  window.open(`mailto:${q.customer?.email ?? ''}?subject=${subject}&body=${body}`)
+                  window.open(`mailto:${q.customer.email}?subject=${subject}&body=${body}`)
                   statusMut.mutate({ id, status: 'sent' })
                 }}
                 disabled={isPending}

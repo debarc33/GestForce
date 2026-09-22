@@ -265,8 +265,8 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     const body = encodeURIComponent(
       `Estimado/a ${doc.customer?.name ?? 'cliente'},\n\n` +
       (doc.type === 'quote'
-        ? `Adjuntamos la cotización ${doc.number} por valor de ${fmt(doc.total)}.\n\nEsta cotización es válida ${doc.expiry_date ? `hasta el ${fmtDate(doc.expiry_date)}` : 'por 30 días'}.\n\n`
-        : `Adjuntamos la factura ${doc.number} por valor de ${fmt(doc.total)}.\n\n`) +
+        ? `Te comparto la cotización ${doc.number} por valor de ${fmt(doc.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\nEsta cotización es válida ${doc.expiry_date ? `hasta el ${fmtDate(doc.expiry_date)}` : 'por 30 días'}.\n\n`
+        : `Te comparto la factura ${doc.number} por valor de ${fmt(doc.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\n`) +
       `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
     )
     window.open(`mailto:${doc.customer?.email ?? ''}?subject=${subject}&body=${body}`)
