@@ -252,16 +252,17 @@ body {
 
 /* ── Superficies de vidrio ─────────────────────────────────────────────────── */
 .glass-surface {
+  /* Se quito el backdrop-filter (efecto vidrio esmerilado) que tenia antes.
+     Tener blur en muchas superficies a la vez (sidebar, tarjetas, tabla)
+     hacia que equipos sin buena aceleracion de GPU se congelaran varios
+     segundos al abrir cualquier modal o panel. El fondo semitransparente
+     (var(--glass)) ya da suficiente contraste sin necesitar el blur. */
   background: var(--glass);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-float);
 }
 .glass-surface-strong {
   background: var(--glass-strong);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border-strong);
   box-shadow: var(--shadow-pop);
 }

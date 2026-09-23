@@ -4,7 +4,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-12 text-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 lg:grid lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-16">
-        <section className="space-y-6 rounded-[2rem] border border-white/10 bg-white/5 p-10 shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
+        <section className="space-y-6 rounded-[2rem] border border-white/10 bg-white/5 p-10 shadow-2xl shadow-slate-950/40">
           <div className="inline-flex items-center gap-3 rounded-full bg-sky-500/10 px-4 py-2 text-sm font-semibold tracking-[0.3em] text-sky-200">
             NUEVO ERP PREMIUM
           </div>

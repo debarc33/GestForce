@@ -102,7 +102,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent
-        className="p-0 max-w-[580px] gap-0 overflow-hidden rounded-2xl border-[var(--glass-border-strong)] bg-card/85 backdrop-blur-2xl backdrop-saturate-180 shadow-[var(--shadow-pop)]"
+        className="p-0 max-w-[580px] gap-0 overflow-hidden rounded-2xl border-[var(--glass-border-strong)] bg-card/85 shadow-[var(--shadow-pop)]"
         onKeyDown={handleKey}
       >
         {/* Search */}

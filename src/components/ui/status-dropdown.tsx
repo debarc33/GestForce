@@ -61,7 +61,7 @@ export function StatusDropdown({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+6px)] z-40 min-w-[180px] rounded-lg border border-[var(--glass-border-strong)] bg-[var(--glass-strong)] p-1.5 shadow-[var(--shadow-float)] backdrop-blur-2xl backdrop-saturate-180">
+        <div className="absolute right-0 top-[calc(100%+6px)] z-40 min-w-[180px] rounded-lg border border-[var(--glass-border-strong)] bg-[var(--glass-strong)] p-1.5 shadow-[var(--shadow-float)]">
           {options.map((o) => {
             const sel = o.id === value
             return (
