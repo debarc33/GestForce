@@ -24,11 +24,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               left = 232 (sidebar) + 14 + 14 = 260px   (92px si está colapsado)
             El selector :has detecta el sidebar colapsado (data-collapsed="true").
           */}
-          <main className="content-scroll fixed z-[1] left-[260px] right-5 top-[84px] bottom-3 overflow-y-auto overflow-x-hidden transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] [&:has(aside[data-collapsed='true'])]:left-[92px]">
+          <main className="content-scroll fixed z-[1] left-[260px] right-5 top-[84px] bottom-3 overflow-y-auto overflow-x-hidden transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] [&:has(aside[data-collapsed='true'])]:left-[92px] max-md:!left-3 max-md:!right-3">
             {/* px-8 pt-8: el contenedor que esperan las cabeceras-banner de las
                 páginas (usan -mx-8 -mt-8 para sangrar hasta los bordes). Sin
                 este padding, el scroll propio recortaba el título por arriba. */}
-            <div className="mx-auto max-w-[1600px] px-8 pt-8 pb-8 animate-[fadeIn_240ms_ease]">
+            <div className="mx-auto max-w-[1600px] px-8 pt-8 pb-8 max-md:px-4 max-md:pt-4 animate-[fadeIn_240ms_ease]">
               {children}
             </div>
           </main>

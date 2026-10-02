@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, Suspense } from 'react'
-import { Search, Bell, HelpCircle, ChevronDown, ChevronRight as ChevronRightIcon, LogOut, Building2, Shield, Sparkles } from 'lucide-react'
+import { Search, Bell, HelpCircle, ChevronDown, ChevronRight as ChevronRightIcon, LogOut, Building2, Shield, Sparkles, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -79,7 +79,7 @@ export function Header() {
   const router = useRouter()
   const supabase = createClient()
   const { activeCompany, clearUser } = useCompanyStore()
-  const { isCollapsed } = useSidebarStore()
+  const { isCollapsed, toggleMobileSidebar } = useSidebarStore()
 
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isSuperadmin, setIsSuperadmin] = useState(false)
@@ -131,12 +131,22 @@ export function Header() {
       <header
         className={cn(
           'fixed top-3 right-3 z-20 h-14 flex items-center gap-3 px-3.5 rounded-2xl glass-surface',
-          'transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]'
+          'transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'max-md:!left-3'
         )}
         style={{ left: isCollapsed ? 'calc(64px + 24px)' : 'calc(232px + 24px)' }}
       >
+        {/* Botón de menú (solo celular/tablet): abre el panel deslizante del sidebar */}
+        <button
+          onClick={toggleMobileSidebar}
+          className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors"
+          aria-label="Abrir menú"
+        >
+          <Menu className="h-4.5 w-4.5" />
+        </button>
+
         {/* Empresa activa */}
-        <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[var(--glass-strong)] border border-[var(--glass-border)] hover:bg-[var(--glass-hover)] transition-colors max-w-[240px] shrink-0">
+        <button className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[var(--glass-strong)] border border-[var(--glass-border)] hover:bg-[var(--glass-hover)] transition-colors max-w-[240px] shrink-0">
           <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-gradient-to-br from-primary to-fuchsia-500 text-[9.5px] font-bold text-white">
             {companyInitials}
           </div>
@@ -167,14 +177,14 @@ export function Header() {
 
         {/* Acciones */}
         <div className="flex items-center gap-1 shrink-0">
-          <button className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
+          <button className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
             <Sparkles className="h-4 w-4" />
           </button>
           <button className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
             <Bell className="h-4 w-4" />
             <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--ring)]" />
           </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
+          <button className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
             <HelpCircle className="h-4 w-4" />
           </button>
 
