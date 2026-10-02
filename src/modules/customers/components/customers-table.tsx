@@ -129,7 +129,17 @@ export function CustomersTable({
 
   // Paginación
   const totalPages = Math.ceil(filteredData.length / pageSize)
-  const paginatedData = filteredData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize)
+  // IMPORTANTE: memoizado. Antes esto creaba un array nuevo en cada render
+  // (aunque el contenido fuera igual), y @tanstack/react-table usa la
+  // identidad de `data` para saber si los datos "cambiaron". Con una
+  // referencia nueva en cada render, la tabla recalculaba todo (filas,
+  // columnas, selección) una y otra vez, lo que disparaba renders
+  // adicionales que volvían a crear un array nuevo: un bucle infinito que
+  // congelaba la pestaña "Clientes" (CPU al 95-100%).
+  const paginatedData = useMemo(
+    () => filteredData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize),
+    [filteredData, pageIndex, pageSize]
+  )
 
   // Sync selección → ids
   const filteredDataRef = useRef(filteredData)
@@ -144,7 +154,13 @@ export function CustomersTable({
   }, [rowSelection]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Columnas ─────────────────────────────────────────────── */
-  const columns: ColumnDef<Customer>[] = [
+  // IMPORTANTE: memoizado con useMemo. Antes este array se creaba de
+  // cero en cada render (nueva referencia siempre), y @tanstack/react-table
+  // usa la identidad de `columns` para decidir si debe recalcular todo.
+  // Una referencia nueva en cada render + la de `paginatedData` causaban
+  // un bucle de renders infinito que congelaba la pestaña "Clientes".
+  // Solo depende de `openMoreId` (lo único que cambia dentro de las celdas).
+  const columns: ColumnDef<Customer>[] = useMemo(() => [
     {
       id: 'select',
       header: ({ table }) => (
@@ -284,7 +300,7 @@ export function CustomersTable({
       },
       size: 100,
     },
-  ]
+  ], [openMoreId])
 
   const table = useReactTable({
     data: paginatedData,
