@@ -332,6 +332,7 @@ export function CustomersTable({
   return (
     <>
       <div className="rounded-2xl glass-surface overflow-hidden animate-[slideUp_250ms_ease]">
+        <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             {table.getHeaderGroups().map(hg => (
@@ -391,6 +392,7 @@ export function CustomersTable({
             )}
           </tbody>
         </table>
+        </div>
 
         {/* ── Paginación ────────────────────────────────────── */}
         {filteredData.length > 0 && (
