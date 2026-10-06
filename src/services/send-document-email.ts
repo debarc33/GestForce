@@ -59,7 +59,15 @@ export async function sendDocumentEmail(doc: PdfDocData) {
     </html>
   `
 
-  return resend.emails.send({
+  // El SDK de Resend NO lanza una excepción cuando el envío falla -- resuelve
+  // con { data, error }. Si no se revisa `error` aquí, la ruta que llama a
+  // esta función (POST /api/sales/documents/send) nunca se entera de un
+  // rechazo real de Resend (dominio no verificado, remitente inválido,
+  // adjunto mal formado, límite de la cuenta, etc.) y responde 200 con un
+  // mensaje de "enviado con éxito" aunque el correo nunca haya salido. Este
+  // bug causó justamente eso: la UI mostraba éxito pero el cliente nunca
+  // recibió nada.
+  const result = await resend.emails.send({
     from: process.env.SENDER_EMAIL || 'noreply@gestforce.com',
     to: doc.customer.email,
     subject,
@@ -71,4 +79,11 @@ export async function sendDocumentEmail(doc: PdfDocData) {
       },
     ],
   })
+
+  if (result.error) {
+    console.error('Resend rechazó el envío del documento:', result.error)
+    throw new Error(`Resend no pudo enviar el correo: ${result.error.message ?? JSON.stringify(result.error)}`)
+  }
+
+  return result
 }
