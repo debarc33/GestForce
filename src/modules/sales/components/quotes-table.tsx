@@ -175,10 +175,14 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
                   const companyName = 'GestForce'
                   const fmtMoney = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
                   const fmtD = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+                  // El recordatorio de adjuntar el PDF es solo para quien envía
+                  // (se muestra aquí, en GestForce) — no debe ir en el cuerpo del
+                  // correo, porque ese texto lo lee el cliente tal cual.
+                  window.alert('Recuerda descargar el PDF de la cotización y adjuntarlo manualmente en el borrador antes de darle enviar.')
                   const subject = encodeURIComponent(`Cotización ${q.quote_number} — ${companyName}`)
                   const body = encodeURIComponent(
                     `Estimado/a ${q.customer?.name ?? 'cliente'},\n\n` +
-                    `Te comparto la cotización ${q.quote_number} por valor de ${fmtMoney(q.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\n` +
+                    `Te comparto la cotización ${q.quote_number} por valor de ${fmtMoney(q.total)}.\n\n` +
                     `Esta cotización es válida ${q.expiry_date ? `hasta el ${fmtD(q.expiry_date)}` : 'por 30 días'}.\n\n` +
                     `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
                   )
