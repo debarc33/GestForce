@@ -79,7 +79,7 @@ export function Header() {
   const router = useRouter()
   const supabase = createClient()
   const { activeCompany, clearUser } = useCompanyStore()
-  const { isCollapsed, toggleMobileSidebar } = useSidebarStore()
+  const { isCollapsed, isMobileOpen, toggleMobileSidebar } = useSidebarStore()
 
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isSuperadmin, setIsSuperadmin] = useState(false)
@@ -132,7 +132,13 @@ export function Header() {
         className={cn(
           'fixed top-3 right-3 z-20 h-14 flex items-center gap-3 px-3.5 rounded-2xl glass-surface',
           'transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          'max-md:!left-3'
+          'max-md:!left-3',
+          // En celular/tablet, el panel deslizante del sidebar ocupa esta
+          // misma franja superior (ambos son superficies "glass"
+          // semitransparentes) — si el Header se queda visible detrás, su
+          // buscador e iconos se ven mezclados con el logo del panel. Se
+          // oculta mientras el panel está abierto para evitar esa superposición.
+          isMobileOpen && 'max-md:hidden'
         )}
         style={{ left: isCollapsed ? 'calc(64px + 24px)' : 'calc(232px + 24px)' }}
       >
