@@ -257,6 +257,10 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   }
 
   const handleEmail = () => {
+    // El recordatorio de adjuntar el PDF es solo para quien envía (se muestra
+    // aquí mismo, en GestForce) — NO debe ir dentro del cuerpo del correo,
+    // porque ese texto lo lee el cliente tal cual.
+    window.alert('Recuerda descargar el PDF (botón "Imprimir / PDF") y adjuntarlo manualmente en el borrador antes de darle enviar.')
     const subject = encodeURIComponent(
       doc.type === 'quote'
         ? `Cotización ${doc.number} — ${companyName}`
@@ -265,8 +269,8 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     const body = encodeURIComponent(
       `Estimado/a ${doc.customer?.name ?? 'cliente'},\n\n` +
       (doc.type === 'quote'
-        ? `Te comparto la cotización ${doc.number} por valor de ${fmt(doc.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\nEsta cotización es válida ${doc.expiry_date ? `hasta el ${fmtDate(doc.expiry_date)}` : 'por 30 días'}.\n\n`
-        : `Te comparto la factura ${doc.number} por valor de ${fmt(doc.total)}. Recuerda adjuntar el PDF antes de enviar este correo.\n\n`) +
+        ? `Te comparto la cotización ${doc.number} por valor de ${fmt(doc.total)}.\n\nEsta cotización es válida ${doc.expiry_date ? `hasta el ${fmtDate(doc.expiry_date)}` : 'por 30 días'}.\n\n`
+        : `Te comparto la factura ${doc.number} por valor de ${fmt(doc.total)}.\n\n`) +
       `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
     )
     window.open(`mailto:${doc.customer?.email ?? ''}?subject=${subject}&body=${body}`)
