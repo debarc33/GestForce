@@ -60,8 +60,9 @@ const RECEIPT_FILTERS = [
 
 const CUSTOMER_FILTERS = [
   { label: 'Todos los clientes', value: 'all' },
-  { label: 'Contado',            value: 'contado' },
-  { label: 'Crédito',            value: 'credito' },
+  { label: 'Resp. IVA',          value: 'iva' },
+  { label: 'No Resp. IVA',       value: 'no_iva' },
+  { label: 'Gran Contrib.',      value: 'gran_contribuyente' },
 ]
 
 const CXC_AGING_FILTERS = [
