@@ -245,7 +245,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} /> */}
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </>
   )
 }
