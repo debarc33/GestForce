@@ -34,6 +34,17 @@ export async function sendEmail({ to, template, data }: EmailParams) {
       html,
     })
 
+    // El SDK de Resend NO lanza una excepción cuando el envío falla --
+    // resuelve con { data, error }. Sin este chequeo, un rechazo real de
+    // Resend (llave inválida, dominio sin verificar, etc.) quedaba oculto:
+    // el código seguía de largo como si el correo hubiera salido bien.
+    // Mismo bug encontrado y corregido en sendDocumentEmail() (envío de
+    // cotizaciones/facturas) -- ver ese archivo para más contexto.
+    if (result.error) {
+      console.error(`Resend rechazó el envío del correo "${template}" a ${to}:`, result.error)
+      throw new Error(`Resend no pudo enviar el correo: ${result.error.message ?? JSON.stringify(result.error)}`)
+    }
+
     return result
   } catch (error) {
     console.error(`Error sending ${template} email to ${to}:`, error)
