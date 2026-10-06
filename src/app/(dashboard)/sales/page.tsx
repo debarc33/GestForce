@@ -297,6 +297,7 @@ function SalesPageInner() {
     quotes: {
       subtitle: 'Crea y gestiona cotizaciones para tus clientes.',
       onAdd: () => router.push('/sales/quotes/new'),
+      addLabel: undefined as string | undefined,
       onDelete: () => deleteMut.mutate(),
       filterOptions: QUOTE_FILTERS,
       searchPlaceholder: 'Buscar por # cotización o cliente...',
@@ -304,22 +305,17 @@ function SalesPageInner() {
     },
     invoices: {
       subtitle: 'Facturas y tickets generados desde cotizaciones o directamente.',
-      onAdd: undefined as (() => void) | undefined,
+      onAdd: () => router.push('/sales/tickets/new'),
+      addLabel: 'Nuevo ticket',
       onDelete: selectedIds.length > 0 ? handleInvoiceDelete : undefined,
       filterOptions: INVOICE_FILTERS,
       searchPlaceholder: 'Buscar por # factura, # cotización o cliente...',
-      extraButtons: (
-        <button
-          onClick={() => router.push('/sales/tickets/new')}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100 transition-colors">
-          <span className="text-base leading-none">🧾</span>
-          <span className="hidden sm:inline">Nuevo ticket</span>
-        </button>
-      ),
+      extraButtons: undefined as React.ReactNode,
     },
     receipts: {
       subtitle: 'Recibos generados al remitir facturas.',
       onAdd: undefined as (() => void) | undefined,
+      addLabel: undefined as string | undefined,
       onDelete: undefined as (() => void) | undefined,
       filterOptions: RECEIPT_FILTERS,
       searchPlaceholder: 'Buscar por # recibo, # factura o cliente...',
@@ -328,6 +324,7 @@ function SalesPageInner() {
     customers: {
       subtitle: 'Directorio de clientes de tu empresa.',
       onAdd: () => setIsCustomerDialogOpen(true),
+      addLabel: undefined as string | undefined,
       onDelete: selectedIds.length > 0 ? handleCustomerDelete : undefined,
       filterOptions: CUSTOMER_FILTERS,
       searchPlaceholder: 'Buscar por nombre, email, teléfono...',
@@ -336,6 +333,7 @@ function SalesPageInner() {
     cxc: {
       subtitle: 'Facturas de venta pendientes de cobro.',
       onAdd: undefined as (() => void) | undefined,
+      addLabel: undefined as string | undefined,
       onDelete: undefined as (() => void) | undefined,
       filterOptions: CXC_AGING_FILTERS,
       searchPlaceholder: 'Buscar por # factura o cliente...',
@@ -392,6 +390,7 @@ function SalesPageInner() {
       <ModuleToolbar
         selectedCount={selectedIds.length}
         onAdd={toolbarProps.onAdd}
+        addLabel={toolbarProps.addLabel}
         onDelete={toolbarProps.onDelete}
         onPrint={() => window.print()}
         onUpload={(file) => console.log('Archivo:', file.name)}

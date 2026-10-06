@@ -14,6 +14,7 @@ interface ModuleToolbarProps {
   subtitle?: string
   selectedCount?: number
   onAdd?: () => void
+  addLabel?: string
   onDelete?: () => void
   onPrint: () => void
   onUpload: (file: File) => void
@@ -32,6 +33,7 @@ export function ModuleToolbar({
   subtitle,
   selectedCount = 0,
   onAdd,
+  addLabel = 'Nuevo',
   onDelete,
   onPrint,
   onUpload,
@@ -80,7 +82,7 @@ export function ModuleToolbar({
             className={cn(btnBase, 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20')}
           >
             <Plus className="h-3.5 w-3.5" />
-            <span>Nuevo</span>
+            <span>{addLabel}</span>
           </button>
         )}
 
