@@ -115,6 +115,7 @@ export default function EditInvoicePage() {
 
   // DocData para el visor
   const docData: DocData | null = invoice ? {
+    id:                 invoice.id,
     type:               'invoice',
     document_type:      invoice.document_type ?? 'invoice',
     is_tax_responsible: company?.fiscal_regime === 'iva' || company?.fiscal_regime === 'gran_contribuyente',

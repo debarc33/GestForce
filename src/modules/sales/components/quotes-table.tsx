@@ -91,6 +91,23 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['quotes', companyId] }); setActionError(null) },
     onError: (e: Error) => setActionError(e.message),
   })
+  // Envía la cotización por correo desde el servidor (PDF generado y
+  // adjuntado automáticamente, sin depender de mailto: ni de que el
+  // usuario tenga un cliente de correo configurado en su navegador).
+  const sendMut = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch('/api/sales/documents/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentType: 'quote', documentId: id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo enviar el correo')
+      return data
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['quotes', companyId] }); setActionError(null) },
+    onError: (e: Error) => setActionError(e.message),
+  })
 
   const columns: ColumnDef<QuoteWithCustomer>[] = [
     {
@@ -157,13 +174,15 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
       header: '',
       cell: ({ row }) => {
         const { status, id } = row.original
-        const isPending = approveMut.isPending || statusMut.isPending
+        const isPending = approveMut.isPending || statusMut.isPending || sendMut.isPending
         if (status === 'approved' || status === 'rejected' || status === 'expired') return null
         return (
           <div className="flex items-center gap-1">
-            {/* Enviar / Reenviar — abre cliente de correo. Sigue visible aunque ya
-                esté "Enviada" para poder reenviarla si el cliente la perdió o no
-                le llegó (antes desaparecía al marcarse como enviada). */}
+            {/* Enviar / Reenviar — genera el PDF en el servidor y lo envía por
+                correo vía Resend, con el PDF ya adjunto (ver
+                src/app/api/sales/documents/send/route.ts). Sigue visible
+                aunque ya esté "Enviada" para poder reenviarla si el cliente
+                la perdió o no le llegó. */}
             {(status === 'draft' || status === 'sent') && (
               <button
                 onClick={() => {
@@ -172,25 +191,10 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
                     window.alert('Este cliente no tiene un correo registrado. Agrega su correo en Clientes antes de enviarle la cotización.')
                     return
                   }
-                  const companyName = 'GestForce'
-                  const fmtMoney = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
-                  const fmtD = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
-                  // El recordatorio de adjuntar el PDF es solo para quien envía
-                  // (se muestra aquí, en GestForce) — no debe ir en el cuerpo del
-                  // correo, porque ese texto lo lee el cliente tal cual.
-                  window.alert('Recuerda descargar el PDF de la cotización y adjuntarlo manualmente en el borrador antes de darle enviar.')
-                  const subject = encodeURIComponent(`Cotización ${q.quote_number} — ${companyName}`)
-                  const body = encodeURIComponent(
-                    `Estimado/a ${q.customer?.name ?? 'cliente'},\n\n` +
-                    `Te comparto la cotización ${q.quote_number} por valor de ${fmtMoney(q.total)}.\n\n` +
-                    `Esta cotización es válida ${q.expiry_date ? `hasta el ${fmtD(q.expiry_date)}` : 'por 30 días'}.\n\n` +
-                    `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
-                  )
-                  window.open(`mailto:${q.customer.email}?subject=${subject}&body=${body}`)
-                  if (status !== 'sent') statusMut.mutate({ id, status: 'sent' })
+                  sendMut.mutate(id)
                 }}
                 disabled={isPending}
-                title={status === 'sent' ? 'Reenviar al correo' : 'Enviar al correo y marcar como enviada'}
+                title={status === 'sent' ? 'Reenviar por correo' : 'Enviar por correo (con PDF adjunto)'}
                 className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-40">
                 <Send className="h-4 w-4" />
               </button>
