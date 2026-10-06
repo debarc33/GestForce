@@ -18,7 +18,7 @@ export function SuperadminNav() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <nav className="relative border-b border-zinc-800 bg-zinc-900 px-4 md:px-6">
+    <nav className="relative border-b border-[var(--glass-border)] glass-surface px-4 md:px-6">
       <div className="flex h-14 items-center justify-between">
         {/* Logo + badge */}
         <div className="flex items-center gap-4 min-w-0">
@@ -26,7 +26,7 @@ export function SuperadminNav() {
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-[11px] font-bold text-white shadow-sm">
               GF
             </div>
-            <span className="text-[13px] font-bold text-white truncate">GestForce</span>
+            <span className="text-[13px] font-bold text-foreground truncate">GestForce</span>
             <span className="hidden sm:flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-400 shrink-0">
               <Shield className="h-3 w-3" />
               Superadmin
@@ -47,8 +47,8 @@ export function SuperadminNav() {
                   className={cn(
                     'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-colors',
                     isActive
-                      ? 'bg-zinc-700 text-white'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
                   )}
                 >
                   <item.icon className="h-3.5 w-3.5" />
@@ -63,7 +63,7 @@ export function SuperadminNav() {
           {/* Volver al ERP */}
           <Link
             href="/"
-            className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            className="hidden sm:flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Volver al ERP
@@ -72,7 +72,7 @@ export function SuperadminNav() {
           {/* Botón de menú (solo celular/tablet) */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
             aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
           >
             {mobileOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
@@ -82,7 +82,7 @@ export function SuperadminNav() {
 
       {/* Menú deslizante (solo celular/tablet) */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-zinc-800 py-2 flex flex-col gap-0.5">
+        <div className="md:hidden border-t border-[var(--glass-border)] py-2 flex flex-col gap-0.5">
           {NAV_ITEMS.map((item) => {
             const isActive =
               item.href === '/superadmin'
@@ -96,8 +96,8 @@ export function SuperadminNav() {
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors',
                   isActive
-                    ? 'bg-zinc-700 text-white'
-                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -108,7 +108,7 @@ export function SuperadminNav() {
           <Link
             href="/"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver al ERP
