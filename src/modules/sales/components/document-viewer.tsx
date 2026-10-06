@@ -60,6 +60,8 @@ export interface DocItem {
 }
 
 export interface DocData {
+  /** Necesario para poder enviarlo por correo vía la API server-side */
+  id?: string
   type: 'quote' | 'invoice' | 'credit_note' | 'debit_note'
   document_type?: 'invoice' | 'ticket'
   is_tax_responsible?: boolean
@@ -95,6 +97,7 @@ interface Props {
 export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const printRef  = useRef<HTMLDivElement>(null)
   const [xmlBusy, setXmlBusy] = useState(false)
+  const [emailBusy, setEmailBusy] = useState(false)
 
   const companyName = doc.company?.name ?? 'GestForce'
   const isTicket    = doc.document_type === 'ticket'
@@ -265,24 +268,36 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     }
   }
 
-  const handleEmail = () => {
-    // El recordatorio de adjuntar el PDF es solo para quien envía (se muestra
-    // aquí mismo, en GestForce) — NO debe ir dentro del cuerpo del correo,
-    // porque ese texto lo lee el cliente tal cual.
-    window.alert('Recuerda descargar el PDF (botón "Imprimir / PDF") y adjuntarlo manualmente en el borrador antes de darle enviar.')
-    const subject = encodeURIComponent(
-      doc.type === 'quote'
-        ? `Cotización ${doc.number} — ${companyName}`
-        : `Factura ${doc.number} — ${companyName}`
-    )
-    const body = encodeURIComponent(
-      `Estimado/a ${doc.customer?.name ?? 'cliente'},\n\n` +
-      (doc.type === 'quote'
-        ? `Te comparto la cotización ${doc.number} por valor de ${fmt(doc.total)}.\n\nEsta cotización es válida ${doc.expiry_date ? `hasta el ${fmtDate(doc.expiry_date)}` : 'por 30 días'}.\n\n`
-        : `Te comparto la factura ${doc.number} por valor de ${fmt(doc.total)}.\n\n`) +
-      `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
-    )
-    window.open(`mailto:${doc.customer?.email ?? ''}?subject=${subject}&body=${body}`)
+  // Envía el documento por correo desde el servidor: genera el PDF
+  // (@react-pdf/renderer) y lo adjunta automáticamente vía Resend. Reemplaza
+  // el flujo anterior basado en mailto:, que no podía adjuntar archivos y
+  // dependía de que el usuario tuviera un cliente de correo configurado.
+  const handleEmail = async () => {
+    if (!doc.id) {
+      window.alert('No se puede enviar: falta el identificador del documento.')
+      return
+    }
+    if (!doc.customer?.email) {
+      window.alert('Este cliente no tiene un correo registrado. Agrega su correo antes de enviarle el documento.')
+      return
+    }
+    setEmailBusy(true)
+    try {
+      const documentType = doc.type === 'quote' ? 'quote' : 'invoice'
+      const res = await fetch('/api/sales/documents/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentType, documentId: doc.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo enviar el correo')
+      window.alert(`Correo enviado a ${doc.customer.email} con el PDF adjunto.`)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'No se pudo enviar el correo'
+      window.alert(message)
+    } finally {
+      setEmailBusy(false)
+    }
   }
 
   // ── Ticket POS (58mm) ───────────────────────────────────────────────────
@@ -594,10 +609,10 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
           <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{docTypeLabel}</span>
           <div className="flex items-center gap-1.5">
             {doc.customer?.email && (
-              <button onClick={handleEmail}
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-blue-50 transition-colors border border-blue-200">
+              <button onClick={handleEmail} disabled={emailBusy}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-blue-50 transition-colors border border-blue-200 disabled:opacity-40">
                 <Mail className="h-3.5 w-3.5" />
-                Enviar al correo
+                {emailBusy ? 'Enviando...' : 'Enviar al correo'}
               </button>
             )}
             {canExportXml && (

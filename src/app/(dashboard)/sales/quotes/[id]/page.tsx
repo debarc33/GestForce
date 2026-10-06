@@ -179,6 +179,7 @@ export default function EditQuotePage() {
 
   // DocData para el visor
   const docData: DocData | null = quote ? {
+    id:                 quote.id,
     type:               'quote',
     is_tax_responsible: company?.fiscal_regime === 'iva' || company?.fiscal_regime === 'gran_contribuyente',
     number:     quote.quote_number,
