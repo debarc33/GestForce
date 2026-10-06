@@ -65,11 +65,11 @@ const CXP_AGING_FILTERS = [
 ]
 
 function cxpAgingBand(dias: number) {
-  if (dias === 0)  return { cls: 'bg-green-100 text-green-700',   label: 'Al día' }
-  if (dias <= 30)  return { cls: 'bg-yellow-100 text-yellow-700', label: `${dias}d` }
-  if (dias <= 60)  return { cls: 'bg-orange-100 text-orange-700', label: `${dias}d` }
-  if (dias <= 90)  return { cls: 'bg-red-100 text-red-700',       label: `${dias}d` }
-  return               { cls: 'bg-red-200 text-red-800',          label: `${dias}d` }
+  if (dias === 0)  return { cls: 'bg-green-500/10 border border-green-500/20 text-green-600',   label: 'Al día' }
+  if (dias <= 30)  return { cls: 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-600', label: `${dias}d` }
+  if (dias <= 60)  return { cls: 'bg-orange-500/10 border border-orange-500/20 text-orange-600', label: `${dias}d` }
+  if (dias <= 90)  return { cls: 'bg-red-500/10 border border-red-500/20 text-red-600',       label: `${dias}d` }
+  return               { cls: 'bg-red-500/20 border border-red-500/30 text-red-600',          label: `${dias}d` }
 }
 
 function filterObligByAging(rows: ObligacionRow[], f: string): ObligacionRow[] {
@@ -368,39 +368,39 @@ function PurchasesPageInner() {
             />
           )}
           {activeTab === 'cxp' && (
-            <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-2xl glass-surface overflow-hidden">
               {obligFiltered.length === 0 ? (
-                <div className="py-16 text-center text-sm text-zinc-400">
+                <div className="py-16 text-center text-sm text-muted-foreground">
                   No hay facturas pendientes de pago.
                 </div>
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="bg-zinc-50/50 border-b border-zinc-200">
+                  <thead className="border-b border-[var(--glass-border)]">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Proveedor</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Factura #</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Emisión</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencimiento</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Total</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">Saldo</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Estado</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Vencido</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Proveedor</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Factura #</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Emisión</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vencimiento</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">Saldo</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vencido</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-zinc-100">
+                  <tbody className="divide-y divide-[var(--glass-border)]">
                     {obligFiltered.map(row => {
                       const band = cxpAgingBand(row.dias_vencido)
                       return (
-                        <tr key={row.id} className="hover:bg-zinc-50/60 transition-colors">
-                          <td className="px-4 py-3 font-medium text-zinc-800">{row.supplier}</td>
+                        <tr key={row.id} className="hover:bg-[var(--glass)] transition-colors">
+                          <td className="px-4 py-3 font-medium text-foreground">{row.supplier}</td>
                           <td className="px-4 py-3 font-mono text-sm text-primary">{row.invoice_number}</td>
-                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.issue_date)}</td>
-                          <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.due_date)}</td>
-                          <td className="px-4 py-3 text-right tabular-nums text-zinc-700">{fmtMoney(row.total)}</td>
-                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-zinc-900">{fmtMoney(row.balance_due)}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{fmtDate(row.issue_date)}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{fmtDate(row.due_date)}</td>
+                          <td className="px-4 py-3 text-right tabular-nums text-foreground">{fmtMoney(row.total)}</td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-foreground">{fmtMoney(row.balance_due)}</td>
                           <td className="px-4 py-3">
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                              row.status === 'partial' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-600'
+                              row.status === 'partial' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-600' : 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground'
                             }`}>
                               {row.status === 'partial' ? 'Parcial' : 'Pendiente'}
                             </span>

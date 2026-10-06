@@ -52,7 +52,7 @@ export default async function SuperadminDashboard() {
     {
       label: 'Módulos activados',
       value: stats.totalModuleRows,
-      sub: 'filas en company_modules',
+      sub: 'activados en total',
       icon: LayoutGrid,
       color: 'text-amber-400',
       bg: 'bg-amber-500/10',
