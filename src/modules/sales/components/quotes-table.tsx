@@ -161,8 +161,10 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
         if (status === 'approved' || status === 'rejected' || status === 'expired') return null
         return (
           <div className="flex items-center gap-1">
-            {/* Enviar — marca como enviada Y abre cliente de correo */}
-            {status === 'draft' && (
+            {/* Enviar / Reenviar — abre cliente de correo. Sigue visible aunque ya
+                esté "Enviada" para poder reenviarla si el cliente la perdió o no
+                le llegó (antes desaparecía al marcarse como enviada). */}
+            {(status === 'draft' || status === 'sent') && (
               <button
                 onClick={() => {
                   const q = row.original
@@ -181,10 +183,10 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
                     `Quedo atento/a a cualquier consulta.\n\nSaludos cordiales,\n${companyName}`
                   )
                   window.open(`mailto:${q.customer.email}?subject=${subject}&body=${body}`)
-                  statusMut.mutate({ id, status: 'sent' })
+                  if (status !== 'sent') statusMut.mutate({ id, status: 'sent' })
                 }}
                 disabled={isPending}
-                title="Enviar al correo y marcar como enviada"
+                title={status === 'sent' ? 'Reenviar al correo' : 'Enviar al correo y marcar como enviada'}
                 className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-40">
                 <Send className="h-4 w-4" />
               </button>
