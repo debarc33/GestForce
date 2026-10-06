@@ -143,56 +143,65 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     const content   = printRef.current?.innerHTML ?? ''
     const paperSize = doc.company?.print_paper_size ?? 'carta'
 
+    // El contenido capturado (DocContent/TicketContent) usa clases de Tailwind
+    // (bg-zinc-50, grid, rounded-lg, etc.) para todo su estilo visual. Antes,
+    // la ventana de impresion solo tenia un puñado de clases propias escritas
+    // a mano (.right, .bold, .title-bar...) que no coinciden con esas clases
+    // de Tailwind -- por eso el documento salia impreso sin ningun estilo,
+    // como una lista plana de datos. La solucion es copiar las hojas de
+    // estilo reales de la pagina (el CSS de Tailwind incluido) a la ventana
+    // de impresion, para que las mismas clases se vean igual que en pantalla.
+    const pageStyles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(el => el.tagName === 'LINK'
+        ? `<link rel="stylesheet" href="${(el as HTMLLinkElement).href}">`
+        : el.outerHTML)
+      .join('\n')
+
+    let printed = false
+    const printOnce = (win: Window) => {
+      if (printed || win.closed) return
+      printed = true
+      win.focus()
+      win.print()
+      win.close()
+    }
+
+    const openPrintWindow = (width: number, height: number, extraStyle: string) => {
+      const win = window.open('', '_blank', `width=${width},height=${height}`)
+      if (!win) return
+      win.document.write(`
+        <!DOCTYPE html><html><head>
+          <meta charset="utf-8"/>
+          <title>${doc.number}</title>
+          ${pageStyles}
+          <style>${extraStyle}</style>
+        </head><body>${content}</body></html>
+      `)
+      win.document.close()
+      // Espera a que las hojas de estilo externas (Tailwind) terminen de
+      // cargar antes de imprimir; si el navegador no dispara "onload" para
+      // esta ventana, el respaldo de abajo imprime de todas formas a los 1.2s.
+      win.onload = () => printOnce(win)
+      setTimeout(() => printOnce(win), 1200)
+    }
+
     if (isTicket || paperSize === 'tiquete_80mm') {
-      const win = window.open('', '_blank', 'width=380,height=600')
-      if (!win) return
-      win.document.write(`
-        <!DOCTYPE html><html><head>
-          <meta charset="utf-8"/>
-          <title>${doc.number}</title>
-          <style>
-            @page { size: 80mm auto; margin: 2mm; }
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: monospace, 'Courier New', Courier; font-size: 11px; color: #000; width: 76mm; }
-            .center { text-align: center; }
-            .right  { text-align: right; }
-            .bold   { font-weight: bold; }
-            .sep    { border-top: 1px dashed #000; margin: 4px 0; }
-            table   { width: 100%; border-collapse: collapse; font-size: 10px; }
-            td      { padding: 1px 2px; vertical-align: top; }
-            .td-r   { text-align: right; white-space: nowrap; }
-            img     { max-width: 100%; height: auto; }
-          </style>
-        </head><body>${content}</body></html>
+      openPrintWindow(380, 600, `
+        @page { size: 80mm auto; margin: 2mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: monospace, 'Courier New', Courier; font-size: 11px; color: #000; width: 76mm; }
+        .sep { border-top: 1px dashed #000; margin: 4px 0; }
+        img { max-width: 100%; height: auto; }
       `)
-      win.document.close(); win.focus(); win.print(); win.close()
     } else {
-      const pageSize  = paperSize === 'media_carta' ? '216mm 139.7mm' : '216mm 279mm'
-      const winH      = paperSize === 'media_carta' ? 560 : 700
-      const win = window.open('', '_blank', `width=900,height=${winH}`)
-      if (!win) return
-      win.document.write(`
-        <!DOCTYPE html><html><head>
-          <meta charset="utf-8"/>
-          <title>${doc.number}</title>
-          <style>
-            @page { size: ${pageSize}; margin: 12mm 16mm; }
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: -apple-system, sans-serif; font-size: 12px; color: #111; }
-            table { width: 100%; border-collapse: collapse; }
-            th { background: #f4f4f5; text-align: left; padding: 6px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
-            td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; }
-            .right { text-align: right; }
-            .bold { font-weight: 600; }
-            .muted { color: #888; font-size: 11px; }
-            .title-bar { background: #1d4ed8; color: white; padding: 10px 16px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
-            .title-bar-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.85; }
-            .title-bar-num { font-family: monospace; font-size: 18px; font-weight: 700; }
-            img { max-width: 100%; height: auto; }
-          </style>
-        </head><body>${content}</body></html>
+      const pageSize = paperSize === 'media_carta' ? '216mm 139.7mm' : '216mm 279mm'
+      const winH     = paperSize === 'media_carta' ? 560 : 700
+      openPrintWindow(900, winH, `
+        @page { size: ${pageSize}; margin: 12mm 16mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; font-size: 12px; color: #111; }
+        img { max-width: 100%; height: auto; }
       `)
-      win.document.close(); win.focus(); win.print(); win.close()
     }
   }
 
