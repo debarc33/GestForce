@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { CommandPalette } from '@/components/ui/command-palette'
 import { NotificationsPanel } from '@/components/layout/notifications-panel'
+import { ThemeToggle } from '@/components/layout/theme-toggle'
+import { HelpCenter } from '@/components/layout/help-center'
 
 const MODULE_NAMES: Record<string, string> = {
   '/':           'Dashboard',
@@ -184,7 +186,9 @@ export function Header() {
 
         {/* Acciones */}
         <div className="flex items-center gap-1 shrink-0">
+          <ThemeToggle />
           <NotificationsPanel />
+          <HelpCenter />
 
           <div className="w-px h-5 bg-[var(--glass-border)] mx-1" />
 
