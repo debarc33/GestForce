@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, Suspense } from 'react'
-import { Search, Bell, HelpCircle, ChevronDown, ChevronRight as ChevronRightIcon, LogOut, Building2, Shield, Sparkles, Menu } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight as ChevronRightIcon, LogOut, Building2, Shield, Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -9,6 +9,7 @@ import { useSidebarStore } from '@/store/useSidebarStore'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { CommandPalette } from '@/components/ui/command-palette'
+import { NotificationsPanel } from '@/components/layout/notifications-panel'
 
 const MODULE_NAMES: Record<string, string> = {
   '/':           'Dashboard',
@@ -183,16 +184,7 @@ export function Header() {
 
         {/* Acciones */}
         <div className="flex items-center gap-1 shrink-0">
-          <button className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
-            <Sparkles className="h-4 w-4" />
-          </button>
-          <button className="relative flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--ring)]" />
-          </button>
-          <button className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors">
-            <HelpCircle className="h-4 w-4" />
-          </button>
+          <NotificationsPanel />
 
           <div className="w-px h-5 bg-[var(--glass-border)] mx-1" />
 
