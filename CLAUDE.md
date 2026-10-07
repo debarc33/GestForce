@@ -132,6 +132,14 @@ Panel de inicio — siempre activo.
 | 007 | Payment orders para suscripciones |
 | 008 | Payment events para webhook tracking |
 | 009 | Payment providers (Bold, Wompi, Stripe) |
+| 010 | ui_preferences en companies (modo claro/oscuro persistido) |
+| 011 | Quitar el trigger automático de subscription_end |
+| 012 | Corrección de política RLS de lectura en company_users |
+| 013 | Corrección de recursión en políticas de company_users |
+| 014 | Corrección de esquema de purchase_orders |
+| 016 | Corrección de suppliers e inventory_movements (no existe 015, se saltó en la numeración) |
+| 017 | Planes de suscripción reales por paquete de módulos (plan_id) + compra de facturas DIAN (one_time_purchases) |
+| 018 | kind `test_payment` para el checkout de prueba de Bold (solo superadmin) |
 
 ---
 
@@ -143,7 +151,7 @@ Toda pantalla, módulo o componente nuevo DEBE seguir este sistema de diseño. N
 - **Superficies** → `GlassCard` (`@/components/ui/glass-card`). Nunca `<div>` con bordes/bg propios para contenedores.
 - **Tablas** → `GlassTable` + `StatusBadge` + `DocLink` (`@/components/ui/*`).
 - **KPIs** → `MetricCard` (`@/components/ui/metric-card`).
-- **Toolbars** → componente `Toolbar` con el orden: `[iconos imprimir/importar/exportar] [buscador flex-1] [filtros] [BOTÓN PRIMARIO]`.
+- **Toolbars** → componente `ModuleToolbar` (`src/components/ui/module-toolbar.tsx`) con el orden: `[iconos imprimir/importar/exportar] [buscador flex-1] [filtros] [BOTÓN PRIMARIO]`. Acepta `addLabel` para personalizar el texto del botón primario (ej. "Nuevo ticket") sin perder la posición/estilo estándar.
 - **Formato dinero** → `formatCOP()` (`@/lib/format-cop`). COP sin decimales.
 
 ### Reglas visuales
