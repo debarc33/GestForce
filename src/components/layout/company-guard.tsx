@@ -30,16 +30,16 @@ export function CompanyGuard({ children }: CompanyGuardProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { activeCompanyId } = useCompanyStore()
-  const [hasHydrated, setHasHydrated] = useState(() => useCompanyStore.persist.hasHydrated())
+  const [hasHydrated, setHasHydrated] = useState(() => useCompanyStore.persist?.hasHydrated() ?? false)
 
   // Espera a que el store termine de leer localStorage antes de confiar en
   // activeCompanyId.
   useEffect(() => {
-    if (useCompanyStore.persist.hasHydrated()) {
+    if (useCompanyStore.persist?.hasHydrated()) {
       setHasHydrated(true)
       return
     }
-    const unsub = useCompanyStore.persist.onFinishHydration(() => setHasHydrated(true))
+    const unsub = useCompanyStore.persist?.onFinishHydration(() => setHasHydrated(true))
     return unsub
   }, [])
 
