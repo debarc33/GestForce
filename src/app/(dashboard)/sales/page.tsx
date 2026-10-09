@@ -17,10 +17,13 @@ import {
   type QuoteWithCustomer, type InvoiceWithCustomer, type ReceiptWithDetails,
 } from '@/modules/sales/queries'
 import {
-  useCustomers, deleteCustomers, getCustomersWithDocuments,
+  useCustomers, deleteCustomers, getCustomersWithDocuments, createCustomer,
 } from '@/modules/customers/queries'
+import type { CustomerInsertValues } from '@/modules/customers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapCustomerRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import { useCartera, type CarteraRow } from '@/modules/finances/queries'
 
 // ─── Configuración de tabs ─────────────────────────────────────────────────
@@ -117,6 +120,9 @@ function SalesPageInner() {
   const [showCustomerDeleteConfirm, setShowCustomerDeleteConfirm] = useState(false)
   const [showCustomerDocError, setShowCustomerDocError]           = useState(false)
   const [customerBlockedCount, setCustomerBlockedCount]           = useState(0)
+  const [importOpen,     setImportOpen]     = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRows,     setImportRows]     = useState<ParsedImportRow<CustomerInsertValues>[]>([])
 
   useEffect(() => {
     if (tabParam && TABS.some(t => t.id === tabParam)) setActiveTab(tabParam)
@@ -193,6 +199,36 @@ function SalesPageInner() {
       setShowCustomerDocError(true)
     } else {
       setShowCustomerDeleteConfirm(true)
+    }
+  }
+
+  // ─── Importar (solo disponible para la pestaña Clientes) ──────────────────
+
+  async function handleImportFile(file: File) {
+    if (activeTab !== 'customers') {
+      window.alert('La importación desde Excel todavía no está disponible para cotizaciones, facturas, recibos ni CxC. Por ahora solo puedes importar el directorio de Clientes (pestaña "Clientes").')
+      return
+    }
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    if (!activeCompanyId) { window.alert('No hay una empresa activa seleccionada.'); return }
+    try {
+      const rawRows = await readExcelRows(file)
+      if (rawRows.length === 0) {
+        window.alert('El archivo no tiene filas de datos (o la hoja de datos no es la primera hoja del archivo).')
+        return
+      }
+      const parsed: ParsedImportRow<CustomerInsertValues>[] = rawRows.map((row, i) => {
+        const result = mapCustomerRow(row, activeCompanyId)
+        return result.ok
+          ? { row: i + 2, ok: true, data: result.data }
+          : { row: i + 2, ok: false, message: result.message }
+      })
+      setImportFileName(file.name)
+      setImportRows(parsed)
+      setImportOpen(true)
+    } catch (e) {
+      window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
   }
 
@@ -393,7 +429,7 @@ function SalesPageInner() {
         addLabel={toolbarProps.addLabel}
         onDelete={toolbarProps.onDelete}
         onPrint={() => window.print()}
-        onUpload={(file) => console.log('Archivo:', file.name)}
+        onUpload={handleImportFile}
         onExport={handleExport}
         searchValue={search}
         onSearchChange={setSearch}
@@ -535,6 +571,18 @@ function SalesPageInner() {
       </Dialog>
 
       {/* ── Dialogs: Clientes ─────────────────────────────────────────── */}
+
+      {/* Importar clientes desde Excel */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="cliente"
+        entityLabelPlural="clientes"
+        createFn={(data) => createCustomer(data)}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['customers', activeCompanyId] })}
+      />
 
       {/* Nuevo cliente */}
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
