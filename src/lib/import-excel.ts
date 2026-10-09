@@ -24,7 +24,11 @@ export async function readExcelRows(file: File): Promise<Record<string, string>[
   const sheetName = workbook.SheetNames[0]
   if (!sheetName) return []
   const sheet = workbook.Sheets[sheetName]
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '', raw: false })
+  // raw: true devuelve el valor numérico real de cada celda (sin pasar por el
+  // formato de visualización, que es lo que causaba inconsistencias como
+  // "36.000" vs "36.0" según cómo Excel haya formateado cada celda). Las
+  // celdas de texto no se ven afectadas por esta opción.
+  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '', raw: true })
   return rows.map(row => {
     const out: Record<string, string> = {}
     for (const [k, v] of Object.entries(row)) {
@@ -52,15 +56,34 @@ function parsePercentOrFraction(raw: string, fallback: number): number {
   return hadPercent || n > 1 ? n / 100 : n
 }
 
+/**
+ * Convierte un texto numérico a number, interpretando el formato
+ * colombiano: el PUNTO separa miles y la COMA separa decimales
+ * (36.000 = treinta y seis mil, no treinta y seis). Si el texto trae
+ * ambos separadores, se asume que el que aparece más a la derecha es
+ * el decimal (cubre también el formato 1,234.56 por si el archivo viene
+ * de una hoja en inglés).
+ */
 function parseMoneyOrNumber(raw: string): number {
   if (!raw) return 0
   const cleaned = raw.replace(/[^0-9.,-]/g, '')
   if (!cleaned) return 0
-  let normalized = cleaned
-  if (cleaned.includes(',') && cleaned.includes('.')) {
-    normalized = cleaned.replace(/\./g, '').replace(',', '.')
-  } else if (cleaned.includes(',')) {
+  let normalized: string
+  const lastComma = cleaned.lastIndexOf(',')
+  const lastDot = cleaned.lastIndexOf('.')
+  if (lastComma !== -1 && lastDot !== -1) {
+    // Trae los dos separadores: el último que aparece es el decimal.
+    normalized = lastComma > lastDot
+      ? cleaned.replace(/\./g, '').replace(',', '.') // 1.234,56
+      : cleaned.replace(/,/g, '')                     // 1,234.56
+  } else if (lastComma !== -1) {
+    // Solo coma: es el separador decimal.
     normalized = cleaned.replace(',', '.')
+  } else if (lastDot !== -1) {
+    // Solo punto(s): en Colombia es separador de miles, se eliminan.
+    normalized = cleaned.replace(/\./g, '')
+  } else {
+    normalized = cleaned
   }
   const n = parseFloat(normalized)
   return isNaN(n) ? 0 : n

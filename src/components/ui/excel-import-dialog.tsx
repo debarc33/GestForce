@@ -15,7 +15,13 @@ interface ExcelImportDialogProps<T> {
   rows: ParsedImportRow<T>[]
   entityLabel: string
   entityLabelPlural: string
-  /** Inserta un registro válido. Si lanza, la fila se reporta como error sin detener el resto. */
+  /**
+   * Inserta o actualiza un registro válido. Si lanza, la fila se reporta como
+   * error sin detener el resto. Puede devolver { _importAction: 'updated' }
+   * (junto con los demás datos que quiera) cuando la fila completó/actualizó
+   * un registro existente en vez de crear uno nuevo, para que el resumen
+   * final distinga "creados" de "actualizados".
+   */
   createFn: (data: T) => Promise<unknown>
   /** Se llama al cerrar el diálogo después de una importación (para invalidar queries, etc). */
   onDone: () => void
@@ -26,7 +32,7 @@ export function ExcelImportDialog<T>({
 }: ExcelImportDialogProps<T>) {
   const [phase, setPhase] = useState<'preview' | 'importing' | 'done'>('preview')
   const [progress, setProgress] = useState(0)
-  const [result, setResult] = useState<{ created: number; failed: { row: number; message: string }[] }>({ created: 0, failed: [] })
+  const [result, setResult] = useState<{ created: number; updated: number; failed: { row: number; message: string }[] }>({ created: 0, updated: 0, failed: [] })
   const [didImport, setDidImport] = useState(false)
 
   const validRows = rows.filter((r): r is { row: number; ok: true; data: T } => r.ok)
@@ -36,17 +42,22 @@ export function ExcelImportDialog<T>({
     setPhase('importing')
     setProgress(0)
     let created = 0
+    let updated = 0
     const failed: { row: number; message: string }[] = []
     for (const r of validRows) {
       try {
-        await createFn(r.data)
-        created++
+        const res = await createFn(r.data)
+        if (res && typeof res === 'object' && (res as { _importAction?: string })._importAction === 'updated') {
+          updated++
+        } else {
+          created++
+        }
       } catch (e) {
         failed.push({ row: r.row, message: e instanceof Error ? e.message : 'Error desconocido.' })
       }
       setProgress(p => p + 1)
     }
-    setResult({ created, failed: [...invalidRows.map(r => ({ row: r.row, message: r.message })), ...failed] })
+    setResult({ created, updated, failed: [...invalidRows.map(r => ({ row: r.row, message: r.message })), ...failed] })
     setDidImport(true)
     setPhase('done')
   }
@@ -54,7 +65,7 @@ export function ExcelImportDialog<T>({
   function reset() {
     setPhase('preview')
     setProgress(0)
-    setResult({ created: 0, failed: [] })
+    setResult({ created: 0, updated: 0, failed: [] })
   }
 
   function handleClose() {
@@ -136,8 +147,15 @@ export function ExcelImportDialog<T>({
             </DialogHeader>
             <div className="space-y-3 py-1">
               <p className="text-sm text-zinc-600">
-                Se cre{result.created === 1 ? 'ó' : 'aron'} <strong className="text-green-700">{result.created}</strong>{' '}
-                {result.created === 1 ? entityLabel : entityLabelPlural}.
+                {result.created > 0 && (
+                  <>Se cre{result.created === 1 ? 'ó' : 'aron'} <strong className="text-green-700">{result.created}</strong>{' '}
+                  {result.created === 1 ? entityLabel : entityLabelPlural} nuev{result.created === 1 ? 'o' : 'os'}.{' '}</>
+                )}
+                {result.updated > 0 && (
+                  <>Se actualiz{result.updated === 1 ? 'ó' : 'aron'} <strong className="text-blue-700">{result.updated}</strong>{' '}
+                  {result.updated === 1 ? entityLabel : entityLabelPlural} que ya exist{result.updated === 1 ? 'ía' : 'ían'}.</>
+                )}
+                {result.created === 0 && result.updated === 0 && 'No se creó ni actualizó ningún registro.'}
               </p>
               {result.failed.length > 0 && (
                 <>

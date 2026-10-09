@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -8,7 +8,7 @@ import { Ban } from 'lucide-react'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { SuppliersTable } from '@/modules/suppliers/components/suppliers-table'
 import { SupplierForm } from '@/modules/suppliers/components/supplier-form'
-import { createSupplier, deleteSuppliers, getSuppliersWithDocuments, useSuppliers } from '@/modules/suppliers/queries'
+import { createSupplier, updateSupplier, deleteSuppliers, getSuppliersWithDocuments, useSuppliers } from '@/modules/suppliers/queries'
 import type { SupplierInsertValues } from '@/modules/suppliers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
@@ -31,6 +31,8 @@ export default function SuppliersPage() {
   const [importRows,     setImportRows]     = useState<ParsedImportRow<SupplierInsertValues>[]>([])
 
   const { data: allSuppliers = [] } = useSuppliers(activeCompanyId ?? undefined)
+  /** número de documento (normalizado) -> id del proveedor existente, para completar en vez de duplicar. */
+  const existingSuppliersByDoc = useRef<Map<string, string>>(new Map())
 
   async function handleImportFile(file: File) {
     const fileError = validateImportFile(file)
@@ -48,12 +50,29 @@ export default function SuppliersPage() {
           ? { row: i + 2, ok: true, data: result.data }
           : { row: i + 2, ok: false, message: result.message }
       })
+      existingSuppliersByDoc.current = new Map(
+        allSuppliers
+          .map(s => [(s as { doc_number?: string | null }).doc_number?.trim().toLowerCase() ?? '', s.id] as const)
+          .filter(([key]) => key)
+      )
       setImportFileName(file.name)
       setImportRows(parsed)
       setImportOpen(true)
     } catch (e) {
       window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
+  }
+
+  async function importOneSupplier(data: SupplierInsertValues) {
+    const docKey = data.doc_number?.trim().toLowerCase() ?? ''
+    const existingId = docKey ? existingSuppliersByDoc.current.get(docKey) : undefined
+    if (existingId) {
+      const updated = await updateSupplier(existingId, data)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createSupplier(data)
+    if (docKey) existingSuppliersByDoc.current.set(docKey, created.id)
+    return created
   }
 
   const FISCAL_LABEL: Record<string, string> = {
@@ -144,7 +163,7 @@ export default function SuppliersPage() {
         rows={importRows}
         entityLabel="proveedor"
         entityLabelPlural="proveedores"
-        createFn={(data) => createSupplier(data)}
+        createFn={importOneSupplier}
         onDone={() => queryClient.invalidateQueries({ queryKey: ['suppliers', activeCompanyId] })}
       />
 

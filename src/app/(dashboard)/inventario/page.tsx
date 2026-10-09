@@ -12,10 +12,10 @@ import { Button } from '@/components/ui/button'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { ProductsTable } from '@/modules/products/components/products-table'
 import { ProductForm } from '@/modules/products/components/product-form'
-import { createCategory, createProduct, deleteProducts, useCategories, useProducts } from '@/modules/products/queries'
+import { createCategory, createProduct, updateProduct, deleteProducts, useCategories, useProducts } from '@/modules/products/queries'
 import { createClient } from '@/lib/supabase/client'
 import { useCompanyStore } from '@/store/useCompanyStore'
-import { exportToExcel, fmtMoney, fmtPercent, type ExcelColumn } from '@/lib/export-excel'
+import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import { readExcelRows, validateImportFile, mapProductRow, type ParsedProductRow } from '@/lib/import-excel'
 import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import {
@@ -83,6 +83,8 @@ function ProductosTab({ companyId }: { companyId: string }) {
   const [importFileName, setImportFileName] = useState('')
   const [importRows,     setImportRows]     = useState<ParsedImportRow<ParsedProductRow>[]>([])
   const categoryCache = useRef<Map<string, string>>(new Map())
+  /** nombre (normalizado) -> id del producto existente, para completar en vez de duplicar. */
+  const existingProductsByName = useRef<Map<string, string>>(new Map())
 
   const { data: allProducts = [] } = useProducts(companyId)
   const { data: categories = [] } = useCategories(companyId)
@@ -103,6 +105,7 @@ function ProductosTab({ companyId }: { companyId: string }) {
           : { row: i + 2, ok: false, message: result.message }
       })
       categoryCache.current = new Map(categories.map(c => [c.name.toLowerCase(), c.id]))
+      existingProductsByName.current = new Map(allProducts.map(p => [p.name.trim().toLowerCase(), p.id]))
       setImportFileName(file.name)
       setImportRows(parsed)
       setImportOpen(true)
@@ -123,8 +126,7 @@ function ProductosTab({ companyId }: { companyId: string }) {
       }
       category_id = id
     }
-    return createProduct({
-      company_id: companyId,
+    const payload = {
       category_id,
       name: data.name,
       sku: data.sku,
@@ -136,7 +138,16 @@ function ProductosTab({ companyId }: { companyId: string }) {
       tax_type: data.tax_type,
       tax_rate: data.tax_rate,
       is_taxable: data.is_taxable,
-    })
+    }
+    const nameKey = data.name.trim().toLowerCase()
+    const existingId = existingProductsByName.current.get(nameKey)
+    if (existingId) {
+      const updated = await updateProduct(existingId, payload)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createProduct({ company_id: companyId, ...payload })
+    existingProductsByName.current.set(nameKey, created.id)
+    return created
   }
 
   const TAX_TYPE_LABEL: Record<string, string> = {
@@ -149,13 +160,15 @@ function ProductosTab({ companyId }: { companyId: string }) {
     { header: 'Nombre',       key: 'name',        width: 30 },
     { header: 'SKU',          key: 'sku',          width: 14 },
     { header: 'Descripción',  key: 'description',  width: 36 },
-    { header: 'Precio',       key: (r) => fmtMoney(r.price), width: 14 },
+    { header: 'Precio',       key: 'price',         width: 14 },
     { header: 'Stock',        key: 'stock',         width: 10 },
     { header: 'Stock mínimo', key: 'stock_minimum', width: 12 },
     { header: 'Unidad',       key: 'unit',          width: 12 },
     { header: 'Categoría',    key: (r) => (r as ProductRow & { categories?: { name: string } | null }).categories?.name ?? '', width: 18 },
     { header: 'Tipo IVA',     key: (r) => TAX_TYPE_LABEL[r.tax_type] ?? r.tax_type, width: 18 },
-    { header: 'Tarifa IVA',   key: (r) => fmtPercent(r.tax_rate), width: 12 },
+    // Número plano (ej. 19), no texto formateado, para que la celda sea
+    // inequívoca al reimportar el archivo.
+    { header: 'Tarifa IVA',   key: (r) => Math.round((r.tax_rate ?? 0) * 100), width: 12 },
   ]
 
   const handleExport = () => {

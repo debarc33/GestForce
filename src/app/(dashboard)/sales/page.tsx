@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react'
+import React, { useEffect, useState, useMemo, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Ban } from 'lucide-react'
@@ -17,7 +17,7 @@ import {
   type QuoteWithCustomer, type InvoiceWithCustomer, type ReceiptWithDetails,
 } from '@/modules/sales/queries'
 import {
-  useCustomers, deleteCustomers, getCustomersWithDocuments, createCustomer,
+  useCustomers, deleteCustomers, getCustomersWithDocuments, createCustomer, updateCustomer,
 } from '@/modules/customers/queries'
 import type { CustomerInsertValues } from '@/modules/customers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -147,6 +147,8 @@ function SalesPageInner() {
   const { data: receipts  = [], isLoading: loadingR } = useReceipts(activeCompanyId ?? undefined)
   const { data: customers = [], isLoading: loadingC } = useCustomers(activeCompanyId ?? undefined)
   const { data: cartera   = [], isLoading: loadingCxC } = useCartera(activeCompanyId ?? undefined)
+  /** número de documento (normalizado) -> id del cliente existente, para completar en vez de duplicar. */
+  const existingCustomersByDoc = useRef<Map<string, string>>(new Map())
 
   const carteraFiltered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -224,12 +226,29 @@ function SalesPageInner() {
           ? { row: i + 2, ok: true, data: result.data }
           : { row: i + 2, ok: false, message: result.message }
       })
+      existingCustomersByDoc.current = new Map(
+        customers
+          .map(c => [(c as { doc_number?: string | null }).doc_number?.trim().toLowerCase() ?? '', c.id] as const)
+          .filter(([key]) => key)
+      )
       setImportFileName(file.name)
       setImportRows(parsed)
       setImportOpen(true)
     } catch (e) {
       window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
+  }
+
+  async function importOneCustomer(data: CustomerInsertValues) {
+    const docKey = data.doc_number?.trim().toLowerCase() ?? ''
+    const existingId = docKey ? existingCustomersByDoc.current.get(docKey) : undefined
+    if (existingId) {
+      const updated = await updateCustomer(existingId, data)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createCustomer(data)
+    if (docKey) existingCustomersByDoc.current.set(docKey, created.id)
+    return created
   }
 
   // ─── Exportar ─────────────────────────────────────────────────────────────

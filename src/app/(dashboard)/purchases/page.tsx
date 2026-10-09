@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react'
+import React, { useEffect, useState, useMemo, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Ban } from 'lucide-react'
@@ -16,7 +16,7 @@ import {
   type PurchaseOrderWithSupplier, type SupplierInvoiceWithDetails,
 } from '@/modules/purchases/queries'
 import {
-  useSuppliers, deleteSuppliers, getSuppliersWithDocuments, createSupplier,
+  useSuppliers, deleteSuppliers, getSuppliersWithDocuments, createSupplier, updateSupplier,
 } from '@/modules/suppliers/queries'
 import type { SupplierInsertValues } from '@/modules/suppliers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -112,6 +112,8 @@ function PurchasesPageInner() {
   const [importOpen,     setImportOpen]     = useState(false)
   const [importFileName, setImportFileName] = useState('')
   const [importRows,     setImportRows]     = useState<ParsedImportRow<SupplierInsertValues>[]>([])
+  /** número de documento (normalizado) -> id del proveedor existente, para completar en vez de duplicar. */
+  const existingSuppliersByDoc = useRef<Map<string, string>>(new Map())
 
   useEffect(() => {
     if (tabParam && TABS.some(t => t.id === tabParam)) setActiveTab(tabParam)
@@ -208,12 +210,29 @@ function PurchasesPageInner() {
           ? { row: i + 2, ok: true, data: result.data }
           : { row: i + 2, ok: false, message: result.message }
       })
+      existingSuppliersByDoc.current = new Map(
+        suppliers
+          .map(s => [(s as { doc_number?: string | null }).doc_number?.trim().toLowerCase() ?? '', s.id] as const)
+          .filter(([key]) => key)
+      )
       setImportFileName(file.name)
       setImportRows(parsed)
       setImportOpen(true)
     } catch (e) {
       window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
+  }
+
+  async function importOneSupplier(data: SupplierInsertValues) {
+    const docKey = data.doc_number?.trim().toLowerCase() ?? ''
+    const existingId = docKey ? existingSuppliersByDoc.current.get(docKey) : undefined
+    if (existingId) {
+      const updated = await updateSupplier(existingId, data)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createSupplier(data)
+    if (docKey) existingSuppliersByDoc.current.set(docKey, created.id)
+    return created
   }
 
   // ─── Exportar ─────────────────────────────────────────────────────────────
@@ -518,7 +537,7 @@ function PurchasesPageInner() {
         rows={importRows}
         entityLabel="proveedor"
         entityLabelPlural="proveedores"
-        createFn={(data) => createSupplier(data)}
+        createFn={importOneSupplier}
         onDone={() => queryClient.invalidateQueries({ queryKey: ['suppliers', activeCompanyId] })}
       />
 

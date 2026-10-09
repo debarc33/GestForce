@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
@@ -8,7 +8,7 @@ import { Ban, Users, UserCheck, CreditCard, DollarSign } from 'lucide-react'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { CustomersTable } from '@/modules/customers/components/customers-table'
 import { CustomerForm } from '@/modules/customers/components/customer-form'
-import { createCustomer, deleteCustomers, getCustomersWithDocuments, useCustomers } from '@/modules/customers/queries'
+import { createCustomer, updateCustomer, deleteCustomers, getCustomersWithDocuments, useCustomers } from '@/modules/customers/queries'
 import type { CustomerInsertValues } from '@/modules/customers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
@@ -48,6 +48,8 @@ export default function CustomersPage() {
   const [importRows,        setImportRows]        = useState<ParsedImportRow<CustomerInsertValues>[]>([])
 
   const { data: allCustomers = [] } = useCustomers(activeCompanyId ?? undefined)
+  /** número de documento (normalizado) -> id del cliente existente, para completar en vez de duplicar. */
+  const existingCustomersByDoc = useRef<Map<string, string>>(new Map())
 
   async function handleImportFile(file: File) {
     const fileError = validateImportFile(file)
@@ -65,12 +67,31 @@ export default function CustomersPage() {
           ? { row: i + 2, ok: true, data: result.data }
           : { row: i + 2, ok: false, message: result.message }
       })
+      existingCustomersByDoc.current = new Map(
+        allCustomers
+          .map(c => [(c as { doc_number?: string | null }).doc_number?.trim().toLowerCase() ?? '', c.id] as const)
+          .filter(([key]) => key)
+      )
       setImportFileName(file.name)
       setImportRows(parsed)
       setImportOpen(true)
     } catch (e) {
       window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
+  }
+
+  async function importOneCustomer(data: CustomerInsertValues) {
+    const docKey = data.doc_number?.trim().toLowerCase() ?? ''
+    const existingId = docKey ? existingCustomersByDoc.current.get(docKey) : undefined
+    if (existingId) {
+      // Ya existe un cliente con este número de documento: se completa/
+      // actualiza en vez de crear uno duplicado.
+      const updated = await updateCustomer(existingId, data)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createCustomer(data)
+    if (docKey) existingCustomersByDoc.current.set(docKey, created.id)
+    return created
   }
 
   /* ── Stats derivadas ────────────────────────────────────── */
@@ -260,7 +281,7 @@ export default function CustomersPage() {
         rows={importRows}
         entityLabel="cliente"
         entityLabelPlural="clientes"
-        createFn={(data) => createCustomer(data)}
+        createFn={importOneCustomer}
         onDone={() => queryClient.invalidateQueries({ queryKey: ['customers', activeCompanyId] })}
       />
 
