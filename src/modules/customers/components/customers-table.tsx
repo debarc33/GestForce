@@ -424,6 +424,7 @@ export function CustomersTable({
                 <button
                   onClick={() => setPageIndex(p => Math.max(0, p - 1))}
                   disabled={pageIndex === 0}
+                  title="Página anterior"
                   className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
                 >
                   ‹
@@ -448,6 +449,7 @@ export function CustomersTable({
                 <button
                   onClick={() => setPageIndex(p => Math.min(totalPages - 1, p + 1))}
                   disabled={pageIndex >= totalPages - 1}
+                  title="Página siguiente"
                   className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
                 >
                   ›

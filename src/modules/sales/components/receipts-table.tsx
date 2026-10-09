@@ -172,7 +172,7 @@ function ReceiptDialog({
               Correo
             </button>
           )}
-          <button onClick={onClose}
+          <button onClick={onClose} title="Cerrar"
             className="rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>

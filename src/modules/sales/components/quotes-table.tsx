@@ -220,7 +220,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
                   className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
                   Ticket
                 </button>
-                <button onClick={() => setApprovingId(null)} className="ml-1 text-muted-foreground hover:text-foreground">
+                <button onClick={() => setApprovingId(null)} title="Cancelar" className="ml-1 text-muted-foreground hover:text-foreground">
                   <X className="h-3 w-3" />
                 </button>
               </div>

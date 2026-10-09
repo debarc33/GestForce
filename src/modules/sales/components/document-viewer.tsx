@@ -627,7 +627,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
               <Printer className="h-3.5 w-3.5" />
               {isTicket ? 'Imprimir ticket' : 'Imprimir / PDF'}
             </button>
-            <button onClick={onClose} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 transition-colors">
+            <button onClick={onClose} title="Cerrar" className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 transition-colors">
               <X className="h-4 w-4" />
             </button>
           </div>

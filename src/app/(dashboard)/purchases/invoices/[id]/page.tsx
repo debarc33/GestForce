@@ -102,7 +102,7 @@ export default function SupplierInvoiceDetailPage() {
       {/* Barra superior */}
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/purchases')}
+          <button onClick={() => router.push('/purchases')} title="Volver"
             className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Building2, ChevronRight, AlertCircle, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { getUserCompanies } from '@/modules/auth/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 
@@ -16,6 +17,9 @@ function SelectCompanyFallback() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950">
       <div className="flex flex-col items-center gap-4 text-zinc-400">
+        <div className="h-10 w-44 relative">
+          <Image src="/logo.png" alt="GestForce" fill sizes="176px" className="object-contain" />
+        </div>
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         <p className="text-sm">Cargando empresas...</p>
       </div>
@@ -72,6 +76,9 @@ function SelectCompanyContent() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-4 text-zinc-400">
+          <div className="h-10 w-44 relative">
+            <Image src="/logo.png" alt="GestForce" fill sizes="176px" className="object-contain" />
+          </div>
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           <p className="text-sm">Cargando empresas...</p>
         </div>

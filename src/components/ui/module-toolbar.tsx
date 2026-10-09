@@ -52,8 +52,9 @@ export function ModuleToolbar({
     'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
 
   const iconBtn = cn(
-    'flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground',
-    'hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors'
+    'flex h-7 w-7 items-center justify-center gap-1.5 rounded-md px-0 text-muted-foreground',
+    'hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors',
+    'sm:w-auto sm:px-2.5'
   )
 
   return (
@@ -109,11 +110,13 @@ export function ModuleToolbar({
           )}
 
           <button onClick={onPrint} title="Imprimir" className={iconBtn}>
-            <Printer className="h-3.5 w-3.5" />
+            <Printer className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap text-[12px] font-medium">Imprimir</span>
           </button>
 
           <button onClick={() => fileInputRef.current?.click()} title="Importar Excel / CSV" className={iconBtn}>
-            <Upload className="h-3.5 w-3.5" />
+            <Upload className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline whitespace-nowrap text-[12px] font-medium">Importar</span>
           </button>
 
           <input
@@ -126,7 +129,8 @@ export function ModuleToolbar({
 
           {onExport && (
             <button onClick={onExport} title="Exportar a Excel" className={iconBtn}>
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap text-[12px] font-medium">Exportar</span>
             </button>
           )}
 
