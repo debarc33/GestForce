@@ -16,10 +16,13 @@ import {
   type PurchaseOrderWithSupplier, type SupplierInvoiceWithDetails,
 } from '@/modules/purchases/queries'
 import {
-  useSuppliers, deleteSuppliers, getSuppliersWithDocuments,
+  useSuppliers, deleteSuppliers, getSuppliersWithDocuments, createSupplier,
 } from '@/modules/suppliers/queries'
+import type { SupplierInsertValues } from '@/modules/suppliers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapSupplierRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import { useObligaciones, type ObligacionRow } from '@/modules/finances/queries'
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────
@@ -106,6 +109,9 @@ function PurchasesPageInner() {
   const [showSupplierDeleteConfirm, setShowSupplierDeleteConfirm]   = useState(false)
   const [showSupplierDocError, setShowSupplierDocError]             = useState(false)
   const [supplierBlockedCount, setSupplierBlockedCount]             = useState(0)
+  const [importOpen,     setImportOpen]     = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRows,     setImportRows]     = useState<ParsedImportRow<SupplierInsertValues>[]>([])
 
   useEffect(() => {
     if (tabParam && TABS.some(t => t.id === tabParam)) setActiveTab(tabParam)
@@ -177,6 +183,36 @@ function PurchasesPageInner() {
       setShowSupplierDocError(true)
     } else {
       setShowSupplierDeleteConfirm(true)
+    }
+  }
+
+  // ─── Importar (solo disponible para la pestaña Proveedores) ───────────────
+
+  async function handleImportFile(file: File) {
+    if (activeTab !== 'suppliers') {
+      window.alert('La importación desde Excel todavía no está disponible para órdenes de compra, facturas de proveedor ni CxP. Por ahora solo puedes importar el directorio de Proveedores (pestaña "Proveedores").')
+      return
+    }
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    if (!activeCompanyId) { window.alert('No hay una empresa activa seleccionada.'); return }
+    try {
+      const rawRows = await readExcelRows(file)
+      if (rawRows.length === 0) {
+        window.alert('El archivo no tiene filas de datos (o la hoja de datos no es la primera hoja del archivo).')
+        return
+      }
+      const parsed: ParsedImportRow<SupplierInsertValues>[] = rawRows.map((row, i) => {
+        const result = mapSupplierRow(row, activeCompanyId)
+        return result.ok
+          ? { row: i + 2, ok: true, data: result.data }
+          : { row: i + 2, ok: false, message: result.message }
+      })
+      setImportFileName(file.name)
+      setImportRows(parsed)
+      setImportOpen(true)
+    } catch (e) {
+      window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
     }
   }
 
@@ -339,7 +375,7 @@ function PurchasesPageInner() {
         onAdd={toolbarProps.onAdd}
         onDelete={toolbarProps.onDelete}
         onPrint={() => window.print()}
-        onUpload={(file) => console.log('Archivo:', file.name)}
+        onUpload={handleImportFile}
         onExport={handleExport}
         searchValue={search}
         onSearchChange={setSearch}
@@ -473,6 +509,18 @@ function PurchasesPageInner() {
       </Dialog>
 
       {/* ── Dialogs: Proveedores ──────────────────────────────────────── */}
+
+      {/* Importar proveedores desde Excel */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="proveedor"
+        entityLabelPlural="proveedores"
+        createFn={(data) => createSupplier(data)}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['suppliers', activeCompanyId] })}
+      />
 
       {/* Nuevo proveedor */}
       <Dialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen}>
