@@ -8,9 +8,12 @@ import { Ban } from 'lucide-react'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { SuppliersTable } from '@/modules/suppliers/components/suppliers-table'
 import { SupplierForm } from '@/modules/suppliers/components/supplier-form'
-import { deleteSuppliers, getSuppliersWithDocuments, useSuppliers } from '@/modules/suppliers/queries'
+import { createSupplier, deleteSuppliers, getSuppliersWithDocuments, useSuppliers } from '@/modules/suppliers/queries'
+import type { SupplierInsertValues } from '@/modules/suppliers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapSupplierRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 
 export default function SuppliersPage() {
   const router = useRouter()
@@ -23,8 +26,27 @@ export default function SuppliersPage() {
   const [blockedCount, setBlockedCount] = useState(0)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchValue, setSearchValue] = useState('')
+  const [importOpen,     setImportOpen]     = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRows,     setImportRows]     = useState<ParsedImportRow<SupplierInsertValues>[]>([])
 
   const { data: allSuppliers = [] } = useSuppliers(activeCompanyId ?? undefined)
+
+  async function handleImportFile(file: File) {
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    if (!activeCompanyId) return
+    const rawRows = await readExcelRows(file)
+    const parsed: ParsedImportRow<SupplierInsertValues>[] = rawRows.map((row, i) => {
+      const result = mapSupplierRow(row, activeCompanyId)
+      return result.ok
+        ? { row: i + 2, ok: true, data: result.data }
+        : { row: i + 2, ok: false, message: result.message }
+    })
+    setImportFileName(file.name)
+    setImportRows(parsed)
+    setImportOpen(true)
+  }
 
   const FISCAL_LABEL: Record<string, string> = {
     no_iva: 'No Responsable de IVA', iva: 'Responsable de IVA', gran_contribuyente: 'Gran Contribuyente',
@@ -92,7 +114,7 @@ export default function SuppliersPage() {
           }
         }}
         onPrint={() => window.print()}
-        onUpload={(file) => console.log('Archivo cargado:', file.name)}
+        onUpload={handleImportFile}
         onExport={handleExport}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
@@ -105,6 +127,18 @@ export default function SuppliersPage() {
           globalFilter={searchValue}
         />
       )}
+
+      {/* Modal: importar proveedores desde Excel */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="proveedor"
+        entityLabelPlural="proveedores"
+        createFn={(data) => createSupplier(data)}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['suppliers', activeCompanyId] })}
+      />
 
       {/* Modal: nuevo proveedor */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

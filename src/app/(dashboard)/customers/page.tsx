@@ -8,9 +8,12 @@ import { Ban, Users, UserCheck, CreditCard, DollarSign } from 'lucide-react'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { CustomersTable } from '@/modules/customers/components/customers-table'
 import { CustomerForm } from '@/modules/customers/components/customer-form'
-import { deleteCustomers, getCustomersWithDocuments, useCustomers } from '@/modules/customers/queries'
+import { createCustomer, deleteCustomers, getCustomersWithDocuments, useCustomers } from '@/modules/customers/queries'
+import type { CustomerInsertValues } from '@/modules/customers/schemas'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapCustomerRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -40,8 +43,27 @@ export default function CustomersPage() {
   const [selectedIds,       setSelectedIds]       = useState<string[]>([])
   const [searchValue,       setSearchValue]       = useState('')
   const [fiscalFilter,      setFiscalFilter]      = useState('all')
+  const [importOpen,        setImportOpen]        = useState(false)
+  const [importFileName,    setImportFileName]    = useState('')
+  const [importRows,        setImportRows]        = useState<ParsedImportRow<CustomerInsertValues>[]>([])
 
   const { data: allCustomers = [] } = useCustomers(activeCompanyId ?? undefined)
+
+  async function handleImportFile(file: File) {
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    if (!activeCompanyId) return
+    const rawRows = await readExcelRows(file)
+    const parsed: ParsedImportRow<CustomerInsertValues>[] = rawRows.map((row, i) => {
+      const result = mapCustomerRow(row, activeCompanyId)
+      return result.ok
+        ? { row: i + 2, ok: true, data: result.data }
+        : { row: i + 2, ok: false, message: result.message }
+    })
+    setImportFileName(file.name)
+    setImportRows(parsed)
+    setImportOpen(true)
+  }
 
   /* ── Stats derivadas ────────────────────────────────────── */
   const stats = useMemo(() => {
@@ -203,7 +225,7 @@ export default function CustomersPage() {
           }
         }}
         onPrint={() => window.print()}
-        onUpload={(file) => console.log('Archivo cargado:', file.name)}
+        onUpload={handleImportFile}
         onExport={handleExport}
         searchValue={searchValue}
         onSearchChange={setSearchValue}
@@ -221,6 +243,18 @@ export default function CustomersPage() {
           fiscalFilter={fiscalFilter}
         />
       )}
+
+      {/* ── Modal: Importar clientes desde Excel ──────────────── */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="cliente"
+        entityLabelPlural="clientes"
+        createFn={(data) => createCustomer(data)}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['customers', activeCompanyId] })}
+      />
 
       {/* ── Modal: Nuevo cliente ──────────────────────────────── */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

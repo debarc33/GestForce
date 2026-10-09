@@ -27,10 +27,13 @@ export async function createCategory(data: CategoryInsertValues) {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) throw new Error('Usuario no autenticado.')
-  const { error } = await supabase
+  const { data: result, error } = await supabase
     .from('categories')
     .insert({ company_id: data.company_id, name: data.name })
+    .select()
+    .single()
   if (error) throw new Error(error.message)
+  return result
 }
 
 // ─── PRODUCTS ──────────────────────────────────────────────────

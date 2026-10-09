@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { ProductsTable } from '@/modules/products/components/products-table'
 import { ProductForm } from '@/modules/products/components/product-form'
-import { createCategory, deleteProducts, useProducts } from '@/modules/products/queries'
+import { createCategory, createProduct, deleteProducts, useCategories, useProducts } from '@/modules/products/queries'
 import { createClient } from '@/lib/supabase/client'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, fmtMoney, fmtPercent, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapProductRow, type ParsedProductRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import {
   useInventoryMovements, createAdjustment,
   MOVEMENT_TYPE_LABELS, MOVEMENT_TYPE_COLORS,
@@ -77,8 +79,57 @@ function ProductosTab({ companyId }: { companyId: string }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchValue, setSearchValue] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
+  const [importOpen,     setImportOpen]     = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRows,     setImportRows]     = useState<ParsedImportRow<ParsedProductRow>[]>([])
+  const categoryCache = useRef<Map<string, string>>(new Map())
 
   const { data: allProducts = [] } = useProducts(companyId)
+  const { data: categories = [] } = useCategories(companyId)
+
+  async function handleImportFile(file: File) {
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    const rawRows = await readExcelRows(file)
+    const parsed: ParsedImportRow<ParsedProductRow>[] = rawRows.map((row, i) => {
+      const result = mapProductRow(row)
+      return result.ok
+        ? { row: i + 2, ok: true, data: result.data }
+        : { row: i + 2, ok: false, message: result.message }
+    })
+    categoryCache.current = new Map(categories.map(c => [c.name.toLowerCase(), c.id]))
+    setImportFileName(file.name)
+    setImportRows(parsed)
+    setImportOpen(true)
+  }
+
+  async function importOneProduct(data: ParsedProductRow) {
+    let category_id = ''
+    if (data.category_name) {
+      const key = data.category_name.toLowerCase()
+      let id = categoryCache.current.get(key)
+      if (!id) {
+        const created = await createCategory({ name: data.category_name, company_id: companyId })
+        id = created.id
+        categoryCache.current.set(key, id)
+      }
+      category_id = id
+    }
+    return createProduct({
+      company_id: companyId,
+      category_id,
+      name: data.name,
+      sku: data.sku,
+      description: data.description,
+      price: data.price,
+      stock: data.stock,
+      stock_minimum: data.stock_minimum,
+      unit: data.unit,
+      tax_type: data.tax_type,
+      tax_rate: data.tax_rate,
+      is_taxable: data.is_taxable,
+    })
+  }
 
   const TAX_TYPE_LABEL: Record<string, string> = {
     iva: 'IVA (gravado)', excluded: 'Excluido de IVA', exempt: 'Exento de IVA', no_tax: 'Sin impuesto',
@@ -148,7 +199,7 @@ function ProductosTab({ companyId }: { companyId: string }) {
         onAdd={() => setIsProductDialogOpen(true)}
         onDelete={selectedIds.length > 0 ? () => deleteMutation.mutate() : undefined}
         onPrint={() => window.print()}
-        onUpload={(file) => console.log('Archivo cargado:', file.name)}
+        onUpload={handleImportFile}
         onExport={handleExport}
         extraButtons={
           <button
@@ -172,6 +223,21 @@ function ProductosTab({ companyId }: { companyId: string }) {
         onSelectionChange={setSelectedIds}
         globalFilter={searchValue}
         stockFilter={stockFilter}
+      />
+
+      {/* Dialog: Importar productos desde Excel */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="producto"
+        entityLabelPlural="productos"
+        createFn={importOneProduct}
+        onDone={() => {
+          queryClient.invalidateQueries({ queryKey: ['products', companyId] })
+          queryClient.invalidateQueries({ queryKey: ['categories', companyId] })
+        }}
       />
 
       {/* Dialog: Nuevo Producto */}
