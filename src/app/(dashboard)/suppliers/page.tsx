@@ -35,17 +35,25 @@ export default function SuppliersPage() {
   async function handleImportFile(file: File) {
     const fileError = validateImportFile(file)
     if (fileError) { window.alert(fileError); return }
-    if (!activeCompanyId) return
-    const rawRows = await readExcelRows(file)
-    const parsed: ParsedImportRow<SupplierInsertValues>[] = rawRows.map((row, i) => {
-      const result = mapSupplierRow(row, activeCompanyId)
-      return result.ok
-        ? { row: i + 2, ok: true, data: result.data }
-        : { row: i + 2, ok: false, message: result.message }
-    })
-    setImportFileName(file.name)
-    setImportRows(parsed)
-    setImportOpen(true)
+    if (!activeCompanyId) { window.alert('No hay una empresa activa seleccionada.'); return }
+    try {
+      const rawRows = await readExcelRows(file)
+      if (rawRows.length === 0) {
+        window.alert('El archivo no tiene filas de datos (o la hoja de datos no es la primera hoja del archivo).')
+        return
+      }
+      const parsed: ParsedImportRow<SupplierInsertValues>[] = rawRows.map((row, i) => {
+        const result = mapSupplierRow(row, activeCompanyId)
+        return result.ok
+          ? { row: i + 2, ok: true, data: result.data }
+          : { row: i + 2, ok: false, message: result.message }
+      })
+      setImportFileName(file.name)
+      setImportRows(parsed)
+      setImportOpen(true)
+    } catch (e) {
+      window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
+    }
   }
 
   const FISCAL_LABEL: Record<string, string> = {

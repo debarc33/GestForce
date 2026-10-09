@@ -90,17 +90,25 @@ function ProductosTab({ companyId }: { companyId: string }) {
   async function handleImportFile(file: File) {
     const fileError = validateImportFile(file)
     if (fileError) { window.alert(fileError); return }
-    const rawRows = await readExcelRows(file)
-    const parsed: ParsedImportRow<ParsedProductRow>[] = rawRows.map((row, i) => {
-      const result = mapProductRow(row)
-      return result.ok
-        ? { row: i + 2, ok: true, data: result.data }
-        : { row: i + 2, ok: false, message: result.message }
-    })
-    categoryCache.current = new Map(categories.map(c => [c.name.toLowerCase(), c.id]))
-    setImportFileName(file.name)
-    setImportRows(parsed)
-    setImportOpen(true)
+    try {
+      const rawRows = await readExcelRows(file)
+      if (rawRows.length === 0) {
+        window.alert('El archivo no tiene filas de datos (o la hoja de datos no es la primera hoja del archivo).')
+        return
+      }
+      const parsed: ParsedImportRow<ParsedProductRow>[] = rawRows.map((row, i) => {
+        const result = mapProductRow(row)
+        return result.ok
+          ? { row: i + 2, ok: true, data: result.data }
+          : { row: i + 2, ok: false, message: result.message }
+      })
+      categoryCache.current = new Map(categories.map(c => [c.name.toLowerCase(), c.id]))
+      setImportFileName(file.name)
+      setImportRows(parsed)
+      setImportOpen(true)
+    } catch (e) {
+      window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
+    }
   }
 
   async function importOneProduct(data: ParsedProductRow) {
