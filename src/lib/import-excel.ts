@@ -80,8 +80,12 @@ function parseMoneyOrNumber(raw: string): number {
     // Solo coma: es el separador decimal.
     normalized = cleaned.replace(',', '.')
   } else if (lastDot !== -1) {
-    // Solo punto(s): en Colombia es separador de miles, se eliminan.
-    normalized = cleaned.replace(/\./g, '')
+    // Solo punto(s). En Colombia el punto separa miles, pero un grupo de
+    // miles siempre tiene exactamente 3 dígitos (36.000, 1.234.567). Si
+    // después del último punto NO hay exactamente 3 dígitos (36.5, 36.0,
+    // 36.50), es más probable que sea un decimal, así que se deja tal cual.
+    const afterLastDot = cleaned.slice(lastDot + 1)
+    normalized = afterLastDot.length === 3 ? cleaned.replace(/\./g, '') : cleaned
   } else {
     normalized = cleaned
   }
@@ -93,6 +97,51 @@ function parseInt0(raw: string): number {
   if (!raw) return 0
   const n = parseInt(raw.replace(/[^0-9-]/g, ''), 10)
   return isNaN(n) ? 0 : n
+}
+
+/** Como parsePercentOrFraction pero sin dividir entre 100: para campos que
+ *  en la base de datos ya se guardan como porcentaje (0-100), no como fracción. */
+function parsePercentAsNumber(raw: string, fallback: number | null): number | null {
+  if (!raw) return fallback
+  const s = raw.replace('%', '').replace(',', '.').trim()
+  const n = parseFloat(s)
+  return isNaN(n) ? fallback : n
+}
+
+/**
+ * Convierte una fecha a formato "AAAA-MM-DD". Acepta el formato ISO tal
+ * cual, "DD/MM/AAAA" o "DD-MM-AAAA" (como se escribe normalmente en
+ * Colombia), y también el número de serie de Excel (lo que llega si Excel
+ * convirtió la celda a una fecha real al editarla). Vacío o irreconocible
+ * devuelve ''.
+ */
+function parseDateFlexible(raw: string): string {
+  if (!raw) return ''
+  const trimmed = raw.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  const dmy = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/)
+  if (dmy) {
+    const [, d, m, y] = dmy
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+  }
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    const serial = parseFloat(trimmed)
+    if (serial > 0 && serial < 100000) {
+      const ms = Math.round((serial - 25569) * 86400 * 1000)
+      const d = new Date(ms)
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10)
+    }
+  }
+  return ''
+}
+
+/** Acepta Sí/No, true/false, 1/0, Activo/Inactivo (case-insensitive). */
+function parseBooleanFlexible(raw: string, fallback: boolean): boolean {
+  if (!raw) return fallback
+  const s = raw.trim().toLowerCase()
+  if (['si', 'sí', 'true', 'activo', '1', 'yes'].includes(s)) return true
+  if (['no', 'false', 'inactivo', '0'].includes(s)) return false
+  return fallback
 }
 
 /** Acepta tanto el valor crudo (CC, iva, und...) como la etiqueta visible (case-insensitive). */
@@ -282,6 +331,121 @@ export function mapProductRow(row: Record<string, string>): MapResult<ParsedProd
       tax_type: taxType,
       tax_rate: parsePercentOrFraction(get(row, 'Tarifa IVA'), 0.19),
       is_taxable: taxType !== 'no_tax',
+    },
+  }
+}
+
+// ─── Empleados (Nómina) ────────────────────────────────────────────────────────
+
+const EMPLOYEE_DOC_TYPES = [
+  { value: 'CC',  label: 'Cédula de Ciudadanía' },
+  { value: 'CE',  label: 'Cédula de Extranjería' },
+  { value: 'PA',  label: 'Pasaporte' },
+  { value: 'TI',  label: 'Tarjeta de Identidad' },
+  { value: 'PEP', label: 'Permiso Especial de Permanencia' },
+]
+
+const CONTRACT_TYPES = [
+  { value: 'indefinido',  label: 'Término indefinido' },
+  { value: 'fijo',        label: 'Término fijo' },
+  { value: 'obra_labor',  label: 'Obra o labor' },
+  { value: 'aprendizaje', label: 'Contrato de aprendizaje' },
+  { value: 'comision',    label: 'Por comisión' },
+]
+
+const ARL_RATE_VALUES = [0.00522, 0.01044, 0.02436, 0.04350, 0.06960]
+
+/** La tarifa ARL solo puede ser una de 5 clases de riesgo fijas: se toma la
+ *  más cercana al número leído en vez de guardar un valor arbitrario.
+ *
+ *  A diferencia de parsePercentOrFraction, aquí NO se usa la heurística de
+ *  "si es <= 1 ya es una fracción", porque los valores de ARL siempre se
+ *  escriben/leen como porcentaje (0.522, 1.044, 2.436...) y esa heurística
+ *  los dejaría sin dividir entre 100, haciendo que el "snap" elija la clase
+ *  equivocada (ej. 0.522 quedaría más cerca de 6.96% que de 0.522%). */
+function parseArlRate(raw: string): number {
+  const s = (raw ?? '').replace('%', '').replace(',', '.').trim()
+  const n = parseFloat(s)
+  const fraction = s !== '' && !isNaN(n) ? n / 100 : 0.00522
+  let closest = ARL_RATE_VALUES[0]
+  let minDiff = Math.abs(fraction - closest)
+  for (const v of ARL_RATE_VALUES) {
+    const diff = Math.abs(fraction - v)
+    if (diff < minDiff) { minDiff = diff; closest = v }
+  }
+  return closest
+}
+
+export type ParsedEmployeeRow = {
+  name: string
+  doc_type: 'CC' | 'CE' | 'PA' | 'TI' | 'PEP'
+  doc_number: string
+  birth_date: string
+  position: string
+  department: string
+  hire_date: string
+  contract_type: 'indefinido' | 'fijo' | 'obra_labor' | 'aprendizaje' | 'comision'
+  salary: number
+  commission_rate: number | null
+  is_active: boolean
+  eps_name: string
+  afp_name: string
+  arl_rate: number
+  ccf_name: string
+  bank_name: string
+  bank_account_type: string
+  bank_account_number: string
+  notes: string
+}
+
+export function mapEmployeeRow(row: Record<string, string>): MapResult<ParsedEmployeeRow> {
+  const name = get(row, 'Nombre')
+  if (name.length < 2) return { ok: false, message: 'El nombre es obligatorio (mínimo 2 caracteres).' }
+
+  const hireDateRaw = get(row, 'Fecha de Ingreso', 'Fecha Ingreso', 'Ingreso')
+  const hire_date = parseDateFlexible(hireDateRaw)
+  if (!hire_date) {
+    return { ok: false, message: `Fecha de ingreso inválida o vacía: "${hireDateRaw}". Usa el formato AAAA-MM-DD o DD/MM/AAAA.` }
+  }
+
+  const salaryRaw = get(row, 'Salario Base', 'Salario')
+  const salary = parseMoneyOrNumber(salaryRaw)
+  if (salary < 0) return { ok: false, message: 'El salario no puede ser negativo.' }
+
+  const contractType = matchEnum(
+    get(row, 'Tipo Contrato', 'Tipo de Contrato'), CONTRACT_TYPES, 'indefinido'
+  ) as ParsedEmployeeRow['contract_type']
+
+  const birthDateRaw = get(row, 'Fecha de Nacimiento', 'Fecha Nacimiento', 'Nacimiento')
+  const birth_date = birthDateRaw ? parseDateFlexible(birthDateRaw) : ''
+
+  const commissionRaw = get(row, '% Comisión', 'Comisión', 'Porcentaje Comision')
+  const commission_rate = contractType === 'comision'
+    ? parsePercentAsNumber(commissionRaw, 0)
+    : null
+
+  return {
+    ok: true,
+    data: {
+      name,
+      doc_type: matchEnum(get(row, 'Tipo Documento', 'Tipo de Documento'), EMPLOYEE_DOC_TYPES, 'CC') as ParsedEmployeeRow['doc_type'],
+      doc_number: get(row, 'Número Documento', 'Numero Documento', 'Documento', 'Cédula', 'Cedula'),
+      birth_date,
+      position: get(row, 'Cargo'),
+      department: get(row, 'Departamento'),
+      hire_date,
+      contract_type: contractType,
+      salary,
+      commission_rate,
+      is_active: parseBooleanFlexible(get(row, 'Activo', 'Estado'), true),
+      eps_name: get(row, 'EPS'),
+      afp_name: get(row, 'AFP'),
+      arl_rate: parseArlRate(get(row, 'Tarifa ARL', 'ARL')),
+      ccf_name: get(row, 'Caja de Compensación', 'Caja Compensacion', 'CCF'),
+      bank_name: get(row, 'Banco'),
+      bank_account_type: get(row, 'Tipo de Cuenta', 'Tipo Cuenta'),
+      bank_account_number: get(row, 'Número de Cuenta', 'Numero de Cuenta', 'Número Cuenta'),
+      notes: get(row, 'Notas'),
     },
   }
 }

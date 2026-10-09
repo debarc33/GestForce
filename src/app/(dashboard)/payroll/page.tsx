@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,16 +12,19 @@ import {
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, FileSpreadsheet, Pencil, RefreshCw, Lock, AlertTriangle, Trash2 } from 'lucide-react'
+import { Users, FileSpreadsheet, Upload, Pencil, RefreshCw, Lock, AlertTriangle, Trash2 } from 'lucide-react'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useCompany } from '@/modules/company/queries'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
+import { readExcelRows, validateImportFile, mapEmployeeRow, type ParsedEmployeeRow } from '@/lib/import-excel'
+import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import { EmployeeForm } from '@/modules/payroll/components/employee-form'
 import {
   useEmployees, usePayrollPeriods, usePayrollItems,
   useAbsences, useSocialBenefitsSummary,
   getOrCreatePeriod, generatePayrollItems, updatePayrollItem,
   closePayrollPeriod, deleteEmployees, createAbsence, deleteAbsence,
+  createEmployee, updateEmployee,
   mesLabel, calcPayroll,
   type Employee, type PayrollItemWithEmployee, type PayrollItem, type Absence,
 } from '@/modules/payroll/queries'
@@ -55,6 +58,15 @@ const CONTRACT_LABEL: Record<string, string> = {
   fijo:        'Término fijo',
   obra_labor:  'Obra/labor',
   aprendizaje: 'Aprendizaje',
+  comision:    'Por comisión',
+}
+
+const EMPLOYEE_DOC_TYPE_LABEL: Record<string, string> = {
+  CC: 'Cédula de Ciudadanía',
+  CE: 'Cédula de Extranjería',
+  PA: 'Pasaporte',
+  TI: 'Tarjeta de Identidad',
+  PEP: 'Permiso Especial de Permanencia',
 }
 
 const ABSENCE_COLOR: Record<string, string> = {
@@ -88,6 +100,13 @@ export default function PayrollPage() {
   const [editingEmployee, setEditingEmployee]   = useState<Employee | null>(null)
   const [isNewEmployeeOpen, setIsNewEmployeeOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [importOpen,     setImportOpen]     = useState(false)
+  const [importFileName, setImportFileName] = useState('')
+  const [importRows,     setImportRows]     = useState<ParsedImportRow<ParsedEmployeeRow>[]>([])
+  /** número de documento (normalizado) -> id del empleado existente, para
+   *  completar/actualizar en vez de duplicar. */
+  const existingEmployeesByDoc = useRef<Map<string, string>>(new Map())
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   // Liquidar
   const now = new Date()
@@ -135,6 +154,51 @@ export default function PayrollPage() {
     Object.keys(rowSelection).filter(k => rowSelection[k])
       .map(i => filteredEmployees[parseInt(i)]?.id).filter(Boolean) as string[]
   , [rowSelection, filteredEmployees])
+
+  // ── Importar empleados desde Excel ─────────────────────────────────────────
+  async function handleImportFile(file: File) {
+    const fileError = validateImportFile(file)
+    if (fileError) { window.alert(fileError); return }
+    if (!cid) { window.alert('No hay una empresa activa seleccionada.'); return }
+    try {
+      const rawRows = await readExcelRows(file)
+      if (rawRows.length === 0) {
+        window.alert('El archivo no tiene filas de datos (o la hoja de datos no es la primera hoja del archivo).')
+        return
+      }
+      const parsed: ParsedImportRow<ParsedEmployeeRow>[] = rawRows.map((row, i) => {
+        const result = mapEmployeeRow(row)
+        return result.ok
+          ? { row: i + 2, ok: true, data: result.data }
+          : { row: i + 2, ok: false, message: result.message }
+      })
+      existingEmployeesByDoc.current = new Map(
+        employees
+          .map(e => [(e.doc_number ?? '').trim().toLowerCase(), e.id] as const)
+          .filter(([key]) => key)
+      )
+      setImportFileName(file.name)
+      setImportRows(parsed)
+      setImportOpen(true)
+    } catch (e) {
+      window.alert('No se pudo leer el archivo: ' + (e instanceof Error ? e.message : 'error desconocido.'))
+    }
+  }
+
+  async function importOneEmployee(data: ParsedEmployeeRow) {
+    if (!cid) throw new Error('Sin empresa activa.')
+    const docKey = data.doc_number.trim().toLowerCase()
+    const existingId = docKey ? existingEmployeesByDoc.current.get(docKey) : undefined
+    if (existingId) {
+      // Ya existe un empleado con este número de documento: se completa/actualiza
+      // en vez de crear uno duplicado.
+      const updated = await updateEmployee(existingId, data)
+      return { ...updated, _importAction: 'updated' as const }
+    }
+    const created = await createEmployee({ company_id: cid, ...data })
+    if (docKey) existingEmployeesByDoc.current.set(docKey, created.id)
+    return created
+  }
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const deleteMut = useMutation({
@@ -303,14 +367,39 @@ export default function PayrollPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleImportFile(f); e.target.value = '' }}
+              />
+              <button onClick={() => importInputRef.current?.click()}
+                className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)]">
+                <Upload className="h-4 w-4 text-blue-600" />Importar
+              </button>
               <button onClick={() => exportToExcel(employees, [
-                { header: 'Nombre',        key: 'name',          width: 30 },
-                { header: 'Cargo',         key: 'position',      width: 22 },
-                { header: 'Tipo contrato', key: r => CONTRACT_LABEL[r.contract_type], width: 18 },
-                { header: 'Ingreso',       key: 'hire_date',     width: 14 },
-                { header: 'Salario base',  key: 'salary',        width: 16 },
-                { header: 'EPS',           key: 'eps_name',      width: 18 },
-                { header: 'AFP',           key: 'afp_name',      width: 18 },
+                { header: 'Nombre',               key: 'name',                width: 30 },
+                { header: 'Tipo Documento',        key: r => EMPLOYEE_DOC_TYPE_LABEL[r.doc_type] ?? r.doc_type, width: 20 },
+                { header: 'Número Documento',      key: 'doc_number',         width: 18 },
+                { header: 'Fecha de Nacimiento',   key: r => r.birth_date ?? '', width: 16 },
+                { header: 'Cargo',                 key: 'position',           width: 22 },
+                { header: 'Departamento',          key: 'department',        width: 18 },
+                { header: 'Fecha de Ingreso',      key: 'hire_date',          width: 14 },
+                { header: 'Tipo Contrato',         key: r => CONTRACT_LABEL[r.contract_type] ?? r.contract_type, width: 18 },
+                { header: 'Salario Base',          key: 'salary',             width: 16 },
+                { header: '% Comisión',            key: r => r.commission_rate ?? '', width: 12 },
+                { header: 'Activo',                key: r => r.is_active ? 'Sí' : 'No', width: 10 },
+                { header: 'EPS',                   key: 'eps_name',           width: 18 },
+                { header: 'AFP',                   key: 'afp_name',           width: 18 },
+                // Se exporta como porcentaje plano (ej. 0.522, no 0.00522 ni "0.522%")
+                // para que al reimportar la celda tenga un único formato inequívoco.
+                { header: 'Tarifa ARL',            key: r => Math.round((r.arl_rate ?? 0) * 100 * 1000) / 1000, width: 12 },
+                { header: 'Caja de Compensación',  key: 'ccf_name',           width: 20 },
+                { header: 'Banco',                 key: 'bank_name',          width: 18 },
+                { header: 'Tipo de Cuenta',        key: 'bank_account_type', width: 16 },
+                { header: 'Número de Cuenta',      key: 'bank_account_number', width: 20 },
+                { header: 'Notas',                 key: 'notes',              width: 30 },
               ] as ExcelColumn<Employee>[], 'empleados')}
                 className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)]">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />Exportar
@@ -756,6 +845,18 @@ export default function PayrollPage() {
       )}
 
       {/* ══ DIALOGS ═══════════════════════════════════════════════════════ */}
+
+      {/* Importar empleados desde Excel */}
+      <ExcelImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        fileName={importFileName}
+        rows={importRows}
+        entityLabel="empleado"
+        entityLabelPlural="empleados"
+        createFn={importOneEmployee}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['employees', cid] })}
+      />
 
       {/* Nuevo empleado */}
       <Dialog open={isNewEmployeeOpen} onOpenChange={setIsNewEmployeeOpen}>
