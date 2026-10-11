@@ -109,6 +109,73 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
     onError: (e: Error) => setActionError(e.message),
   })
 
+  // Acciones de una cotización (Enviar/Aprobar/Rechazar) — función compartida
+  // para que la columna de escritorio y la tarjeta de celular (Fase 4, punto
+  // 10 del plan UX/UI) rendericen exactamente el mismo comportamiento.
+  const renderRowActions = (q: QuoteWithCustomer) => {
+    const { status, id } = q
+    const isPending = approveMut.isPending || statusMut.isPending || sendMut.isPending
+    if (status === 'approved' || status === 'rejected' || status === 'expired') return null
+    return (
+      <div className="flex items-center gap-1">
+        {/* Enviar / Reenviar — genera el PDF en el servidor y lo envía por
+            correo vía Resend, con el PDF ya adjunto (ver
+            src/app/api/sales/documents/send/route.ts). Sigue visible
+            aunque ya esté "Enviada" para poder reenviarla si el cliente
+            la perdió o no le llegó. */}
+        {(status === 'draft' || status === 'sent') && (
+          <button
+            onClick={() => {
+              if (!q.customer?.email) {
+                window.alert('Este cliente no tiene un correo registrado. Agrega su correo en Clientes antes de enviarle la cotización.')
+                return
+              }
+              sendMut.mutate(id)
+            }}
+            disabled={isPending}
+            title={status === 'sent' ? 'Reenviar por correo' : 'Enviar por correo (con PDF adjunto)'}
+            className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-40">
+            <Send className="h-4 w-4" />
+          </button>
+        )}
+        {/* Aprobar */}
+        {(status === 'draft' || status === 'sent') && approvingId !== id && (
+          <button onClick={() => setApprovingId(id)} disabled={isPending}
+            title="Aprobar cotización"
+            className="rounded-md p-1.5 text-green-600 hover:bg-green-500/10 transition-colors disabled:opacity-40">
+            <Check className="h-4 w-4" />
+          </button>
+        )}
+        {approvingId === id && (
+          <div className="flex items-center gap-1 rounded-lg glass-surface px-2 py-1">
+            <span className="text-xs text-muted-foreground mr-1">Aprobar como:</span>
+            <button
+              onClick={() => { approveMut.mutate({ id, documentType: 'invoice' }); setApprovingId(null) }}
+              className="rounded px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              Factura
+            </button>
+            <button
+              onClick={() => { approveMut.mutate({ id, documentType: 'ticket' }); setApprovingId(null) }}
+              className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+              Ticket
+            </button>
+            <button onClick={() => setApprovingId(null)} title="Cancelar" className="ml-1 text-muted-foreground hover:text-foreground">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+        {/* Rechazar */}
+        {(status === 'draft' || status === 'sent') && (
+          <button onClick={() => statusMut.mutate({ id, status: 'rejected' })} disabled={isPending}
+            title="Rechazar cotización"
+            className="rounded-md p-1.5 text-red-600 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
   const columns: ColumnDef<QuoteWithCustomer>[] = [
     {
       id: 'select',
@@ -172,70 +239,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => {
-        const { status, id } = row.original
-        const isPending = approveMut.isPending || statusMut.isPending || sendMut.isPending
-        if (status === 'approved' || status === 'rejected' || status === 'expired') return null
-        return (
-          <div className="flex items-center gap-1">
-            {/* Enviar / Reenviar — genera el PDF en el servidor y lo envía por
-                correo vía Resend, con el PDF ya adjunto (ver
-                src/app/api/sales/documents/send/route.ts). Sigue visible
-                aunque ya esté "Enviada" para poder reenviarla si el cliente
-                la perdió o no le llegó. */}
-            {(status === 'draft' || status === 'sent') && (
-              <button
-                onClick={() => {
-                  const q = row.original
-                  if (!q.customer?.email) {
-                    window.alert('Este cliente no tiene un correo registrado. Agrega su correo en Clientes antes de enviarle la cotización.')
-                    return
-                  }
-                  sendMut.mutate(id)
-                }}
-                disabled={isPending}
-                title={status === 'sent' ? 'Reenviar por correo' : 'Enviar por correo (con PDF adjunto)'}
-                className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-40">
-                <Send className="h-4 w-4" />
-              </button>
-            )}
-            {/* Aprobar */}
-            {(status === 'draft' || status === 'sent') && approvingId !== id && (
-              <button onClick={() => setApprovingId(id)} disabled={isPending}
-                title="Aprobar cotización"
-                className="rounded-md p-1.5 text-green-600 hover:bg-green-500/10 transition-colors disabled:opacity-40">
-                <Check className="h-4 w-4" />
-              </button>
-            )}
-            {approvingId === id && (
-              <div className="flex items-center gap-1 rounded-lg glass-surface px-2 py-1">
-                <span className="text-xs text-muted-foreground mr-1">Aprobar como:</span>
-                <button
-                  onClick={() => { approveMut.mutate({ id, documentType: 'invoice' }); setApprovingId(null) }}
-                  className="rounded px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                  Factura
-                </button>
-                <button
-                  onClick={() => { approveMut.mutate({ id, documentType: 'ticket' }); setApprovingId(null) }}
-                  className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
-                  Ticket
-                </button>
-                <button onClick={() => setApprovingId(null)} title="Cancelar" className="ml-1 text-muted-foreground hover:text-foreground">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-            {/* Rechazar */}
-            {(status === 'draft' || status === 'sent') && (
-              <button onClick={() => statusMut.mutate({ id, status: 'rejected' })} disabled={isPending}
-                title="Rechazar cotización"
-                className="rounded-md p-1.5 text-red-600 hover:bg-red-500/10 transition-colors disabled:opacity-40">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        )
-      },
+      cell: ({ row }) => renderRowActions(row.original),
     },
   ]
 
@@ -249,7 +253,9 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
       {actionError && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600">{actionError}</div>
       )}
-      <div className="rounded-2xl glass-surface overflow-hidden">
+
+      {/* Escritorio/tablet (≥ md): tabla normal */}
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
         <Table>
           <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
@@ -293,6 +299,61 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll horizontal
+          — Fase 4, punto 10 del plan de corrección UX/UI. */}
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const q = row.original
+            const actions = renderRowActions(q)
+            return (
+              <div key={row.id} className={row.getIsSelected() ? 'bg-primary/10' : undefined}>
+                <div className="flex items-start gap-3 p-4">
+                  <input type="checkbox" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link href={`/sales/quotes/${q.id}`}
+                        className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
+                        {q.quote_number}
+                      </Link>
+                      <Badge status={q.status} />
+                    </div>
+                    <p className="mt-0.5 truncate text-sm text-foreground">
+                      {q.customer?.name ?? <span className="text-muted-foreground italic">Sin cliente</span>}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(q.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {q.expiry_date && ` · vence ${new Date(q.expiry_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">{fmt(q.total)}</span>
+                    </div>
+                    {actions && (
+                      <div className="mt-2 border-t border-[var(--glass-border)] pt-2">
+                        {actions}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+            <FileText className="h-10 w-10 opacity-30" />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {globalFilter || statusFilter !== 'all' ? 'Ninguna cotización coincide' : 'No hay cotizaciones'}
+              </p>
+              <p className="text-xs">
+                {globalFilter || statusFilter !== 'all' ? 'Cambia los filtros.' : 'Usa Nuevo para crear la primera cotización.'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </>
   )

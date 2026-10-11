@@ -512,7 +512,9 @@ function SalesPageInner() {
                   No hay facturas pendientes de cobro.
                 </div>
               ) : (
-                <table className="w-full text-sm">
+                <>
+                {/* Escritorio/tablet (≥ md): tabla normal */}
+                <table className="hidden md:table w-full text-sm">
                   <thead className="bg-zinc-50/50 border-b border-zinc-200">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">Factura #</th>
@@ -561,6 +563,47 @@ function SalesPageInner() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll
+                    horizontal — Fase 4, punto 10 del plan de corrección UX/UI. */}
+                <div className="md:hidden divide-y divide-zinc-100">
+                  {carteraFiltered.map(row => {
+                    const band = cxcAgingBand(row.dias_vencido)
+                    return (
+                      <div key={row.id} className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <button
+                            onClick={() => handleOpenCarteraInvoice(row.id)}
+                            className="font-mono text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                            title="Ver recibo y registrar pago"
+                          >
+                            {row.invoice_number}
+                          </button>
+                          <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
+                            {band.label}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-sm font-medium text-zinc-800">{row.customer}</p>
+                        <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+                          <span>Emisión {fmtDate(row.issue_date)}</span>
+                          <span>Vence {fmtDate(row.due_date)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            row.payment_status === 'partial' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-600'
+                          }`}>
+                            {row.payment_status === 'partial' ? 'Parcial' : 'Pendiente'}
+                          </span>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold tabular-nums text-zinc-900">{fmtMoney(row.balance_due)}</p>
+                            <p className="text-xs tabular-nums text-zinc-500">de {fmtMoney(row.total)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                </>
               )}
             </div>
           )}

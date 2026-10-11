@@ -332,7 +332,8 @@ export function CustomersTable({
   return (
     <>
       <div className="rounded-2xl glass-surface overflow-hidden animate-[slideUp_250ms_ease]">
-        <div className="overflow-x-auto">
+        {/* Escritorio/tablet (≥ md): tabla normal */}
+        <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             {table.getHeaderGroups().map(hg => (
@@ -392,6 +393,114 @@ export function CustomersTable({
             )}
           </tbody>
         </table>
+        </div>
+
+        {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll
+            horizontal — Fase 4, punto 10 del plan de corrección UX/UI. */}
+        <div className="md:hidden divide-y divide-[var(--glass-border)]">
+          {table.getRowModel().rows.length > 0 ? (
+            table.getRowModel().rows.map(row => {
+              const c = row.original
+              const avatarColor = getAvatarColor(c.name)
+              const initials = getInitials(c.name)
+              return (
+                <div key={row.id} className={cn('p-4', row.getIsSelected() && 'bg-[var(--glass-strong)]')}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={row.getIsSelected()}
+                      onChange={row.getToggleSelectedHandler()}
+                      className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-[var(--glass-border)] accent-primary cursor-pointer"
+                    />
+                    <div className={cn(
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+                      avatarColor
+                    )}>
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <button
+                          onClick={() => setEditingCustomer(c)}
+                          className="truncate text-left text-[13px] font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors"
+                        >
+                          {c.name}
+                        </button>
+                        <span className="shrink-0 inline-flex items-center rounded-full bg-[var(--glass)] border border-[var(--glass-border)] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          {FISCAL_LABEL[c.fiscal_regime] ?? c.fiscal_regime}
+                        </span>
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        {c.doc_number && (
+                          <p className="text-[12px] text-muted-foreground">
+                            <span className="font-medium">{c.doc_type}</span> {c.doc_number}
+                          </p>
+                        )}
+                        {c.email && (
+                          <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                            <Mail className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{c.email}</span>
+                          </p>
+                        )}
+                        {c.phone && (
+                          <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                            <Phone className="h-3 w-3 shrink-0" />
+                            {c.phone}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingCustomer(c)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
+                          title="Editar"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="relative" ref={openMoreId === c.id ? moreRef : null}>
+                          <button
+                            onClick={() => setOpenMoreId(openMoreId === c.id ? null : c.id)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
+                            title="Más opciones"
+                          >
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </button>
+                          {openMoreId === c.id && (
+                            <div className="absolute left-0 top-full mt-1 w-36 animate-[slideUp_220ms_ease] rounded-lg glass-surface-strong py-1 z-50">
+                              <button
+                                onClick={() => setOpenMoreId(null)}
+                                className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--glass)]">
+                <UserSquare2 className="h-5 w-5 opacity-40" />
+              </div>
+              <div>
+                <p className="text-[13px] font-medium text-foreground">
+                  {globalFilter || fiscalFilter !== 'all'
+                    ? 'Ningún cliente coincide con la búsqueda'
+                    : 'No hay clientes registrados'}
+                </p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  {globalFilter || fiscalFilter !== 'all'
+                    ? 'Intenta con otros términos de búsqueda.'
+                    : 'Usa el botón Nuevo para agregar tu primer cliente.'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Paginación ────────────────────────────────────── */}

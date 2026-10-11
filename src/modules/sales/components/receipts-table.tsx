@@ -437,7 +437,8 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
 
   return (
     <>
-      <div className="rounded-2xl glass-surface overflow-hidden">
+      {/* Escritorio/tablet (≥ md): tabla normal */}
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
         <Table>
           <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
@@ -475,6 +476,53 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll horizontal
+          — Fase 4, punto 10 del plan de corrección UX/UI. */}
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const r = row.original
+            const isPendingOrPartial = r.status === 'pending' || r.status === 'partial'
+            const statusCfg = STATUS_CFG[r.status] ?? STATUS_CFG.pending
+            return (
+              <div key={row.id} className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <button
+                      onClick={() => setOpenReceipt(r)}
+                      className={`font-mono text-sm font-medium hover:underline transition-colors ${
+                        isPendingOrPartial ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {r.receipt_number}
+                    </button>
+                    {r.invoice_number && (
+                      <p className="text-xs text-muted-foreground font-mono">{r.invoice_number}</p>
+                    )}
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.cls}`}>{statusCfg.label}</span>
+                </div>
+                <p className="mt-1 truncate text-sm text-foreground">
+                  {r.customer?.name ?? <span className="italic text-muted-foreground">Sin cliente</span>}
+                </p>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Total <span className="font-medium text-foreground">{fmt(r.total_amount)}</span></span>
+                  <span className="font-medium text-green-600">Pagado {fmt(r.amount_paid)}</span>
+                  <span className={r.balance > 0 ? 'font-medium text-red-600' : 'text-muted-foreground'}>Saldo {fmt(r.balance)}</span>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+            <Wallet className="h-10 w-10 opacity-30" />
+            <p className="text-sm font-medium">
+              {globalFilter || statusFilter !== 'all' ? 'Ningún recibo coincide' : 'No hay recibos — se crean al remitir una factura'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Receipt dialog */}

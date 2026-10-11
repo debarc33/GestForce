@@ -146,7 +146,9 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
       {actionError && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600">{actionError}</div>
       )}
-      <div className="rounded-2xl glass-surface overflow-hidden">
+
+      {/* Escritorio/tablet (≥ md): tabla normal */}
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
         <Table>
           <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
@@ -185,6 +187,71 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll horizontal
+          — Fase 4, punto 10 del plan de corrección UX/UI. */}
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const inv = row.original
+            const statusCfg = STATUS_CFG[inv.status] ?? STATUS_CFG.draft
+            const payCfg = PAY_CFG[inv.payment_status] ?? PAY_CFG.unpaid
+            return (
+              <div key={row.id} className={row.getIsSelected() ? 'bg-[var(--glass-strong)]' : undefined}>
+                <div className="flex items-start gap-3 p-4">
+                  <input type="checkbox" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-blue-600 cursor-pointer" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link href={`/sales/invoices/${inv.id}`}
+                          className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
+                          {inv.invoice_number}
+                        </Link>
+                        {inv.quote_number && (
+                          <p className="text-xs text-muted-foreground font-mono">{inv.quote_number}</p>
+                        )}
+                      </div>
+                      <span className={`shrink-0 text-xs font-medium rounded-full px-1.5 py-0.5 ${
+                        inv.document_type === 'ticket'
+                          ? 'bg-amber-500/10 border border-amber-500/20 text-amber-700'
+                          : 'bg-blue-500/10 border border-blue-500/20 text-primary'
+                      }`}>
+                        {inv.document_type === 'ticket' ? 'Ticket' : 'Factura'}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-sm text-foreground">
+                      {inv.customer?.name ?? <span className="text-muted-foreground italic">Sin cliente</span>}
+                    </p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.cls}`}>{statusCfg.label}</span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${payCfg.cls}`}>{payCfg.label}</span>
+                    </div>
+                    <div className="mt-2 flex items-end justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(inv.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">{fmt(inv.total)}</p>
+                        {inv.balance_due > 0 && (
+                          <p className="text-xs text-muted-foreground">Saldo {fmt(inv.balance_due)}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+            <ReceiptText className="h-10 w-10 opacity-30" />
+            <p className="text-sm font-medium">
+              {globalFilter || statusFilter !== 'all' ? 'Ninguna factura coincide' : 'No hay facturas — aprueba una cotización primero'}
+            </p>
+          </div>
+        )}
       </div>
     </>
   )
