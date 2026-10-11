@@ -159,6 +159,29 @@ function SalesPageInner() {
     return filterCarteraByAging(rows, filter)
   }, [cartera, search, filter])
 
+  /** factura.id -> recibo.id, para poder abrir directamente el recibo de cobro desde CxC. */
+  const receiptIdByInvoice = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const r of receipts) {
+      if (r.invoice_id) map[r.invoice_id] = r.id
+    }
+    return map
+  }, [receipts])
+
+  /** Al hacer clic en el # de factura de CxC: abre el recibo de cobro de esa factura para poder pagarla. */
+  const handleOpenCarteraInvoice = (invoiceId: string) => {
+    const receiptId = receiptIdByInvoice[invoiceId]
+    setSearch('')
+    setFilter('all')
+    if (receiptId) {
+      setActiveTab('receipts')
+      router.push(`/sales?tab=receipts&openReceipt=${receiptId}`)
+    } else {
+      // Respaldo poco probable: una factura en CxC siempre debería tener su recibo asociado.
+      router.push(`/sales/invoices/${invoiceId}`)
+    }
+  }
+
   const isLoading =
     (activeTab === 'quotes'    && loadingQ)   ||
     (activeTab === 'invoices'  && loadingI)   ||
@@ -507,7 +530,15 @@ function SalesPageInner() {
                       const band = cxcAgingBand(row.dias_vencido)
                       return (
                         <tr key={row.id} className="hover:bg-zinc-50/60 transition-colors">
-                          <td className="px-4 py-3 font-mono text-sm text-primary">{row.invoice_number}</td>
+                          <td className="px-4 py-3 font-mono text-sm">
+                            <button
+                              onClick={() => handleOpenCarteraInvoice(row.id)}
+                              className="text-primary hover:text-primary/80 hover:underline transition-colors"
+                              title="Ver recibo y registrar pago"
+                            >
+                              {row.invoice_number}
+                            </button>
+                          </td>
                           <td className="px-4 py-3 font-medium text-zinc-800">{row.customer}</td>
                           <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.issue_date)}</td>
                           <td className="px-4 py-3 text-sm text-zinc-500">{fmtDate(row.due_date)}</td>
