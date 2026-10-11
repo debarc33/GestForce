@@ -584,39 +584,59 @@ export default function PayrollPage() {
               Aún no hay nóminas liquidadas.
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[var(--glass-hover)]/50">
-                  <TableRow>
-                    {['Período','Estado','Acciones'].map(h => (
-                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {periods.map(period => (
-                    <TableRow key={period.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/60">
-                      <TableCell className="py-3 font-medium text-foreground">
-                        {mesLabel(period.month)} {period.year}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          period.status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {period.status === 'closed' ? 'Cerrada' : 'Abierta'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <button onClick={() => setHistPeriodId(period.id)}
-                          className="text-xs text-primary hover:underline">
-                          Ver detalle
-                        </button>
-                      </TableCell>
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-[var(--glass-hover)]/50">
+                    <TableRow>
+                      {['Período','Estado','Acciones'].map(h => (
+                        <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {periods.map(period => (
+                      <TableRow key={period.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/60">
+                        <TableCell className="py-3 font-medium text-foreground">
+                          {mesLabel(period.month)} {period.year}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            period.status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {period.status === 'closed' ? 'Cerrada' : 'Abierta'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <button onClick={() => setHistPeriodId(period.id)}
+                            className="text-xs text-primary hover:underline">
+                            Ver detalle
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden divide-y divide-[var(--glass-border)]">
+                {periods.map(period => (
+                  <div key={period.id} className="flex items-center justify-between gap-2 p-4">
+                    <div>
+                      <p className="font-medium text-foreground">{mesLabel(period.month)} {period.year}</p>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium mt-1 ${
+                        period.status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {period.status === 'closed' ? 'Cerrada' : 'Abierta'}
+                      </span>
+                    </div>
+                    <button onClick={() => setHistPeriodId(period.id)}
+                      className="text-xs text-primary hover:underline shrink-0">
+                      Ver detalle
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           {histPeriodId && histItems.length > 0 && (
@@ -643,28 +663,48 @@ export default function PayrollPage() {
                   <FileSpreadsheet className="h-3.5 w-3.5" />Exportar
                 </button>
               </div>
-              <table className="w-full text-sm min-w-[700px]">
-                <thead className="bg-[var(--glass-hover)]/50">
-                  <tr>
-                    {['Empleado','Días','Salario','Devengado','Deducciones','Neto','Costo empresa'].map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {histItems.map(item => (
-                    <tr key={item.id} className="border-t border-zinc-100">
-                      <td className="px-3 py-2.5 font-medium text-foreground">{item.employee?.name}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-muted-foreground">{item.worked_days ?? 30}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-foreground">{fmtCOP(item.salary)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-foreground">{fmtCOP(item.gross_pay)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-red-600">-{fmtCOP(item.total_deductions)}</td>
-                      <td className="px-3 py-2.5 tabular-nums font-bold text-foreground">{fmtCOP(item.net_pay)}</td>
-                      <td className="px-3 py-2.5 tabular-nums text-amber-700">{fmtCOP(item.total_employer_cost)}</td>
+              <div className="hidden md:block">
+                <table className="w-full text-sm min-w-[700px]">
+                  <thead className="bg-[var(--glass-hover)]/50">
+                    <tr>
+                      {['Empleado','Días','Salario','Devengado','Deducciones','Neto','Costo empresa'].map(h => (
+                        <th key={h} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {histItems.map(item => (
+                      <tr key={item.id} className="border-t border-zinc-100">
+                        <td className="px-3 py-2.5 font-medium text-foreground">{item.employee?.name}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-muted-foreground">{item.worked_days ?? 30}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-foreground">{fmtCOP(item.salary)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-foreground">{fmtCOP(item.gross_pay)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-red-600">-{fmtCOP(item.total_deductions)}</td>
+                        <td className="px-3 py-2.5 tabular-nums font-bold text-foreground">{fmtCOP(item.net_pay)}</td>
+                        <td className="px-3 py-2.5 tabular-nums text-amber-700">{fmtCOP(item.total_employer_cost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden divide-y divide-zinc-100">
+                {histItems.map(item => (
+                  <div key={item.id} className="p-4 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{item.employee?.name}</p>
+                      <span className="text-xs text-muted-foreground">{item.worked_days ?? 30} días</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Salario: {fmtCOP(item.salary)}</span>
+                      <span className="font-bold text-foreground tabular-nums">{fmtCOP(item.net_pay)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Deducciones: <span className="text-red-600">-{fmtCOP(item.total_deductions)}</span></span>
+                      <span>Costo empresa: <span className="text-amber-700">{fmtCOP(item.total_employer_cost)}</span></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -720,51 +760,88 @@ export default function PayrollPage() {
               No hay ausencias registradas.
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
-              <table className="w-full text-sm min-w-[800px]">
-                <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
-                  <tr>
-                    {['Empleado','Tipo','Desde','Hasta','Días','Afecta salario','Descripción',''].map(h => (
-                      <th key={h} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {absences.map(abs => {
-                    const emp = employees.find(e => e.id === abs.employee_id)
-                    return (
-                      <tr key={abs.id} className="border-t border-zinc-100 hover:bg-[var(--glass-hover)]/40">
-                        <td className="px-3 py-3 font-medium text-foreground">{emp?.name ?? '—'}</td>
-                        <td className="px-3 py-3">
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
+                <table className="w-full text-sm min-w-[800px]">
+                  <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
+                    <tr>
+                      {['Empleado','Tipo','Desde','Hasta','Días','Afecta salario','Descripción',''].map(h => (
+                        <th key={h} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {absences.map(abs => {
+                      const emp = employees.find(e => e.id === abs.employee_id)
+                      return (
+                        <tr key={abs.id} className="border-t border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                          <td className="px-3 py-3 font-medium text-foreground">{emp?.name ?? '—'}</td>
+                          <td className="px-3 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ABSENCE_COLOR[abs.absence_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
+                              {absenceLabel(abs.absence_type)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-muted-foreground tabular-nums">
+                            {new Date(abs.date_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-3 py-3 text-muted-foreground tabular-nums">
+                            {new Date(abs.date_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-3 py-3 tabular-nums text-foreground">{abs.days}</td>
+                          <td className="px-3 py-3">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${abs.affects_salary ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                              {abs.affects_salary ? 'Sí' : 'No'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 text-muted-foreground max-w-xs truncate">{abs.description ?? '—'}</td>
+                          <td className="px-3 py-3">
+                            <button onClick={() => setDeletingAbsenceId(abs.id)}
+                              className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-red-600 transition-colors">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm divide-y divide-[var(--glass-border)]">
+                {absences.map(abs => {
+                  const emp = employees.find(e => e.id === abs.employee_id)
+                  return (
+                    <div key={abs.id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground">{emp?.name ?? '—'}</p>
+                          <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                            {new Date(abs.date_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {' – '}
+                            {new Date(abs.date_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {` · ${abs.days} día(s)`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ABSENCE_COLOR[abs.absence_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
                             {absenceLabel(abs.absence_type)}
                           </span>
-                        </td>
-                        <td className="px-3 py-3 text-muted-foreground tabular-nums">
-                          {new Date(abs.date_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-3 py-3 text-muted-foreground tabular-nums">
-                          {new Date(abs.date_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="px-3 py-3 tabular-nums text-foreground">{abs.days}</td>
-                        <td className="px-3 py-3">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${abs.affects_salary ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            {abs.affects_salary ? 'Sí' : 'No'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-muted-foreground max-w-xs truncate">{abs.description ?? '—'}</td>
-                        <td className="px-3 py-3">
                           <button onClick={() => setDeletingAbsenceId(abs.id)}
                             className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-red-600 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </div>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${abs.affects_salary ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                        {abs.affects_salary ? 'Afecta salario' : 'No afecta salario'}
+                      </span>
+                      {abs.description && (
+                        <p className="text-xs text-muted-foreground">{abs.description}</p>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -807,39 +884,65 @@ export default function PayrollPage() {
               No hay datos de prestaciones. Liquida al menos un período de nómina.
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
-              <table className="w-full text-sm min-w-[900px]">
-                <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
-                  <tr>
-                    {['Empleado','Períodos','Cesantías acum.','Int. Cesantías','Prima acum.','Vacac. días','Tomados','Pendientes','Valor pendiente'].map(h => (
-                      <th key={h} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {benefitsSummary.map(row => (
-                    <tr key={row.employee.id} className="border-t border-zinc-100 hover:bg-[var(--glass-hover)]/40">
-                      <td className="px-3 py-3">
-                        <p className="font-medium text-foreground">{row.employee.name}</p>
-                        {row.employee.position && <p className="text-xs text-muted-foreground">{row.employee.position}</p>}
-                      </td>
-                      <td className="px-3 py-3 tabular-nums text-muted-foreground">{row.months_worked}</td>
-                      <td className="px-3 py-3 tabular-nums font-medium text-foreground">{fmtCOP(row.cesantias_total)}</td>
-                      <td className="px-3 py-3 tabular-nums text-foreground">{fmtCOP(row.cesantias_interest_total)}</td>
-                      <td className="px-3 py-3 tabular-nums font-medium text-foreground">{fmtCOP(row.prima_total)}</td>
-                      <td className="px-3 py-3 tabular-nums text-muted-foreground">{fmtDays(row.vacation_days_total)}</td>
-                      <td className="px-3 py-3 tabular-nums text-muted-foreground">{fmtDays(row.vacation_days_taken)}</td>
-                      <td className="px-3 py-3 tabular-nums">
-                        <span className={row.vacation_days_pending > 0 ? 'font-medium text-amber-700' : 'text-muted-foreground'}>
-                          {fmtDays(row.vacation_days_pending)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 tabular-nums font-semibold text-blue-700">{fmtCOP(row.vacation_value_pending)}</td>
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
+                <table className="w-full text-sm min-w-[900px]">
+                  <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
+                    <tr>
+                      {['Empleado','Períodos','Cesantías acum.','Int. Cesantías','Prima acum.','Vacac. días','Tomados','Pendientes','Valor pendiente'].map(h => (
+                        <th key={h} className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground whitespace-nowrap">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {benefitsSummary.map(row => (
+                      <tr key={row.employee.id} className="border-t border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                        <td className="px-3 py-3">
+                          <p className="font-medium text-foreground">{row.employee.name}</p>
+                          {row.employee.position && <p className="text-xs text-muted-foreground">{row.employee.position}</p>}
+                        </td>
+                        <td className="px-3 py-3 tabular-nums text-muted-foreground">{row.months_worked}</td>
+                        <td className="px-3 py-3 tabular-nums font-medium text-foreground">{fmtCOP(row.cesantias_total)}</td>
+                        <td className="px-3 py-3 tabular-nums text-foreground">{fmtCOP(row.cesantias_interest_total)}</td>
+                        <td className="px-3 py-3 tabular-nums font-medium text-foreground">{fmtCOP(row.prima_total)}</td>
+                        <td className="px-3 py-3 tabular-nums text-muted-foreground">{fmtDays(row.vacation_days_total)}</td>
+                        <td className="px-3 py-3 tabular-nums text-muted-foreground">{fmtDays(row.vacation_days_taken)}</td>
+                        <td className="px-3 py-3 tabular-nums">
+                          <span className={row.vacation_days_pending > 0 ? 'font-medium text-amber-700' : 'text-muted-foreground'}>
+                            {fmtDays(row.vacation_days_pending)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 tabular-nums font-semibold text-blue-700">{fmtCOP(row.vacation_value_pending)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm divide-y divide-[var(--glass-border)]">
+                {benefitsSummary.map(row => (
+                  <div key={row.employee.id} className="p-4 space-y-2">
+                    <div>
+                      <p className="font-medium text-foreground">{row.employee.name}</p>
+                      {row.employee.position && <p className="text-xs text-muted-foreground">{row.employee.position}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>Períodos: <span className="text-foreground">{row.months_worked}</span></span>
+                      <span>Cesantías: <span className="font-medium text-foreground">{fmtCOP(row.cesantias_total)}</span></span>
+                      <span>Int. cesantías: <span className="text-foreground">{fmtCOP(row.cesantias_interest_total)}</span></span>
+                      <span>Prima: <span className="font-medium text-foreground">{fmtCOP(row.prima_total)}</span></span>
+                      <span>Vacac. días: <span className="text-foreground">{fmtDays(row.vacation_days_total)}</span></span>
+                      <span>Tomados: <span className="text-foreground">{fmtDays(row.vacation_days_taken)}</span></span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-[var(--glass-border)]">
+                      <span className={`text-xs ${row.vacation_days_pending > 0 ? 'font-medium text-amber-700' : 'text-muted-foreground'}`}>
+                        Pendientes: {fmtDays(row.vacation_days_pending)}
+                      </span>
+                      <span className="font-semibold text-blue-700 tabular-nums">{fmtCOP(row.vacation_value_pending)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
