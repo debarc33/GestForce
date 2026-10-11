@@ -167,7 +167,8 @@ export function SuppliersTable({
 
   return (
     <>
-      <div className="rounded-2xl glass-surface overflow-hidden">
+      {/* Escritorio/tablet (≥ md): tabla normal */}
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
         <Table>
           <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map(hg => (
@@ -216,6 +217,63 @@ export function SuppliersTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll horizontal
+          — Fase 4, punto 10 del plan de corrección UX/UI. */}
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map(row => {
+            const s = row.original
+            return (
+              <div key={row.id} className={row.getIsSelected() ? 'bg-[var(--glass-strong)]' : undefined}>
+                <div className="flex items-start gap-3 p-4">
+                  <input type="checkbox" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
+                  <div className="min-w-0 flex-1">
+                    <button
+                      onClick={() => setEditingSupplier(s)}
+                      className="truncate text-left font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+                    >
+                      {s.name}
+                    </button>
+                    {s.city && (
+                      <p className="text-xs text-muted-foreground">{s.city}{s.department ? `, ${s.department}` : ''}</p>
+                    )}
+                    {s.contact_name && (
+                      <p className="text-xs text-muted-foreground">Contacto: {s.contact_name}</p>
+                    )}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      {s.doc_number && <span><span className="font-semibold">{s.doc_type}</span> {s.doc_number}</span>}
+                      {s.email && <span>{s.email}</span>}
+                      {s.phone && <span>{s.phone}</span>}
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{FISCAL_LABEL[s.fiscal_regime] ?? s.fiscal_regime}</span>
+                      {s.payment_days != null && <span>· {s.payment_days} días de pago</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+            <Building2 className="h-10 w-10 opacity-30" />
+            <div>
+              <p className="text-sm font-medium">
+                {globalFilter
+                  ? 'Ningún proveedor coincide con la búsqueda'
+                  : 'No hay proveedores registrados'}
+              </p>
+              <p className="text-xs">
+                {globalFilter
+                  ? 'Intenta con otros términos.'
+                  : 'Usa el botón Nuevo para agregar tu primer proveedor.'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de edición */}

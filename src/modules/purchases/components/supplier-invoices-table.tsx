@@ -137,47 +137,109 @@ export function SupplierInvoicesTable({
   })
 
   return (
-    <div className="rounded-2xl glass-surface overflow-hidden">
-      <Table>
-        <TableHeader className="border-b border-[var(--glass-border)]">
-          {table.getHeaderGroups().map(hg => (
-            <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
-              {hg.headers.map(h => (
-                <TableHead key={h.id} className="py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-                  {flexRender(h.column.columnDef.header, h.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map(row => (
-              <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
-                className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
-                {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id} className="py-3.5">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+    <>
+      {/* Escritorio/tablet (≥ md): tabla normal */}
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
+        <Table>
+          <TableHeader className="border-b border-[var(--glass-border)]">
+            {table.getHeaderGroups().map(hg => (
+              <TableRow key={hg.id} className="border-b border-[var(--glass-border)]">
+                {hg.headers.map(h => (
+                  <TableHead key={h.id} className="py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                    {flexRender(h.column.columnDef.header, h.getContext())}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-40 text-center">
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <FileText className="h-10 w-10 opacity-30" />
-                  <p className="text-sm font-medium">
-                    {globalFilter || statusFilter !== 'all'
-                      ? 'Ninguna factura coincide'
-                      : 'No hay facturas de proveedor — recibe una orden de compra primero'}
-                  </p>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map(row => (
+                <TableRow key={row.id} data-state={row.getIsSelected() ? 'selected' : undefined}
+                  className="border-b border-[var(--glass-border)] hover:bg-[var(--glass)] data-[state=selected]:bg-[var(--glass-strong)] transition-colors">
+                  {row.getVisibleCells().map(cell => (
+                    <TableCell key={cell.id} className="py-3.5">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-40 text-center">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                    <FileText className="h-10 w-10 opacity-30" />
+                    <p className="text-sm font-medium">
+                      {globalFilter || statusFilter !== 'all'
+                        ? 'Ninguna factura coincide'
+                        : 'No hay facturas de proveedor — recibe una orden de compra primero'}
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll horizontal
+          — Fase 4, punto 10 del plan de corrección UX/UI. */}
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map(row => {
+            const inv = row.original
+            const cfg = STATUS_CFG[inv.status] ?? STATUS_CFG.pending
+            return (
+              <div key={row.id} className={row.getIsSelected() ? 'bg-[var(--glass-strong)]' : undefined}>
+                <div className="flex items-start gap-3 p-4">
+                  <input type="checkbox" checked={row.getIsSelected()} onChange={row.getToggleSelectedHandler()}
+                    className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <Link href={`/purchases/invoices/${inv.id}`}
+                          className="font-mono text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
+                          {inv.invoice_number}
+                        </Link>
+                        {inv.supplier_invoice_no && (
+                          <p className="text-xs text-muted-foreground font-mono">Prov: {inv.supplier_invoice_no}</p>
+                        )}
+                        {inv.order_number && (
+                          <p className="text-xs text-muted-foreground font-mono">{inv.order_number}</p>
+                        )}
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.cls}`}>{cfg.label}</span>
+                    </div>
+                    <p className="mt-1 truncate text-sm text-foreground">
+                      {inv.supplier?.name ?? <span className="text-muted-foreground italic">Sin proveedor</span>}
+                    </p>
+                    <div className="mt-2 flex items-end justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(inv.issue_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-foreground">{fmt(inv.total)}</p>
+                        {inv.balance_due > 0 && (
+                          <p className="text-xs text-muted-foreground">Saldo {fmt(inv.balance_due)}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="flex flex-col items-center gap-3 px-4 py-16 text-center text-muted-foreground">
+            <FileText className="h-10 w-10 opacity-30" />
+            <p className="text-sm font-medium">
+              {globalFilter || statusFilter !== 'all'
+                ? 'Ninguna factura coincide'
+                : 'No hay facturas de proveedor — recibe una orden de compra primero'}
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   )
 }

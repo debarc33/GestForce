@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Building2, Plus, Search, ArrowRight, Users, LayoutGrid,
@@ -175,8 +175,8 @@ export default function CompaniesPage() {
           </div>
         ) : (
           <>
-            {/* Cabecera */}
-            <div className="grid grid-cols-12 gap-3 border-b border-[var(--glass-border)] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {/* Cabecera (solo escritorio/tablet) */}
+            <div className="hidden md:grid grid-cols-12 gap-3 border-b border-[var(--glass-border)] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span className="col-span-3">Empresa</span>
               <span className="col-span-2 text-center">Inicio</span>
               <span className="col-span-2 text-center">Período</span>
@@ -192,9 +192,10 @@ export default function CompaniesPage() {
                 const isExpiringSoon = days !== null && days > 0 && days <= 15
 
                 return (
+                  <Fragment key={company.id}>
+                  {/* Escritorio/tablet (≥ md): fila de tabla */}
                   <div
-                    key={company.id}
-                    className="grid grid-cols-12 items-center gap-3 px-5 py-3.5 hover:bg-[var(--glass-hover)] transition-colors"
+                    className="hidden md:grid grid-cols-12 items-center gap-3 px-5 py-3.5 hover:bg-[var(--glass-hover)] transition-colors"
                   >
                     {/* Empresa */}
                     <div className="col-span-3 flex items-center gap-2.5 min-w-0">
@@ -274,6 +275,75 @@ export default function CompaniesPage() {
                       </Link>
                     </div>
                   </div>
+
+                  {/* Celular (< md): tarjeta apilada en vez de fila con scroll
+                      horizontal — Fase 4, punto 10 del plan de corrección UX/UI. */}
+                  <div className="md:hidden px-5 py-3.5 hover:bg-[var(--glass-hover)] transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--glass-hover)] text-[11px] font-bold text-foreground">
+                          {company.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">{company.name}</p>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{company.nit ?? 'Sin NIT'}</span>
+                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                              <Users className="h-2.5 w-2.5" />{company.user_count}
+                            </span>
+                            <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                              <LayoutGrid className="h-2.5 w-2.5" />
+                              {company.enabled_modules_count === 0 ? 'Todos' : company.enabled_modules_count}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/superadmin/companies/${company.id}`}
+                        className="flex shrink-0 items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-indigo-400 transition-colors"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-lg bg-[var(--glass)] border border-[var(--glass-border)] px-2.5 py-1 text-xs font-medium text-foreground">
+                        {SUBSCRIPTION_PERIOD_LABELS[company.subscription_period]}
+                      </span>
+                      <div className="relative inline-flex">
+                        <StatusBadge status={company.subscription_status} />
+                        <select
+                          value={company.subscription_status}
+                          onChange={(e) => updateStatus(company, e.target.value as SubscriptionStatus)}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          title="Cambiar estado"
+                        >
+                          <option value="active">Activa</option>
+                          <option value="pending">Pendiente pago</option>
+                          <option value="expired">Vencida</option>
+                          <option value="suspended">Suspendida</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3 shrink-0" />
+                        Inicio {formatDate(company.subscription_start)}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock className={`h-3 w-3 shrink-0 ${isExpiringSoon ? 'text-amber-400' : 'text-muted-foreground'}`} />
+                        {isExpiringSoon ? (
+                          <span className="text-amber-400 font-medium">Vence en {days} día{days !== 1 ? 's' : ''}</span>
+                        ) : days !== null && days <= 0 && company.subscription_status !== 'expired' ? (
+                          <span className="text-red-400 font-medium">Vencida</span>
+                        ) : (
+                          <>Vence {formatDate(company.subscription_end)}</>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  </Fragment>
                 )
               })}
             </div>

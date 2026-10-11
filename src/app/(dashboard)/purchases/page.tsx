@@ -429,7 +429,9 @@ function PurchasesPageInner() {
                   No hay facturas pendientes de pago.
                 </div>
               ) : (
-                <table className="w-full text-sm">
+                <>
+                {/* Escritorio/tablet (≥ md): tabla normal */}
+                <table className="hidden md:table w-full text-sm">
                   <thead className="border-b border-[var(--glass-border)]">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Proveedor</th>
@@ -470,6 +472,41 @@ function PurchasesPageInner() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Celular (< md): tarjetas apiladas en vez de tabla con scroll
+                    horizontal — Fase 4, punto 10 del plan de corrección UX/UI. */}
+                <div className="md:hidden divide-y divide-[var(--glass-border)]">
+                  {obligFiltered.map(row => {
+                    const band = cxpAgingBand(row.dias_vencido)
+                    return (
+                      <div key={row.id} className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono text-sm text-primary">{row.invoice_number}</span>
+                          <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
+                            {band.label}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-sm font-medium text-foreground">{row.supplier}</p>
+                        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Emisión {fmtDate(row.issue_date)}</span>
+                          <span>Vence {fmtDate(row.due_date)}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            row.status === 'partial' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-600' : 'bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground'
+                          }`}>
+                            {row.status === 'partial' ? 'Parcial' : 'Pendiente'}
+                          </span>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold tabular-nums text-foreground">{fmtMoney(row.balance_due)}</p>
+                            <p className="text-xs tabular-nums text-muted-foreground">de {fmtMoney(row.total)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                </>
               )}
             </div>
           )}
