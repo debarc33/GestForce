@@ -3,6 +3,34 @@
 import { useQuery } from '@tanstack/react-query'
 import type { SubscriptionPeriod } from './constants'
 
+export type LivePlan = {
+  id: string
+  name: string
+  description: string
+  prices: Record<SubscriptionPeriod, number>
+}
+
+export type LiveInvoicePack = { quantity: number; price: number }
+
+/** Precios vigentes (editados desde Superadmin) de los planes y del
+ *  paquete de facturas DIAN -- usar siempre esto para mostrar precios al
+ *  cliente, nunca los valores estáticos de modules/subscription/plans.ts
+ *  directamente. */
+export function usePlanPricing(companyId?: string | null) {
+  return useQuery<{ plans: LivePlan[]; invoicePack: LiveInvoicePack }, Error>({
+    queryKey: ['subscription_pricing', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/company/subscription/pricing?companyId=${companyId}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Error al cargar los precios')
+      }
+      return res.json()
+    },
+    enabled: !!companyId,
+  })
+}
+
 export type CompanyPaymentOrder = {
   id: string
   amount: number

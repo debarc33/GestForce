@@ -39,6 +39,8 @@ export interface SACompany {
   subscription_end: string | null   // DATE → string ISO
   subscription_status: SubscriptionStatus
   created_at: string
+  show_plan_pricing: boolean
+  show_invoice_pack_pricing: boolean
 }
 
 export interface SACompanyModule {

@@ -5,7 +5,8 @@ import {
   PERIOD_LABELS,
   type SubscriptionPeriod,
 } from '@/modules/subscription/constants'
-import { getPlan, getPlanPriceCOP } from '@/modules/subscription/plans'
+import { getPlan, type PlanId } from '@/modules/subscription/plans'
+import { getLivePlanPrice, getLiveInvoicePack } from '@/modules/subscription/pricing-db'
 
 export type CheckoutResult =
   | { ok: true; sessionUrl: string; orderId: string }
@@ -48,7 +49,7 @@ export async function createSubscriptionCheckout(opts: {
   // Plan a cobrar: el que se pasó explícitamente, o el plan actual de la
   // empresa, o el plan por defecto -- getPlan() ya resuelve ese último caso.
   const plan = getPlan(opts.planId ?? company.plan_id)
-  const priceCOP = getPlanPriceCOP(plan.id, subscriptionPeriod)
+  const priceCOP = await getLivePlanPrice(admin, plan.id as PlanId, subscriptionPeriod)
 
   // Calcular fechas
   const billingStartDate = new Date()
@@ -322,7 +323,6 @@ export async function createInvoicePackCheckout(opts: {
   cancelUrl: string
 }): Promise<CheckoutResult> {
   const { companyId, successUrl, cancelUrl } = opts
-  const { DIAN_INVOICE_PACK } = await import('@/modules/subscription/plans')
 
   const admin = createAdminClient()
   const { data: company, error: companyError } = await admin
@@ -335,6 +335,8 @@ export async function createInvoicePackCheckout(opts: {
     return { ok: false, status: 404, error: 'Company not found' }
   }
 
+  const invoicePack = await getLiveInvoicePack(admin)
+
   const provider = await getActivePaymentProvider()
   if (!provider) {
     return { ok: false, status: 500, error: 'No payment provider configured' }
@@ -346,8 +348,8 @@ export async function createInvoicePackCheckout(opts: {
       {
         company_id: companyId,
         kind: 'dian_invoice_pack',
-        quantity: DIAN_INVOICE_PACK.quantity,
-        amount: DIAN_INVOICE_PACK.price,
+        quantity: invoicePack.quantity,
+        amount: invoicePack.price,
         currency: 'COP',
         payment_status: 'pending',
         provider: provider.name,
@@ -366,9 +368,9 @@ export async function createInvoicePackCheckout(opts: {
     const boldModule = await import('@/services/bold')
 
     const boldTransaction = await boldModule.createBoldTransaction({
-      amount: DIAN_INVOICE_PACK.price,
+      amount: invoicePack.price,
       currency: 'COP',
-      description: `Paquete de ${DIAN_INVOICE_PACK.quantity} facturas electrónicas DIAN - ${company.name}`,
+      description: `Paquete de ${invoicePack.quantity} facturas electrónicas DIAN - ${company.name}`,
       reference: purchase.id,
       customer: {
         email: company.email || undefined,

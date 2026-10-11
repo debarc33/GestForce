@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { CreditCard, Settings, ChevronRight } from 'lucide-react'
+import { CreditCard, Settings, ChevronRight, Tag } from 'lucide-react'
 
 export default function SettingsPage() {
   const sections = [
@@ -19,6 +19,13 @@ export default function SettingsPage() {
       description: 'Administra Bold, Wompi, Stripe y otros',
       icon: <CreditCard className="h-6 w-6" />,
       href: '/superadmin/settings/payment-providers',
+    },
+    {
+      id: 'subscription-plans',
+      title: 'Planes de suscripción',
+      description: 'Edita los precios de los planes y del paquete de facturas DIAN, y controla la visibilidad del autopago por empresa o para todas',
+      icon: <Tag className="h-6 w-6" />,
+      href: '/superadmin/settings/subscription-plans',
     },
   ]
 

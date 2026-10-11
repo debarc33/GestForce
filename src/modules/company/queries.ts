@@ -51,6 +51,9 @@ export type CompanyProfile = {
   subscription_start:  string | null   // YYYY-MM-DD
   subscription_end:    string | null   // YYYY-MM-DD (calculada por trigger en BD)
   subscription_status: 'pending' | 'active' | 'expired' | 'suspended' | null
+  // ── Visibilidad de precios al cliente (editable solo desde Superadmin) ──
+  show_plan_pricing:          boolean   // mostrar precios/autopago de planes en Suscripción
+  show_invoice_pack_pricing:  boolean   // mostrar compra del paquete de facturas DIAN
 }
 
 export type CompanyProfileUpdate = Partial<Omit<CompanyProfile,

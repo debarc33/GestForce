@@ -8,8 +8,8 @@ import {
   PERIOD_LABELS, SUBSCRIPTION_STATUS_LABELS,
   type SubscriptionPeriod, type SubscriptionStatus,
 } from '@/modules/subscription/constants'
-import { SUBSCRIPTION_PLANS, DEFAULT_PLAN_ID, DIAN_INVOICE_PACK, getPlan, type PlanId } from '@/modules/subscription/plans'
-import { useCompanyPayments, startSubscriptionCheckout, startInvoicePackCheckout } from '@/modules/subscription/queries'
+import { DEFAULT_PLAN_ID, getPlan, type PlanId } from '@/modules/subscription/plans'
+import { useCompanyPayments, usePlanPricing, startSubscriptionCheckout, startInvoicePackCheckout } from '@/modules/subscription/queries'
 import { formatCOP, formatDate } from '@/lib/format-cop'
 
 const PERIODS = Object.keys(PERIOD_LABELS) as SubscriptionPeriod[]
@@ -32,6 +32,9 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient()
   const { data: company, isLoading: loadingCompany } = useCompany(companyId)
   const { data: payments = [], isLoading: loadingPayments, error: paymentsError } = useCompanyPayments(companyId)
+  const { data: pricing, isLoading: loadingPricing } = usePlanPricing(companyId)
+  const livePlans = pricing?.plans ?? []
+  const liveInvoicePack = pricing?.invoicePack
 
   const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null)
@@ -61,6 +64,7 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
   const activePeriod = selectedPeriod ?? period ?? '1_year'
   const activePlanId = selectedPlanId ?? (company?.plan_id as PlanId | null) ?? DEFAULT_PLAN_ID
   const activePlan = getPlan(activePlanId)
+  const activePlanPrices = livePlans.find((p) => p.id === activePlanId)?.prices ?? activePlan.prices
 
   async function handlePay() {
     setPaying(true)
@@ -162,92 +166,107 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
       )}
 
       {/* ── Renovar / cambiar plan ──────────────────────────────────── */}
-      <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-foreground">Renovar o cambiar plan</h3>
+      {company?.show_plan_pricing ? (
+        loadingPricing ? (
+          <div className="h-48 animate-pulse rounded-xl bg-[var(--glass-hover)]" />
+        ) : (
+        <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Renovar o cambiar plan</h3>
 
-        {/* Paquete de módulos */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Paquete de módulos</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {SUBSCRIPTION_PLANS.map(plan => (
-              <button
-                key={plan.id}
-                type="button"
-                onClick={() => setSelectedPlanId(plan.id)}
-                className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                  activePlanId === plan.id
-                    ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
-                }`}
-              >
-                <span className="block text-sm font-medium">{plan.name}</span>
-                <span className="block text-xs mt-0.5 opacity-80">{plan.description}</span>
-              </button>
-            ))}
+          {/* Paquete de módulos */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Paquete de módulos</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {livePlans.map(plan => (
+                <button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => setSelectedPlanId(plan.id as PlanId)}
+                  className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                    activePlanId === plan.id
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
+                  }`}
+                >
+                  <span className="block text-sm font-medium">{plan.name}</span>
+                  <span className="block text-xs mt-0.5 opacity-80">{plan.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Período de facturación */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Período de facturación</p>
-          <div className="grid grid-cols-3 gap-3">
-            {PERIODS.map(p => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setSelectedPeriod(p)}
-                className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors text-center ${
-                  activePeriod === p
-                    ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
-                }`}
-              >
-                <span className="block">{PERIOD_LABELS[p]}</span>
-                <span className="block text-xs mt-0.5 font-mono">{formatCOP(activePlan.prices[p])}</span>
-              </button>
-            ))}
+          {/* Período de facturación */}
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Período de facturación</p>
+            <div className="grid grid-cols-3 gap-3">
+              {PERIODS.map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setSelectedPeriod(p)}
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors text-center ${
+                    activePeriod === p
+                      ? 'border-primary/40 bg-primary/10 text-primary'
+                      : 'border-[var(--glass-border)] glass-surface text-muted-foreground hover:bg-[var(--glass)]'
+                  }`}
+                >
+                  <span className="block">{PERIOD_LABELS[p]}</span>
+                  <span className="block text-xs mt-0.5 font-mono">{formatCOP(activePlanPrices[p])}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <button
-          onClick={handlePay}
-          disabled={paying}
-          className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-          {paying ? 'Redirigiendo...' : `Proceder al pago · ${formatCOP(activePlan.prices[activePeriod])}`}
-        </button>
-        {payError && (
-          <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{payError}</p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Serás redirigido a la pasarela segura de pago. GestForce no almacena datos de tarjetas.
-        </p>
-      </div>
+          <button
+            onClick={handlePay}
+            disabled={paying}
+            className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
+            {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+            {paying ? 'Redirigiendo...' : `Proceder al pago · ${formatCOP(activePlanPrices[activePeriod])}`}
+          </button>
+          {payError && (
+            <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{payError}</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Serás redirigido a la pasarela segura de pago. GestForce no almacena datos de tarjetas.
+          </p>
+        </div>
+        )
+      ) : (
+        <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Renovar o cambiar plan</h3>
+          <p className="text-sm text-muted-foreground">
+            Para renovar tu suscripción o cambiar de plan, contáctanos directamente.
+          </p>
+        </div>
+      )}
 
       {/* ── Compra de facturas electrónicas DIAN ─────────────────────── */}
-      <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">Facturas electrónicas (DIAN)</h3>
+      {company?.show_invoice_pack_pricing && liveInvoicePack && (
+        <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Facturas electrónicas (DIAN)</h3>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Incluye la habilitación de tu empresa como facturador electrónico ante la DIAN, la configuración de facturación electrónica dentro de GestForce, y {liveInvoicePack.quantity} facturas electrónicas. Compra única, no es parte de la suscripción.
+          </p>
+          <button
+            onClick={handleBuyInvoicePack}
+            disabled={buyingInvoicePack}
+            className="flex items-center justify-center gap-2 w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+          >
+            {buyingInvoicePack ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+            {buyingInvoicePack
+              ? 'Redirigiendo...'
+              : `Comprar ${liveInvoicePack.quantity} facturas · ${formatCOP(liveInvoicePack.price)}`}
+          </button>
+          {invoicePackError && (
+            <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{invoicePackError}</p>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Incluye la habilitación de tu empresa como facturador electrónico ante la DIAN, la configuración de facturación electrónica dentro de GestForce, y {DIAN_INVOICE_PACK.quantity} facturas electrónicas. Compra única, no es parte de la suscripción.
-        </p>
-        <button
-          onClick={handleBuyInvoicePack}
-          disabled={buyingInvoicePack}
-          className="flex items-center justify-center gap-2 w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
-        >
-          {buyingInvoicePack ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-          {buyingInvoicePack
-            ? 'Redirigiendo...'
-            : `Comprar ${DIAN_INVOICE_PACK.quantity} facturas · ${formatCOP(DIAN_INVOICE_PACK.price)}`}
-        </button>
-        {invoicePackError && (
-          <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{invoicePackError}</p>
-        )}
-      </div>
+      )}
 
       {/* ── Historial de pagos ──────────────────────────────────────── */}
       <div className="space-y-2">

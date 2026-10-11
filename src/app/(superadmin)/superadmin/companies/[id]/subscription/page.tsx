@@ -12,6 +12,8 @@ type SubscriptionData = {
   subscription_start: string
   subscription_end: string
   is_active: boolean
+  show_plan_pricing: boolean
+  show_invoice_pack_pricing: boolean
 }
 
 type PaymentOrder = {
@@ -56,6 +58,7 @@ export default function SubscriptionPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'3_months' | '6_months' | '1_year'>('1_year')
 
   // Edición manual de fechas (inicio + días de prueba/gracia)
+  const [savingVisibility, setSavingVisibility] = useState<'plan' | 'invoice_pack' | null>(null)
   const [editingDates, setEditingDates] = useState(false)
   const [startInput, setStartInput] = useState('')
   const [trialDaysInput, setTrialDaysInput] = useState(15)
@@ -84,6 +87,23 @@ export default function SubscriptionPage() {
       console.error('Error fetching subscription data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function toggleVisibility(field: 'show_plan_pricing' | 'show_invoice_pack_pricing', value: boolean) {
+    setSavingVisibility(field === 'show_plan_pricing' ? 'plan' : 'invoice_pack')
+    try {
+      const res = await fetch(`/api/superadmin/companies/${companyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      })
+      if (!res.ok) throw new Error('No se pudo guardar')
+      await fetchData()
+    } catch (error) {
+      console.error('Error saving pricing visibility:', error)
+    } finally {
+      setSavingVisibility(null)
     }
   }
 
@@ -300,6 +320,64 @@ export default function SubscriptionPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Visibilidad de precios para el cliente */}
+      <div className="rounded-2xl glass-surface p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Visibilidad de precios para el cliente</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Mientras estén apagados, esta empresa no ve precios ni puede autopagar -- tú activas el plan y cobras manualmente.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Precios y autopago de planes</p>
+            <p className="text-xs text-muted-foreground">Bloque "Renovar o cambiar plan" en Configuración &gt; Suscripción.</p>
+          </div>
+          <button
+            onClick={() => toggleVisibility('show_plan_pricing', !subscription.show_plan_pricing)}
+            disabled={savingVisibility === 'plan'}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 ${
+              subscription.show_plan_pricing ? 'bg-indigo-600' : 'bg-[var(--glass-border-strong)]'
+            }`}
+            role="switch"
+            aria-checked={subscription.show_plan_pricing}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                subscription.show_plan_pricing ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Paquete de facturas DIAN</p>
+            <p className="text-xs text-muted-foreground">Bloque de compra del paquete de 20 facturas electrónicas.</p>
+          </div>
+          <button
+            onClick={() => toggleVisibility('show_invoice_pack_pricing', !subscription.show_invoice_pack_pricing)}
+            disabled={savingVisibility === 'invoice_pack'}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 ${
+              subscription.show_invoice_pack_pricing ? 'bg-indigo-600' : 'bg-[var(--glass-border-strong)]'
+            }`}
+            role="switch"
+            aria-checked={subscription.show_invoice_pack_pricing}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                subscription.show_invoice_pack_pricing ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Para prender o apagar esto en todas las empresas a la vez (por ejemplo cuando unifiques precios), ve a Configuración &gt; Planes de suscripción.
+        </p>
       </div>
 
       {/* Ajustar fechas manualmente */}
