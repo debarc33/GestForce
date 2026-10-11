@@ -121,6 +121,9 @@ function ProductosTab({ companyId }: { companyId: string }) {
       let id = categoryCache.current.get(key)
       if (!id) {
         const created = await createCategory({ name: data.category_name, company_id: companyId })
+        if (!created?.id) {
+          throw new Error(`No se pudo crear la categoria "${data.category_name}".`)
+        }
         id = created.id
         categoryCache.current.set(key, id)
       }
