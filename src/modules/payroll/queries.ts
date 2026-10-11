@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { EmployeeInsertValues, EmployeeFormValues, PayrollNovedadesValues, AbsenceInsertValues } from './schemas'
+import { createJournalEntry } from '@/modules/accounting/queries'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,14 +40,15 @@ export type CommissionAgent = {
 }
 
 export type PayrollPeriod = {
-  id:          string
-  company_id:  string
-  year:        number
-  month:       number
-  status:      'open' | 'closed'
-  approved_by: string | null
-  approved_at: string | null
-  created_at:  string
+  id:               string
+  company_id:       string
+  year:             number
+  month:            number
+  status:           'open' | 'closed'
+  approved_by:      string | null
+  approved_at:      string | null
+  journal_entry_id: string | null
+  created_at:       string
 }
 
 export type PayrollItem = {
@@ -164,8 +166,10 @@ export function calcPrestaciones(
   // Cesantías: (salario + aux) × días / 360  (1 mes anual = 30/360)
   const cesantias = Math.round(base * workedDays / 360)
 
-  // Intereses sobre cesantías: 12% anual proporcional al período
-  const cesantias_interest = Math.round(cesantias * 0.12 * workedDays / 360)
+  // Intereses sobre cesantías: 12% anual sobre las cesantías causadas en el período
+  // ("cesantias" arriba ya es la porción proporcional del período — no se vuelve a
+  //  aplicar la proporción de días aquí, o el interés queda ~12 veces por debajo de lo real)
+  const cesantias_interest = Math.round(cesantias * 0.12)
 
   // Prima de servicios: igual que cesantías (15 días por semestre = 30/360 por mes)
   const prima = Math.round(base * workedDays / 360)
@@ -732,15 +736,44 @@ export async function updatePayrollItem(
 }
 
 /**
- * Cierra un período de nómina (lo bloquea — no se puede editar).
+ * Cierra un período de nómina (lo bloquea — no se puede editar) y genera
+ * automáticamente el comprobante contable del costo total de nómina en Contabilidad.
  */
-export async function closePayrollPeriod(periodId: string): Promise<void> {
+export async function closePayrollPeriod(
+  periodId: string,
+  companyId: string,
+  year: number,
+  month: number,
+  totalEmployerCost: number,
+): Promise<void> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Comprobante contable resumen: costo total de nómina (devengado + aportes patronales)
+  let journalEntryId: string | null = null
+  if (totalEmployerCost > 0) {
+    const label = `Nómina ${mesLabel(month)} ${year}`
+    const entry = await createJournalEntry(companyId, {
+      entry_date:   new Date().toISOString().slice(0, 10),
+      description:  label,
+      entry_type:   'payroll',
+      reference_id: periodId,
+      lines: [
+        { account_code: '510506', description: label, debit: totalEmployerCost, credit: 0 },
+        { account_code: '2505',   description: label, debit: 0,                 credit: totalEmployerCost },
+      ],
+    })
+    journalEntryId = entry.id
+  }
+
   const { error } = await supabase
     .from('payroll_periods')
-    .update({ status: 'closed', approved_by: user?.id, approved_at: new Date().toISOString() })
+    .update({
+      status:           'closed',
+      approved_by:      user?.id,
+      approved_at:      new Date().toISOString(),
+      journal_entry_id: journalEntryId,
+    })
     .eq('id', periodId)
   if (error) throw new Error(error.message)
 }

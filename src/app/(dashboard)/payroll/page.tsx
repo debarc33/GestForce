@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   flexRender, getCoreRowModel, useReactTable,
@@ -115,6 +116,7 @@ export default function PayrollPage() {
   const [activePeriodId, setActivePeriodId]     = useState<string | null>(null)
   const [editingItem, setEditingItem]           = useState<PayrollItemWithEmployee | null>(null)
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false)
   const [loadingGenerate, setLoadingGenerate]   = useState(false)
 
   // Historial mes seleccionado
@@ -211,7 +213,7 @@ export default function PayrollPage() {
   })
 
   const closePeriodMut = useMutation({
-    mutationFn: () => closePayrollPeriod(activePeriodId!),
+    mutationFn: () => closePayrollPeriod(activePeriodId!, cid!, liqYear, liqMonth, totals.total),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payroll_periods', cid] })
       queryClient.invalidateQueries({ queryKey: ['payroll_items', activePeriodId] })
@@ -523,7 +525,9 @@ export default function PayrollPage() {
                 ))}
               </select>
             </div>
-            <button onClick={handleOpenPeriod} disabled={loadingGenerate}
+            <button
+              onClick={() => { if (activePeriodId) { setShowRegenerateConfirm(true) } else { handleOpenPeriod() } }}
+              disabled={loadingGenerate}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 shadow-sm">
               <RefreshCw className={`h-4 w-4 ${loadingGenerate ? 'animate-spin' : ''}`} />
               {activePeriodId ? 'Regenerar' : 'Abrir nómina'}
@@ -723,23 +727,31 @@ export default function PayrollPage() {
                 <p className="text-sm font-semibold text-foreground">
                   {mesLabel(periods.find(p => p.id === histPeriodId)?.month ?? 0)} {periods.find(p => p.id === histPeriodId)?.year}
                 </p>
-                <button onClick={() => {
-                  exportToExcel(histItems, [
-                    { header: 'Empleado',       key: r => r.employee?.name ?? '', width: 28 },
-                    { header: 'Días trabajados', key: 'worked_days', width: 12 },
-                    { header: 'Salario',        key: 'salary',        width: 14 },
-                    { header: 'Aux. Transp.',   key: 'transport_allowance', width: 14 },
-                    { header: 'Devengado',      key: 'gross_pay',     width: 14 },
-                    { header: 'Deducciones',    key: 'total_deductions', width: 14 },
-                    { header: 'Neto a pagar',   key: 'net_pay',       width: 14 },
-                    { header: 'Costo empresa',  key: 'total_employer_cost', width: 16 },
-                    { header: 'Cesantías',      key: 'cesantias_month', width: 14 },
-                    { header: 'Prima',          key: 'prima_month',   width: 14 },
-                  ] as ExcelColumn<PayrollItemWithEmployee>[], `nomina_${histPeriodId}`)
-                }}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-green-700">
-                  <FileSpreadsheet className="h-3.5 w-3.5" />Exportar
-                </button>
+                <div className="flex items-center gap-3">
+                  {periods.find(p => p.id === histPeriodId)?.journal_entry_id && (
+                    <Link href={`/accounting?entry=${periods.find(p => p.id === histPeriodId)?.journal_entry_id}`} target="_blank"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                      Ver comprobante
+                    </Link>
+                  )}
+                  <button onClick={() => {
+                    exportToExcel(histItems, [
+                      { header: 'Empleado',       key: r => r.employee?.name ?? '', width: 28 },
+                      { header: 'Días trabajados', key: 'worked_days', width: 12 },
+                      { header: 'Salario',        key: 'salary',        width: 14 },
+                      { header: 'Aux. Transp.',   key: 'transport_allowance', width: 14 },
+                      { header: 'Devengado',      key: 'gross_pay',     width: 14 },
+                      { header: 'Deducciones',    key: 'total_deductions', width: 14 },
+                      { header: 'Neto a pagar',   key: 'net_pay',       width: 14 },
+                      { header: 'Costo empresa',  key: 'total_employer_cost', width: 16 },
+                      { header: 'Cesantías',      key: 'cesantias_month', width: 14 },
+                      { header: 'Prima',          key: 'prima_month',   width: 14 },
+                    ] as ExcelColumn<PayrollItemWithEmployee>[], `nomina_${histPeriodId}`)
+                  }}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-green-700">
+                    <FileSpreadsheet className="h-3.5 w-3.5" />Exportar
+                  </button>
+                </div>
               </div>
               <div className="hidden md:block">
                 <table className="w-full text-sm min-w-[700px]">
@@ -1104,6 +1116,35 @@ export default function PayrollPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Regenerar nómina (sobrescribe/borra las novedades ya guardadas) */}
+      <Dialog open={showRegenerateConfirm} onOpenChange={v => !loadingGenerate && setShowRegenerateConfirm(v)}>
+        <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <DialogTitle>¿Regenerar nómina de {mesLabel(liqMonth)} {liqYear}?</DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground mt-1">
+              Esto borra las novedades ya guardadas de todos los empleados en este período (horas extra, bonos, incapacidades, días sin pago, etc.) y las reemplaza por los valores por defecto. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 justify-end mt-2">
+            <button onClick={() => setShowRegenerateConfirm(false)} disabled={loadingGenerate}
+              className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)] disabled:opacity-50">
+              Cancelar
+            </button>
+            <button
+              onClick={() => { setShowRegenerateConfirm(false); handleOpenPeriod() }}
+              disabled={loadingGenerate}
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
+              {loadingGenerate ? 'Regenerando...' : 'Sí, regenerar'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Eliminar ausencia */}
       <Dialog open={!!deletingAbsenceId} onOpenChange={v => { if (!v) setDeletingAbsenceId(null) }}>
         <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
@@ -1358,7 +1399,15 @@ function NovedadesDialog({
               </div>
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Días sin pago</label>
-                <input type="number" min="0" max="30" step="1" {...form.register('unpaid_days')} className={inp2} />
+                <input type="number" min="0" max="30" step="1"
+                  {...form.register('unpaid_days', {
+                    onChange: e => {
+                      const unpaid = Number(e.target.value) || 0
+                      form.setValue('worked_days', Math.max(0, 30 - unpaid))
+                    },
+                  })}
+                  className={inp2} />
+                <p className="text-xs text-muted-foreground mt-0.5">Resta automáticamente de "Días trabajados".</p>
               </div>
             </div>
           </div>
