@@ -248,38 +248,60 @@ export default function AccountingPage() {
               <p className="text-xs text-muted-foreground mt-1">Los asientos se generan automáticamente al emitir facturas, registrar pagos o cerrar nómina.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[var(--glass-hover)]/50">
-                  <TableRow className="border-[var(--glass-border)]">
-                    {['#Comprobante','Fecha','Tipo','Descripción','Débito = Crédito',''].map(h => (
-                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {entries.map(entry => (
-                    <TableRow key={entry.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
-                      <TableCell className="py-3 font-mono text-sm text-foreground">{entry.entry_number}</TableCell>
-                      <TableCell className="py-3 text-sm text-muted-foreground">{fmtDate(entry.entry_date)}</TableCell>
-                      <TableCell className="py-3">
-                        <span className="text-xs bg-zinc-100 text-muted-foreground rounded-full px-2 py-0.5">
-                          {ENTRY_TYPE_LABEL[entry.entry_type] ?? entry.entry_type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-3 text-sm text-foreground">{entry.description}</TableCell>
-                      <TableCell className="py-3 text-sm text-muted-foreground">—</TableCell>
-                      <TableCell className="py-3">
-                        <button onClick={() => setSelectedEntry(entry)}
-                          className="text-primary hover:underline text-xs flex items-center gap-1">
-                          Ver <ChevronRight className="h-3 w-3" />
-                        </button>
-                      </TableCell>
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-[var(--glass-hover)]/50">
+                    <TableRow className="border-[var(--glass-border)]">
+                      {['#Comprobante','Fecha','Tipo','Descripción','Débito = Crédito',''].map(h => (
+                        <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {entries.map(entry => (
+                      <TableRow key={entry.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                        <TableCell className="py-3 font-mono text-sm text-foreground">{entry.entry_number}</TableCell>
+                        <TableCell className="py-3 text-sm text-muted-foreground">{fmtDate(entry.entry_date)}</TableCell>
+                        <TableCell className="py-3">
+                          <span className="text-xs bg-zinc-100 text-muted-foreground rounded-full px-2 py-0.5">
+                            {ENTRY_TYPE_LABEL[entry.entry_type] ?? entry.entry_type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-3 text-sm text-foreground">{entry.description}</TableCell>
+                        <TableCell className="py-3 text-sm text-muted-foreground">—</TableCell>
+                        <TableCell className="py-3">
+                          <button onClick={() => setSelectedEntry(entry)}
+                            className="text-primary hover:underline text-xs flex items-center gap-1">
+                            Ver <ChevronRight className="h-3 w-3" />
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden divide-y divide-[var(--glass-border)]">
+                {entries.map(entry => (
+                  <div key={entry.id} className="p-4 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-mono text-sm font-medium text-foreground">{entry.entry_number}</p>
+                        <p className="text-xs text-muted-foreground">{fmtDate(entry.entry_date)}</p>
+                      </div>
+                      <span className="shrink-0 text-xs bg-zinc-100 text-muted-foreground rounded-full px-2 py-0.5">
+                        {ENTRY_TYPE_LABEL[entry.entry_type] ?? entry.entry_type}
+                      </span>
+                    </div>
+                    <p className="text-sm text-foreground">{entry.description}</p>
+                    <button onClick={() => setSelectedEntry(entry)}
+                      className="text-primary hover:underline text-xs flex items-center gap-1">
+                      Ver <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

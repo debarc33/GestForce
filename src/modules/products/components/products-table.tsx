@@ -228,7 +228,7 @@ export function ProductsTable({
 
   return (
     <>
-      <div className="rounded-2xl glass-surface overflow-hidden">
+      <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
         <Table>
           <TableHeader className="border-b border-[var(--glass-border)]">
             {table.getHeaderGroups().map((hg) => (
@@ -282,6 +282,83 @@ export function ProductsTable({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="md:hidden rounded-2xl glass-surface overflow-hidden divide-y divide-[var(--glass-border)]">
+        {table.getRowModel().rows.length ? (
+          table.getRowModel().rows.map((row) => {
+            const p = row.original
+            const min = p.stock_minimum ?? 0
+            const isReorder = min > 0 && p.stock <= min && p.stock > 0
+            const isOut = p.stock === 0
+            return (
+              <div key={row.id} className="flex items-start gap-3 p-4">
+                <input
+                  type="checkbox"
+                  checked={row.getIsSelected()}
+                  onChange={row.getToggleSelectedHandler()}
+                  className="h-4 w-4 mt-1 rounded border-[var(--glass-border)] accent-primary cursor-pointer"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <button
+                        onClick={() => setEditProduct(p)}
+                        className="font-medium text-primary hover:text-primary/80 hover:underline text-left transition-colors"
+                      >
+                        {p.name}
+                      </button>
+                      {p.sku && <p className="text-xs font-mono text-muted-foreground">{p.sku}</p>}
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                        isOut
+                          ? 'bg-red-500/10 border-red-500/20 text-red-700'
+                          : isReorder
+                          ? 'bg-amber-500/10 border-amber-500/20 text-amber-700'
+                          : p.stock < 10
+                          ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-700'
+                          : 'bg-green-500/10 border-green-500/20 text-green-700'
+                      }`}
+                    >
+                      {p.stock}
+                      {(isReorder || isOut) && <AlertTriangle className="h-3 w-3" />}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {(p.categories as { name: string } | null)?.name ?? '—'}
+                    </span>
+                    <span className="font-medium text-foreground">
+                      ${Number(p.price).toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  {min > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground font-mono">Mínimo: {min}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        ) : (
+          <div className="p-10 text-center">
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <Package className="h-10 w-10 opacity-30" />
+              <div>
+                <p className="text-sm font-medium">
+                  {globalFilter || stockFilter !== 'all'
+                    ? 'Ningún producto coincide con la búsqueda'
+                    : 'No hay productos registrados'}
+                </p>
+                <p className="text-xs">
+                  {globalFilter || stockFilter !== 'all'
+                    ? 'Intenta con otros términos o cambia el filtro.'
+                    : 'Usa el botón Nuevo para agregar tu primer producto.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={!!editProduct} onOpenChange={(open) => !open && setEditProduct(null)}>

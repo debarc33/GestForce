@@ -399,47 +399,80 @@ function MovimientosTab({ companyId }: { companyId: string }) {
           <p className="text-xs text-muted-foreground mt-1">Los ajustes manuales aparecerán aquí.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Producto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Cantidad</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock antes</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock después</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filtered.map(m => (
-                <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
-                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
-                  <td className="px-4 py-3 font-medium text-foreground max-w-48 truncate">
-                    {m.product?.name ?? '—'}
-                    {m.product?.sku && <span className="ml-1.5 text-xs text-muted-foreground font-mono">{m.product.sku}</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
-                      {MOVEMENT_TYPE_LABELS[m.movement_type]}
-                    </span>
-                  </td>
-                  <td className={`px-4 py-3 text-right font-mono font-medium tabular-nums ${m.quantity >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                    {m.quantity >= 0 ? '+' : ''}{fmt(m.quantity)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">{fmt(m.stock_before)}</td>
-                  <td className="px-4 py-3 text-right font-mono font-medium text-foreground tabular-nums">{fmt(m.stock_after)}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
-                    {m.reference_no
-                      ? <span className="font-mono">{m.reference_no}</span>
-                      : m.notes ? <span className="italic">{m.notes}</span> : '—'}
-                  </td>
+        <>
+          <div className="hidden md:block rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
+            <table className="w-full text-sm">
+              <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Producto</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Cantidad</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock antes</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Stock después</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {filtered.map(m => (
+                  <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
+                    <td className="px-4 py-3 font-medium text-foreground max-w-48 truncate">
+                      {m.product?.name ?? '—'}
+                      {m.product?.sku && <span className="ml-1.5 text-xs text-muted-foreground font-mono">{m.product.sku}</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                        {MOVEMENT_TYPE_LABELS[m.movement_type]}
+                      </span>
+                    </td>
+                    <td className={`px-4 py-3 text-right font-mono font-medium tabular-nums ${m.quantity >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                      {m.quantity >= 0 ? '+' : ''}{fmt(m.quantity)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">{fmt(m.stock_before)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-medium text-foreground tabular-nums">{fmt(m.stock_after)}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {m.reference_no
+                        ? <span className="font-mono">{m.reference_no}</span>
+                        : m.notes ? <span className="italic">{m.notes}</span> : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)] divide-y divide-[var(--glass-border)]">
+            {filtered.map(m => (
+              <div key={m.id} className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">
+                      {m.product?.name ?? '—'}
+                      {m.product?.sku && <span className="ml-1.5 text-xs text-muted-foreground font-mono">{m.product.sku}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{fmtDateTime(m.created_at)}</p>
+                  </div>
+                  <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                    {MOVEMENT_TYPE_LABELS[m.movement_type]}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                    {fmt(m.stock_before)} → {fmt(m.stock_after)}
+                  </span>
+                  <span className={`font-mono font-medium tabular-nums ${m.quantity >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {m.quantity >= 0 ? '+' : ''}{fmt(m.quantity)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {m.reference_no
+                    ? <span className="font-mono">{m.reference_no}</span>
+                    : m.notes ? <span className="italic">{m.notes}</span> : '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
@@ -535,55 +568,88 @@ function KardexTab({ companyId }: { companyId: string }) {
               <p className="text-sm text-muted-foreground">Sin movimientos para este producto.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-green-700">Entrada</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-red-600">Salida</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Saldo</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[var(--glass-hover)] border-b border-[var(--glass-border)]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Fecha</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Tipo</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-green-700">Entrada</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-red-600">Salida</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Saldo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Referencia</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {movements.map(m => (
+                      <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
+                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                            {MOVEMENT_TYPE_LABELS[m.movement_type]}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-green-700 tabular-nums">
+                          {m.quantity > 0 ? fmt(m.quantity) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-red-600 tabular-nums">
+                          {m.quantity < 0 ? fmt(Math.abs(m.quantity)) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-semibold text-foreground tabular-nums">
+                          {fmt(m.stock_after)}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                          {m.reference_no
+                            ? <span className="font-mono">{m.reference_no}</span>
+                            : m.notes ? <span className="italic">{m.notes}</span> : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
+                    <tr>
+                      <td colSpan={4} className="px-4 py-3 text-sm font-medium text-foreground">Saldo actual</td>
+                      <td className="px-4 py-3 text-right font-mono font-bold text-lg text-foreground tabular-nums">
+                        {product ? fmt(product.stock) : '—'}
+                      </td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div className="md:hidden rounded-xl border border-[var(--glass-border)] overflow-hidden bg-[var(--glass)]">
+                <div className="divide-y divide-[var(--glass-border)]">
                   {movements.map(m => (
-                    <tr key={m.id} className="hover:bg-[var(--glass-hover)] transition-colors">
-                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmtDateTime(m.created_at)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
+                    <div key={m.id} className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">{fmtDateTime(m.created_at)}</p>
+                        <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${MOVEMENT_TYPE_COLORS[m.movement_type]}`}>
                           {MOVEMENT_TYPE_LABELS[m.movement_type]}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-green-700 tabular-nums">
-                        {m.quantity > 0 ? fmt(m.quantity) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-red-600 tabular-nums">
-                        {m.quantity < 0 ? fmt(Math.abs(m.quantity)) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono font-semibold text-foreground tabular-nums">
-                        {fmt(m.stock_after)}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-mono tabular-nums">
+                          {m.quantity > 0
+                            ? <span className="text-green-700">+{fmt(m.quantity)}</span>
+                            : <span className="text-red-600">-{fmt(Math.abs(m.quantity))}</span>}
+                        </span>
+                        <span className="font-mono font-semibold text-foreground tabular-nums">Saldo: {fmt(m.stock_after)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
                         {m.reference_no
                           ? <span className="font-mono">{m.reference_no}</span>
                           : m.notes ? <span className="italic">{m.notes}</span> : '—'}
-                      </td>
-                    </tr>
+                      </p>
+                    </div>
                   ))}
-                </tbody>
-                <tfoot className="border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
-                  <tr>
-                    <td colSpan={4} className="px-4 py-3 text-sm font-medium text-foreground">Saldo actual</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-lg text-foreground tabular-nums">
-                      {product ? fmt(product.stock) : '—'}
-                    </td>
-                    <td />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 border-t-2 border-[var(--glass-border)] bg-[var(--glass-hover)]">
+                  <span className="text-sm font-medium text-foreground">Saldo actual</span>
+                  <span className="font-mono font-bold text-lg text-foreground tabular-nums">{product ? fmt(product.stock) : '—'}</span>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}

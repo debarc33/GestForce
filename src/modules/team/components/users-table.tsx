@@ -173,7 +173,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
               Invitar colaborador
             </button>
           )}
-          <div className="overflow-x-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass)]">
+          <div className="hidden md:block overflow-x-auto rounded-xl border border-[var(--glass-border)] bg-[var(--glass)]">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--glass-border)]">
@@ -230,6 +230,50 @@ export function UsersTable({ companyId }: UsersTableProps) {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] divide-y divide-[var(--glass-border)]">
+            {users.map(user => (
+              <div key={user.id} className="p-4 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    {user.user_email ? (
+                      <p className="text-sm text-foreground truncate">{user.user_email}</p>
+                    ) : (
+                      <code className="bg-[var(--glass-hover)] px-2 py-1 rounded text-xs" title="No se pudo resolver el email de este usuario">
+                        {user.user_id}
+                      </code>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Registrado: {new Date(user.created_at).toLocaleDateString('es-CO')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveUser(user.user_id)}
+                    disabled={removeUserMutation.isPending}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                    title="Eliminar usuario"
+                  >
+                    {removeUserMutation.isPending ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <select
+                  value={selectedRole[user.id] || user.role}
+                  onChange={e => handleRoleChange(user.id, e.target.value)}
+                  disabled={updateRoleMutation.isPending}
+                  className="w-full px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 disabled:opacity-50"
+                >
+                  {AVAILABLE_ROLES.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {role.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
           </div>
         </>
       )}
