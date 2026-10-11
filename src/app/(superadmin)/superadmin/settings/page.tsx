@@ -26,8 +26,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Configuración</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Administra la configuración de tu sistema GestForce
         </p>
       </div>
@@ -38,7 +38,7 @@ export default function SettingsPage() {
           <Link
             key={section.id}
             href={section.href}
-            className="group rounded-2xl border border-zinc-800 bg-zinc-900 p-6 hover:border-indigo-500/50 hover:bg-zinc-800/50 transition-colors relative"
+            className="group rounded-2xl glass-surface p-6 hover:border-indigo-500/50 hover:bg-[var(--glass-hover)] transition-colors relative"
           >
             {section.badge && (
               <div className="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded">
@@ -47,15 +47,15 @@ export default function SettingsPage() {
             )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="text-zinc-400 group-hover:text-indigo-400 transition-colors">
+                <div className="text-muted-foreground group-hover:text-indigo-400 transition-colors">
                   {section.icon}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white">{section.title}</h3>
-                  <p className="mt-0.5 text-sm text-zinc-500">{section.description}</p>
+                  <h3 className="font-semibold text-foreground">{section.title}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{section.description}</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-indigo-400 transition-colors" />
             </div>
           </Link>
         ))}
@@ -85,17 +85,17 @@ export default function SettingsPage() {
 
       {/* Provider guides */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-white">Guías de Configuración</h2>
+        <h2 className="text-lg font-bold text-foreground">Guías de Configuración</h2>
 
         {/* Bold */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
-            <h3 className="font-semibold text-white">🏦 Bold</h3>
-            <ChevronRight className="h-5 w-5 text-zinc-600 group-open:rotate-90 transition-transform" />
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
+            <h3 className="font-semibold text-foreground">🏦 Bold</h3>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-open:rotate-90 transition-transform" />
           </summary>
-          <div className="border-t border-zinc-800 px-6 py-4 text-sm text-zinc-300 space-y-3">
+          <div className="border-t border-[var(--glass-border)] px-6 py-4 text-sm text-muted-foreground space-y-3">
             <p>
-              <strong className="text-white">1. Obtener credenciales:</strong>
+              <strong className="text-foreground">1. Obtener credenciales:</strong>
               <br />
               Accede a tu dashboard en{' '}
               <a
@@ -109,33 +109,33 @@ export default function SettingsPage() {
               {' '} y ve a Settings → API Keys
             </p>
             <p>
-              <strong className="text-white">2. Campos a ingresar:</strong>
+              <strong className="text-foreground">2. Campos a ingresar:</strong>
               <br />
               • API Key (tu clave de desarrollo o producción)<br />
               • Secret Key (tu secret key)
             </p>
             <p>
-              <strong className="text-white">3. Webhook:</strong>
+              <strong className="text-foreground">3. Webhook:</strong>
               <br />
-              URL: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
+              URL: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
               <br />
-              Header esperado: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">X-Bold-Signature</code>
+              Header esperado: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">X-Bold-Signature</code>
             </p>
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-muted-foreground">
               💡 Bold es el proveedor por defecto. Sus transacciones son procesadas en pesos colombianos (COP).
             </p>
           </div>
         </details>
 
         {/* Wompi */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
-            <h3 className="font-semibold text-white">💳 Wompi</h3>
-            <ChevronRight className="h-5 w-5 text-zinc-600 group-open:rotate-90 transition-transform" />
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
+            <h3 className="font-semibold text-foreground">💳 Wompi</h3>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-open:rotate-90 transition-transform" />
           </summary>
-          <div className="border-t border-zinc-800 px-6 py-4 text-sm text-zinc-300 space-y-3">
+          <div className="border-t border-[var(--glass-border)] px-6 py-4 text-sm text-muted-foreground space-y-3">
             <p>
-              <strong className="text-white">1. Obtener credenciales:</strong>
+              <strong className="text-foreground">1. Obtener credenciales:</strong>
               <br />
               Accede a tu dashboard en{' '}
               <a
@@ -149,33 +149,33 @@ export default function SettingsPage() {
               {' '} y ve a Configuración → API
             </p>
             <p>
-              <strong className="text-white">2. Campos a ingresar:</strong>
+              <strong className="text-foreground">2. Campos a ingresar:</strong>
               <br />
               • Public Key (para el frontend)<br />
               • Private Key (para el backend)
             </p>
             <p>
-              <strong className="text-white">3. Webhook:</strong>
+              <strong className="text-foreground">3. Webhook:</strong>
               <br />
-              URL: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
+              URL: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
               <br />
-              Header esperado: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">X-Wompi-Signature</code>
+              Header esperado: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">X-Wompi-Signature</code>
             </p>
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-[11px] text-muted-foreground">
               💡 Wompi soporta múltiples métodos de pago (tarjetas, transferencias, nequi, etc.)
             </p>
           </div>
         </details>
 
         {/* Stripe */}
-        <details className="group rounded-2xl border border-zinc-800 bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
-            <h3 className="font-semibold text-white">💰 Stripe</h3>
-            <ChevronRight className="h-5 w-5 text-zinc-600 group-open:rotate-90 transition-transform" />
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
+            <h3 className="font-semibold text-foreground">💰 Stripe</h3>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-open:rotate-90 transition-transform" />
           </summary>
-          <div className="border-t border-zinc-800 px-6 py-4 text-sm text-zinc-300 space-y-3">
+          <div className="border-t border-[var(--glass-border)] px-6 py-4 text-sm text-muted-foreground space-y-3">
             <p>
-              <strong className="text-white">1. Obtener credenciales:</strong>
+              <strong className="text-foreground">1. Obtener credenciales:</strong>
               <br />
               Accede a tu dashboard en{' '}
               <a
@@ -189,22 +189,22 @@ export default function SettingsPage() {
               {' '} y ve a Configuración → Claves API
             </p>
             <p>
-              <strong className="text-white">2. Campos a ingresar:</strong>
+              <strong className="text-foreground">2. Campos a ingresar:</strong>
               <br />
-              • Secret Key (<code className="bg-zinc-800 px-1 rounded text-[10px]">sk_test_...</code> o <code className="bg-zinc-800 px-1 rounded text-[10px]">sk_live_...</code>)<br />
-              • Publishable Key (<code className="bg-zinc-800 px-1 rounded text-[10px]">pk_test_...</code> o <code className="bg-zinc-800 px-1 rounded text-[10px]">pk_live_...</code>)
+              • Secret Key (<code className="bg-[var(--glass)] px-1 rounded text-[10px]">sk_test_...</code> o <code className="bg-[var(--glass)] px-1 rounded text-[10px]">sk_live_...</code>)<br />
+              • Publishable Key (<code className="bg-[var(--glass)] px-1 rounded text-[10px]">pk_test_...</code> o <code className="bg-[var(--glass)] px-1 rounded text-[10px]">pk_live_...</code>)
             </p>
             <p>
-              <strong className="text-white">3. Webhook:</strong>
+              <strong className="text-foreground">3. Webhook:</strong>
               <br />
-              URL: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
+              URL: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">https://tu-dominio.com/api/webhooks/payment</code>
               <br />
-              Header esperado: <code className="bg-zinc-800 px-2 py-1 rounded text-[11px]">stripe-signature</code>
+              Header esperado: <code className="bg-[var(--glass)] px-2 py-1 rounded text-[11px]">stripe-signature</code>
               <br />
-              Eventos: <code className="bg-zinc-800 px-1 rounded text-[10px]">charge.succeeded</code>, <code className="bg-zinc-800 px-1 rounded text-[10px]">charge.failed</code>
+              Eventos: <code className="bg-[var(--glass)] px-1 rounded text-[10px]">charge.succeeded</code>, <code className="bg-[var(--glass)] px-1 rounded text-[10px]">charge.failed</code>
             </p>
-            <p className="text-[11px] text-zinc-500">
-              💡 Usa <code className="bg-zinc-800 px-1 rounded text-[10px]">sk_test_...</code> para desarrollo y <code className="bg-zinc-800 px-1 rounded text-[10px]">sk_live_...</code> para producción.
+            <p className="text-[11px] text-muted-foreground">
+              💡 Usa <code className="bg-[var(--glass)] px-1 rounded text-[10px]">sk_test_...</code> para desarrollo y <code className="bg-[var(--glass)] px-1 rounded text-[10px]">sk_live_...</code> para producción.
             </p>
           </div>
         </details>

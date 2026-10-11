@@ -76,7 +76,7 @@ export default function PaymentProvidersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -85,8 +85,8 @@ export default function PaymentProvidersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Proveedores de Pago</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold text-foreground">Proveedores de Pago</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Configura y administra tus proveedores de pago (Bold, Wompi, Stripe, etc.)
         </p>
       </div>
@@ -96,16 +96,16 @@ export default function PaymentProvidersPage() {
         {providers.map((provider) => (
           <div
             key={provider.id}
-            className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6"
+            className="rounded-2xl glass-surface p-6"
           >
             {editingId === provider.id ? (
               // Modo edición
               <div className="space-y-4">
-                <h2 className="text-lg font-bold text-white">{provider.display_name}</h2>
+                <h2 className="text-lg font-bold text-foreground">{provider.display_name}</h2>
 
                 {/* Webhook URL */}
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-400">
+                  <label className="mb-2 block text-xs font-medium text-muted-foreground">
                     Webhook URL
                   </label>
                   <input
@@ -115,16 +115,16 @@ export default function PaymentProvidersPage() {
                       setEditData({ ...editData, webhook_url: e.target.value })
                     }
                     placeholder="https://tu-dominio.com/api/webhooks/bold"
-                    className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                    className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-zinc-500">
+                  <p className="mt-1 text-[10px] text-muted-foreground">
                     URL donde recibirás los webhooks del proveedor
                   </p>
                 </div>
 
                 {/* Webhook Secret */}
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-zinc-400">
+                  <label className="mb-2 block text-xs font-medium text-muted-foreground">
                     Webhook Secret
                   </label>
                   <div className="relative">
@@ -135,12 +135,12 @@ export default function PaymentProvidersPage() {
                         setEditData({ ...editData, webhook_secret: e.target.value })
                       }
                       placeholder="Tu secret para validar webhooks"
-                      className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 pr-9 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => toggleReveal('webhook_secret')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       title={revealField['webhook_secret'] ? 'Ocultar' : 'Mostrar'}
                     >
                       {revealField['webhook_secret'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -151,7 +151,7 @@ export default function PaymentProvidersPage() {
                 {/* Credenciales dinámicas por proveedor */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="text-xs font-medium text-zinc-400">
+                    <label className="text-xs font-medium text-muted-foreground">
                       Credenciales ({provider.name.toUpperCase()})
                     </label>
                     <button
@@ -165,11 +165,11 @@ export default function PaymentProvidersPage() {
                   </div>
 
                   {showConfig === provider.id && (
-                    <div className="space-y-2 rounded-lg border border-zinc-700 bg-zinc-800/50 p-3">
+                    <div className="space-y-2 rounded-lg border border-[var(--glass-border)] bg-[var(--glass-hover)] p-3">
                       {provider.name === 'bold' && (
                         <>
                           <div>
-                            <label className="text-[10px] text-zinc-500">API Key (llave de identidad de Bold)</label>
+                            <label className="text-[10px] text-muted-foreground">API Key (llave de identidad de Bold)</label>
                             <div className="relative mt-1">
                               <input
                                 type={revealField['bold_api_key'] ? 'text' : 'password'}
@@ -184,12 +184,12 @@ export default function PaymentProvidersPage() {
                                     },
                                   })
                                 }
-                                className="w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 pr-7 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                                className="w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={() => toggleReveal('bold_api_key')}
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 title={revealField['bold_api_key'] ? 'Ocultar' : 'Mostrar'}
                               >
                                 {revealField['bold_api_key'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -197,7 +197,7 @@ export default function PaymentProvidersPage() {
                             </div>
                           </div>
                           <div>
-                            <label className="text-[10px] text-zinc-500">Secret Key (llave secreta de Bold — de referencia, no usada aun por la integracion)</label>
+                            <label className="text-[10px] text-muted-foreground">Secret Key (llave secreta de Bold — de referencia, no usada aun por la integracion)</label>
                             <div className="relative mt-1">
                               <input
                                 type={revealField['bold_secret_key'] ? 'text' : 'password'}
@@ -212,12 +212,12 @@ export default function PaymentProvidersPage() {
                                     },
                                   })
                                 }
-                                className="w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 pr-7 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                                className="w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 pr-7 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={() => toggleReveal('bold_secret_key')}
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 title={revealField['bold_secret_key'] ? 'Ocultar' : 'Mostrar'}
                               >
                                 {revealField['bold_secret_key'] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -229,7 +229,7 @@ export default function PaymentProvidersPage() {
 
                       {provider.name === 'wompi' && (
                         <div>
-                          <label className="text-[10px] text-zinc-500">API Public Key</label>
+                          <label className="text-[10px] text-muted-foreground">API Public Key</label>
                           <input
                             type="password"
                             placeholder="Tu Public Key de Wompi"
@@ -243,9 +243,9 @@ export default function PaymentProvidersPage() {
                                 },
                               })
                             }
-                            className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                            className="mt-1 w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                           />
-                          <label className="mt-2 block text-[10px] text-zinc-500">
+                          <label className="mt-2 block text-[10px] text-muted-foreground">
                             API Private Key
                           </label>
                           <input
@@ -261,7 +261,7 @@ export default function PaymentProvidersPage() {
                                 },
                               })
                             }
-                            className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                            className="mt-1 w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                           />
                         </div>
                       )}
@@ -269,7 +269,7 @@ export default function PaymentProvidersPage() {
                       {provider.name === 'stripe' && (
                         <>
                           <div>
-                            <label className="text-[10px] text-zinc-500">
+                            <label className="text-[10px] text-muted-foreground">
                               Secret Key (sk_...)
                             </label>
                             <input
@@ -285,11 +285,11 @@ export default function PaymentProvidersPage() {
                                   },
                                 })
                               }
-                              className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                              className="mt-1 w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-zinc-500">
+                            <label className="text-[10px] text-muted-foreground">
                               Publishable Key (pk_...)
                             </label>
                             <input
@@ -305,13 +305,13 @@ export default function PaymentProvidersPage() {
                                   },
                                 })
                               }
-                              className="mt-1 w-full rounded border border-zinc-600 bg-zinc-700 px-2 py-1 text-[11px] text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+                              className="mt-1 w-full rounded border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                             />
                           </div>
                         </>
                       )}
 
-                      <p className="mt-2 text-[9px] text-zinc-600">
+                      <p className="mt-2 text-[9px] text-muted-foreground">
                         💡 Tip: Usa variables de entorno para valores sensibles. Las credenciales se almacenan encriptadas.
                       </p>
                     </div>
@@ -325,7 +325,7 @@ export default function PaymentProvidersPage() {
                       setEditingId(null)
                       setEditData({})
                     }}
-                    className="flex-1 rounded-lg border border-zinc-700 py-2 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors"
+                    className="flex-1 rounded-lg border border-[var(--glass-border)] py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
                   >
                     Cancelar
                   </button>
@@ -344,11 +344,11 @@ export default function PaymentProvidersPage() {
                   {provider.is_active ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-400" />
                   ) : (
-                    <Circle className="h-5 w-5 text-zinc-600" />
+                    <Circle className="h-5 w-5 text-muted-foreground" />
                   )}
                   <div>
-                    <h3 className="font-semibold text-white">{provider.display_name}</h3>
-                    <p className="text-xs text-zinc-500">
+                    <h3 className="font-semibold text-foreground">{provider.display_name}</h3>
+                    <p className="text-xs text-muted-foreground">
                       {provider.is_active ? '✓ Activo' : 'Inactivo'}
                       {provider.webhook_url && ' • Webhook configurado'}
                     </p>
@@ -369,7 +369,7 @@ export default function PaymentProvidersPage() {
                       setEditingId(provider.id)
                       setEditData(provider)
                     }}
-                    className="rounded-lg bg-zinc-800 p-2 text-zinc-400 hover:bg-zinc-700 hover:text-indigo-400 transition-colors"
+                    className="rounded-lg bg-[var(--glass)] p-2 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-indigo-400 transition-colors"
                   >
                     <Settings className="h-4 w-4" />
                   </button>

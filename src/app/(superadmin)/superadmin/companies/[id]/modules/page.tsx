@@ -74,21 +74,21 @@ export default function CompanyModulesPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <Link href="/superadmin/companies" className="hover:text-white transition-colors">Empresas</Link>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Link href="/superadmin/companies" className="hover:text-foreground transition-colors">Empresas</Link>
         <span>/</span>
-        <Link href={`/superadmin/companies/${companyId}`} className="hover:text-white transition-colors">
+        <Link href={`/superadmin/companies/${companyId}`} className="hover:text-foreground transition-colors">
           {companyName || '...'}
         </Link>
         <span>/</span>
-        <span className="text-zinc-300">Módulos</span>
+        <span className="text-foreground">Módulos</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Módulos</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-2xl font-bold text-foreground">Módulos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {loading ? '...' : `${enabledCount} de ${modules.length} módulos habilitados`}
           </p>
         </div>
@@ -97,14 +97,14 @@ export default function CompanyModulesPage() {
           <button
             onClick={disableAll}
             disabled={loading}
-            className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors disabled:opacity-40"
+            className="rounded-xl border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors disabled:opacity-40"
           >
             Deshabilitar todos
           </button>
           <button
             onClick={enableAll}
             disabled={loading}
-            className="rounded-xl border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors disabled:opacity-40"
+            className="rounded-xl border border-[var(--glass-border)] px-4 py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors disabled:opacity-40"
           >
             Habilitar todos
           </button>
@@ -127,30 +127,30 @@ export default function CompanyModulesPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="space-y-3">
           {/* Módulos siempre activos */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-            <div className="border-b border-zinc-800 bg-zinc-800/40 px-5 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="rounded-2xl glass-surface overflow-hidden">
+            <div className="border-b border-[var(--glass-border)] bg-[var(--glass-hover)] px-5 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Siempre activos — no se pueden desactivar
               </p>
             </div>
-            <div className="divide-y divide-zinc-800">
+            <div className="divide-y divide-[var(--glass-border)]">
               {alwaysOnModules.map((m) => (
                 <div key={m.id} className="flex items-center justify-between px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800">
-                      <m.icon className="h-4 w-4 text-zinc-400" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--glass-hover)]">
+                      <m.icon className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-zinc-300">{m.name}</p>
-                      <p className="text-xs text-zinc-500">{m.description}</p>
+                      <p className="text-sm font-semibold text-foreground">{m.name}</p>
+                      <p className="text-xs text-muted-foreground">{m.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-full bg-zinc-800 px-3 py-1.5 text-xs text-zinc-500">
+                  <div className="flex items-center gap-2 rounded-full bg-[var(--glass-hover)] px-3 py-1.5 text-xs text-muted-foreground">
                     <Lock className="h-3 w-3" />
                     Fijo
                   </div>
@@ -160,41 +160,41 @@ export default function CompanyModulesPage() {
           </div>
 
           {/* Módulos configurables */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-            <div className="border-b border-zinc-800 bg-zinc-800/40 px-5 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="rounded-2xl glass-surface overflow-hidden">
+            <div className="border-b border-[var(--glass-border)] bg-[var(--glass-hover)] px-5 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Módulos configurables
               </p>
             </div>
-            <div className="divide-y divide-zinc-800">
+            <div className="divide-y divide-[var(--glass-border)]">
               {modules.map((m) => {
                 const def = MODULE_REGISTRY.find((r) => r.id === m.module_id)
                 return (
                   <div
                     key={m.module_id}
-                    className="flex items-center justify-between px-5 py-4 hover:bg-zinc-800/30 transition-colors"
+                    className="flex items-center justify-between px-5 py-4 hover:bg-[var(--glass-hover)] transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-                        m.is_enabled ? 'bg-indigo-500/15' : 'bg-zinc-800'
+                        m.is_enabled ? 'bg-indigo-500/15' : 'bg-[var(--glass-hover)]'
                       }`}>
                         {def && (
-                          <def.icon className={`h-4 w-4 ${m.is_enabled ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                          <def.icon className={`h-4 w-4 ${m.is_enabled ? 'text-indigo-400' : 'text-muted-foreground'}`} />
                         )}
                       </div>
                       <div>
-                        <p className={`text-sm font-semibold transition-colors ${m.is_enabled ? 'text-white' : 'text-zinc-400'}`}>
+                        <p className={`text-sm font-semibold transition-colors ${m.is_enabled ? 'text-foreground' : 'text-muted-foreground'}`}>
                           {m.name}
                         </p>
-                        <p className="text-xs text-zinc-500">{m.description}</p>
+                        <p className="text-xs text-muted-foreground">{m.description}</p>
                       </div>
                     </div>
 
                     {/* Toggle switch */}
                     <button
                       onClick={() => toggle(m.module_id)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
-                        m.is_enabled ? 'bg-indigo-600' : 'bg-zinc-700'
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background ${
+                        m.is_enabled ? 'bg-indigo-600' : 'bg-[var(--glass-border-strong)]'
                       }`}
                       role="switch"
                       aria-checked={m.is_enabled}
@@ -214,7 +214,7 @@ export default function CompanyModulesPage() {
       )}
 
       {/* Nota informativa */}
-      <p className="text-xs text-zinc-600 text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Los cambios se aplican inmediatamente al guardar. Los usuarios de la empresa verán el sidebar actualizado en su próxima carga de página.
       </p>
     </div>

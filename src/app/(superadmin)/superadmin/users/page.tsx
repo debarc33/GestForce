@@ -38,29 +38,29 @@ export default async function UsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Usuarios del sistema</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold text-foreground">Usuarios del sistema</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           {users.length} cuenta{users.length !== 1 ? 's' : ''} registrada{users.length !== 1 ? 's' : ''} en total
         </p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-        <div className="grid grid-cols-12 gap-4 border-b border-zinc-800 px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="rounded-2xl glass-surface overflow-hidden">
+        <div className="grid grid-cols-12 gap-4 border-b border-[var(--glass-border)] px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           <span className="col-span-4">Email</span>
           <span className="col-span-4">Empresas</span>
           <span className="col-span-2">Registro</span>
           <span className="col-span-2">Último acceso</span>
         </div>
 
-        <div className="divide-y divide-zinc-800">
+        <div className="divide-y divide-[var(--glass-border)]">
           {users.map((u) => (
-            <div key={u.id} className="grid grid-cols-12 items-start gap-4 px-6 py-4 hover:bg-zinc-800/30 transition-colors">
+            <div key={u.id} className="grid grid-cols-12 items-start gap-4 px-6 py-4 hover:bg-[var(--glass-hover)] transition-colors">
               <div className="col-span-4 flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-[12px] font-bold text-zinc-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-hover)] text-[12px] font-bold text-foreground">
                   {u.email[0]?.toUpperCase() ?? '?'}
                 </div>
                 <div>
-                  <p className="text-sm text-white">{u.email}</p>
+                  <p className="text-sm text-foreground">{u.email}</p>
                   {u.is_superadmin && (
                     <span className="text-[10px] font-semibold text-indigo-400">SUPERADMIN</span>
                   )}
@@ -69,14 +69,14 @@ export default async function UsersPage() {
 
               <div className="col-span-4">
                 {u.companies.length === 0 ? (
-                  <span className="text-xs text-zinc-600">Sin empresa</span>
+                  <span className="text-xs text-muted-foreground">Sin empresa</span>
                 ) : (
                   <div className="flex flex-col gap-1">
                     {u.companies.map((c) => (
                       <div key={c.id} className="flex items-center gap-1.5">
-                        <Building2 className="h-3 w-3 shrink-0 text-zinc-600" />
-                        <span className="truncate text-xs text-zinc-300">{c.name}</span>
-                        <span className="rounded px-1 py-0.5 text-[10px] font-medium bg-zinc-800 text-zinc-500">
+                        <Building2 className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        <span className="truncate text-xs text-foreground">{c.name}</span>
+                        <span className="rounded px-1 py-0.5 text-[10px] font-medium bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground">
                           {c.role}
                         </span>
                       </div>
@@ -86,13 +86,13 @@ export default async function UsersPage() {
               </div>
 
               <div className="col-span-2">
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                   {new Date(u.created_at).toLocaleDateString('es-CO')}
                 </p>
               </div>
 
               <div className="col-span-2">
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-muted-foreground">
                   {u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('es-CO') : 'Nunca'}
                 </p>
               </div>
@@ -103,8 +103,8 @@ export default async function UsersPage() {
 
       {users.length === 0 && (
         <div className="py-16 text-center">
-          <Users className="mx-auto h-8 w-8 text-zinc-700" />
-          <p className="mt-2 text-sm text-zinc-500">No hay usuarios registrados.</p>
+          <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">No hay usuarios registrados.</p>
         </div>
       )}
     </div>

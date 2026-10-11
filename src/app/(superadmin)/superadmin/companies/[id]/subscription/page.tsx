@@ -27,7 +27,7 @@ const STATUS_COLORS = {
   active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   expired: 'bg-red-500/10 text-red-400 border-red-500/20',
-  suspended: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+  suspended: 'bg-[var(--glass)] text-muted-foreground border-[var(--glass-border)]',
 }
 
 const STATUS_LABELS = {
@@ -195,7 +195,7 @@ export default function SubscriptionPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -215,14 +215,14 @@ export default function SubscriptionPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">{subscription.company_name}</h1>
-        <p className="mt-1 text-sm text-zinc-400">Gestión de suscripción</p>
+        <h1 className="text-2xl font-bold text-foreground">{subscription.company_name}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Gestión de suscripción</p>
       </div>
 
       {/* Pago de prueba -- solo para validar la pasarela (Bold), no afecta el plan */}
       <div className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-6">
-        <h2 className="text-lg font-semibold text-white mb-1">Pago de prueba (integración)</h2>
-        <p className="text-sm text-zinc-400 mb-4">
+        <h2 className="text-lg font-semibold text-foreground mb-1">Pago de prueba (integración)</h2>
+        <p className="text-sm text-muted-foreground mb-4">
           Cobro real muy pequeño ($3.000 COP) para confirmar que Bold y el webhook funcionan de punta a punta.
           No cambia el plan ni la fecha de vencimiento de esta empresa.
         </p>
@@ -237,13 +237,13 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Estado actual */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Estado Actual</h2>
+      <div className="rounded-2xl glass-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Estado Actual</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Status */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2">ESTADO</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">ESTADO</p>
             <div
               className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
                 STATUS_COLORS[subscription.subscription_status as keyof typeof STATUS_COLORS]
@@ -261,32 +261,32 @@ export default function SubscriptionPage() {
 
           {/* Período */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2">PERÍODO</p>
-            <p className="text-sm font-medium text-zinc-200">
+            <p className="text-xs font-medium text-muted-foreground mb-2">PERÍODO</p>
+            <p className="text-sm font-medium text-foreground">
               {PERIOD_LABELS[subscription.subscription_period as keyof typeof PERIOD_LABELS]}
             </p>
           </div>
 
           {/* Inicio */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2">FECHA INICIO</p>
-            <p className="text-sm text-zinc-300">
+            <p className="text-xs font-medium text-muted-foreground mb-2">FECHA INICIO</p>
+            <p className="text-sm text-foreground">
               {new Date(subscription.subscription_start).toLocaleDateString('es-CO')}
             </p>
           </div>
 
           {/* Vencimiento */}
           <div>
-            <p className="text-xs font-medium text-zinc-500 mb-2">FECHA VENCIMIENTO</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">FECHA VENCIMIENTO</p>
             <div>
-              <p className="text-sm text-zinc-300">
+              <p className="text-sm text-foreground">
                 {new Date(subscription.subscription_end).toLocaleDateString('es-CO')}
               </p>
               {daysUntilExpiry !== null && (
                 <p
                   className={`text-xs mt-1 ${
                     daysUntilExpiry > 7
-                      ? 'text-zinc-500'
+                      ? 'text-muted-foreground'
                       : daysUntilExpiry > 0
                         ? 'text-amber-400'
                         : 'text-red-400'
@@ -303,18 +303,18 @@ export default function SubscriptionPage() {
       </div>
 
       {/* Ajustar fechas manualmente */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="rounded-2xl glass-surface p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Ajustar fechas</h2>
-            <p className="mt-0.5 text-sm text-zinc-400">
+            <h2 className="text-lg font-semibold text-foreground">Ajustar fechas</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Define el inicio y los días gratis (prueba/cortesía). El vencimiento se calcula solo.
             </p>
           </div>
           {!editingDates && (
             <button
               onClick={openDatesEditor}
-              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-200 hover:border-zinc-600 transition-colors"
+              className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-xs font-medium text-foreground hover:border-[var(--glass-border-strong)] transition-colors"
             >
               Editar fechas
             </button>
@@ -325,30 +325,30 @@ export default function SubscriptionPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-2">FECHA DE INICIO</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2">FECHA DE INICIO</label>
                 <input
                   type="date"
                   value={startInput}
                   onChange={(e) => setStartInput(e.target.value)}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-2">DÍAS GRATIS (PRUEBA)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2">DÍAS GRATIS (PRUEBA)</label>
                 <input
                   type="number"
                   min={1}
                   value={trialDaysInput}
                   onChange={(e) => setTrialDaysInput(Number(e.target.value))}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
 
             {startInput && trialDaysInput >= 1 && (
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-muted-foreground">
                 Vencimiento resultante:{' '}
-                <span className="text-zinc-200 font-medium">
+                <span className="text-foreground font-medium">
                   {new Date(computeEnd(startInput, trialDaysInput) + 'T00:00:00').toLocaleDateString('es-CO')}
                 </span>
               </p>
@@ -369,7 +369,7 @@ export default function SubscriptionPage() {
               </button>
               <button
                 onClick={() => { setEditingDates(false); setDatesError(null) }}
-                className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800 transition-colors"
+                className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)] transition-colors"
               >
                 Cancelar
               </button>
@@ -382,13 +382,13 @@ export default function SubscriptionPage() {
       {subscription.subscription_status === 'expired' ||
       (daysUntilExpiry !== null && daysUntilExpiry <= 7) ? (
         <div className="rounded-2xl border border-amber-800 bg-amber-900/20 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-400" />
             Renovar Suscripción
           </h2>
 
           <div className="space-y-4">
-            <p className="text-sm text-zinc-300">
+            <p className="text-sm text-foreground">
               Selecciona el período de suscripción y realiza el pago
             </p>
 
@@ -401,7 +401,7 @@ export default function SubscriptionPage() {
                   className={`p-3 rounded-lg border transition-all ${
                     selectedPeriod === period
                       ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400'
-                      : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600'
+                      : 'border-[var(--glass-border)] bg-[var(--glass)] text-muted-foreground hover:border-[var(--glass-border-strong)]'
                   }`}
                 >
                   <div className="font-medium text-sm">
@@ -426,20 +426,20 @@ export default function SubscriptionPage() {
 
       {/* Historial de pagos */}
       {payments.length > 0 && (
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Historial de Pagos</h2>
+        <div className="rounded-2xl glass-surface p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Historial de Pagos</h2>
 
           <div className="space-y-3">
             {payments.map((payment) => (
               <div
                 key={payment.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700"
+                className="flex items-center justify-between p-3 rounded-lg bg-[var(--glass-hover)] border border-[var(--glass-border)]"
               >
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-foreground">
                     ${payment.amount.toLocaleString('es-CO')} COP
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     {PERIOD_LABELS[payment.subscription_period as keyof typeof PERIOD_LABELS]}
                   </p>
                 </div>
@@ -459,7 +459,7 @@ export default function SubscriptionPage() {
                         ? 'Fallido'
                         : 'Pendiente'}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(payment.created_at).toLocaleDateString('es-CO')}
                   </p>
                 </div>

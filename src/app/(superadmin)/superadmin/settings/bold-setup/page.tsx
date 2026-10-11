@@ -21,7 +21,7 @@ export default function BoldSetupPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Configurar Bold</h1>
+        <h1 className="text-2xl font-bold text-foreground">Configurar Bold</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Guía paso a paso para integrar Bold con GestForce
         </p>
@@ -30,13 +30,13 @@ export default function BoldSetupPage() {
       {/* Progress Steps */}
       <div className="space-y-4">
         {/* Step 1 */}
-        <details open className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
+        <details open className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                 1
               </div>
-              <h3 className="font-semibold text-white">Obtener credenciales de Bold</h3>
+              <h3 className="font-semibold text-foreground">Obtener credenciales de Bold</h3>
             </div>
             <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
@@ -67,12 +67,12 @@ export default function BoldSetupPage() {
               </p>
 
               <div className="space-y-2">
-                <div className="rounded-lg bg-zinc-800/50 p-3">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3">
                   <p className="text-xs font-medium text-muted-foreground mb-2">API Key</p>
                   <input
                     type="text"
                     placeholder="pk_... o similar"
-                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                    className="w-full bg-[var(--glass)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                     readOnly
                   />
                   <p className="mt-1 text-[10px] text-muted-foreground">
@@ -80,12 +80,12 @@ export default function BoldSetupPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3">
                   <p className="text-xs font-medium text-muted-foreground mb-2">Secret Key</p>
                   <input
                     type="password"
                     placeholder="sk_... o similar"
-                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                    className="w-full bg-[var(--glass)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                     readOnly
                   />
                   <p className="mt-1 text-[10px] text-muted-foreground">
@@ -98,13 +98,13 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 2 */}
-        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                 2
               </div>
-              <h3 className="font-semibold text-white">Configurar en GestForce</h3>
+              <h3 className="font-semibold text-foreground">Configurar en GestForce</h3>
             </div>
             <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
@@ -136,12 +136,12 @@ export default function BoldSetupPage() {
               </p>
 
               <div className="space-y-2 ml-4">
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     Webhook URL (automático)
                   </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-foreground break-all">
+                    <code className="flex-1 bg-[var(--glass)] rounded px-2 py-1 text-[10px] text-foreground break-all">
                       {webhookUrl}
                     </code>
                     <button
@@ -154,35 +154,35 @@ export default function BoldSetupPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     Webhook Secret (desde Bold)
                   </p>
                   <input
                     type="password"
                     placeholder="Pega el secret de Bold aquí"
-                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                    className="w-full bg-[var(--glass)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
                   <p className="mt-1 text-[10px] text-muted-foreground">
                     Este es el secret que Bold te proporciona para validar webhooks
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">API Key</p>
                   <input
                     type="password"
                     placeholder="Pega tu API Key aquí"
-                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                    className="w-full bg-[var(--glass)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Secret Key</p>
                   <input
                     type="password"
                     placeholder="Pega tu Secret Key aquí"
-                    className="w-full bg-zinc-700 border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
+                    className="w-full bg-[var(--glass)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
@@ -199,13 +199,13 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 3 */}
-        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                 3
               </div>
-              <h3 className="font-semibold text-white">Configurar webhook en Bold</h3>
+              <h3 className="font-semibold text-foreground">Configurar webhook en Bold</h3>
             </div>
             <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
@@ -230,10 +230,10 @@ export default function BoldSetupPage() {
               </p>
 
               <div className="space-y-2 ml-4">
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">URL del Webhook</p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-zinc-700 rounded px-2 py-1 text-[10px] text-foreground break-all">
+                    <code className="flex-1 bg-[var(--glass)] rounded px-2 py-1 text-[10px] text-foreground break-all">
                       {webhookUrl}
                     </code>
                     <button
@@ -246,7 +246,7 @@ export default function BoldSetupPage() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">
                     Header: X-Bold-Signature
                   </p>
@@ -255,7 +255,7 @@ export default function BoldSetupPage() {
                   </p>
                 </div>
 
-                <div className="rounded-lg bg-zinc-800/50 p-3 border border-[var(--glass-border)]">
+                <div className="rounded-lg bg-[var(--glass-hover)] p-3 border border-[var(--glass-border)]">
                   <p className="text-xs font-medium text-muted-foreground mb-1">Eventos a suscribirse</p>
                   <ul className="text-[10px] text-muted-foreground space-y-1">
                     <li>✓ transaction.success</li>
@@ -278,13 +278,13 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Step 4 */}
-        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                 4
               </div>
-              <h3 className="font-semibold text-white">Probar la integración</h3>
+              <h3 className="font-semibold text-foreground">Probar la integración</h3>
             </div>
             <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>
@@ -325,13 +325,13 @@ export default function BoldSetupPage() {
         </details>
 
         {/* Help */}
-        <details className="group rounded-2xl border border-[var(--glass-border)] bg-zinc-900">
-          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-zinc-800/50 transition-colors">
+        <details className="group rounded-2xl glass-surface">
+          <summary className="flex cursor-pointer items-center justify-between p-6 hover:bg-[var(--glass-hover)] transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
                 ?
               </div>
-              <h3 className="font-semibold text-white">Solución de problemas</h3>
+              <h3 className="font-semibold text-foreground">Solución de problemas</h3>
             </div>
             <ChevronDown className="h-5 w-5 text-muted-foreground group-open:rotate-180 transition-transform" />
           </summary>

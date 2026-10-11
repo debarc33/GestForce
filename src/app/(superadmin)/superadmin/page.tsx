@@ -70,8 +70,8 @@ export default async function SuperadminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Visión global de todas las empresas en el sistema.
         </p>
       </div>
@@ -79,21 +79,24 @@ export default async function SuperadminDashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <div
+            key={kpi.label}
+            className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-5 shadow-sm hover:shadow-md hover:border-[var(--glass-hover)] transition-all"
+          >
             <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${kpi.bg}`}>
               <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
             </div>
-            <p className="text-2xl font-bold text-white">{kpi.value}</p>
-            <p className="mt-0.5 text-sm font-medium text-zinc-300">{kpi.label}</p>
-            <p className="mt-0.5 text-xs text-zinc-500">{kpi.sub}</p>
+            <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+            <p className="mt-0.5 text-sm font-medium text-foreground">{kpi.label}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Empresas recientes */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900">
-        <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-          <h2 className="text-sm font-semibold text-white">Empresas recientes</h2>
+      <div className="rounded-2xl glass-surface">
+        <div className="flex items-center justify-between border-b border-[var(--glass-border)] px-6 py-4">
+          <h2 className="text-sm font-semibold text-foreground">Empresas recientes</h2>
           <Link
             href="/superadmin/companies"
             className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -101,9 +104,9 @@ export default async function SuperadminDashboard() {
             Ver todas <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="divide-y divide-zinc-800">
+        <div className="divide-y divide-[var(--glass-border)]">
           {stats.recentCompanies.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-zinc-500">
+            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
               No hay empresas registradas aún.
             </p>
           ) : (
@@ -111,15 +114,15 @@ export default async function SuperadminDashboard() {
               <Link
                 key={c.id}
                 href={`/superadmin/companies/${c.id}`}
-                className="flex items-center justify-between px-6 py-3.5 hover:bg-zinc-800/50 transition-colors"
+                className="flex items-center justify-between px-6 py-3.5 hover:bg-[var(--glass-hover)] transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-[11px] font-bold text-zinc-300">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--glass-hover)] text-[11px] font-bold text-foreground">
                     {c.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{c.name}</p>
-                    <p className="text-xs text-zinc-500">{c.nit ?? 'Sin NIT'}</p>
+                    <p className="text-sm font-medium text-foreground">{c.name}</p>
+                    <p className="text-xs text-muted-foreground">{c.nit ?? 'Sin NIT'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -132,7 +135,7 @@ export default async function SuperadminDashboard() {
                       <XCircle className="h-3.5 w-3.5" /> Inactiva
                     </span>
                   )}
-                  <ArrowRight className="h-3.5 w-3.5 text-zinc-600" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               </Link>
             ))

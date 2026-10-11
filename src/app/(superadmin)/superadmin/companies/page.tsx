@@ -17,7 +17,7 @@ function StatusBadge({ status }: { status: SubscriptionStatus }) {
     active:    { icon: <CheckCircle2 className="h-3 w-3" />, className: 'bg-emerald-500/10 text-emerald-400' },
     pending:   { icon: <AlertCircle  className="h-3 w-3" />, className: 'bg-amber-500/10  text-amber-400'   },
     expired:   { icon: <XCircle      className="h-3 w-3" />, className: 'bg-red-500/10    text-red-400'     },
-    suspended: { icon: <PauseCircle  className="h-3 w-3" />, className: 'bg-zinc-500/10   text-zinc-400'    },
+    suspended: { icon: <PauseCircle  className="h-3 w-3" />, className: 'bg-[var(--glass)] text-muted-foreground' },
   }
   const { icon, className } = config[status] ?? config.pending
   return (
@@ -113,8 +113,8 @@ export default function CompaniesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Empresas</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-2xl font-bold text-foreground">Empresas</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {companies.length} empresa{companies.length !== 1 ? 's' : ''} registrada{companies.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function CompaniesPage() {
             className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               filterStatus === key
                 ? 'bg-indigo-600 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                : 'bg-[var(--glass)] text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground'
             }`}
           >
             {label}
@@ -152,31 +152,31 @@ export default function CompaniesPage() {
 
       {/* Búsqueda */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           placeholder="Buscar por nombre o NIT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
         />
       </div>
 
       {/* Tabla */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 overflow-hidden">
+      <div className="rounded-2xl glass-surface overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <Building2 className="mx-auto h-8 w-8 text-zinc-700" />
-            <p className="mt-2 text-sm text-zinc-500">No se encontraron empresas.</p>
+            <Building2 className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-2 text-sm text-muted-foreground">No se encontraron empresas.</p>
           </div>
         ) : (
           <>
             {/* Cabecera */}
-            <div className="grid grid-cols-12 gap-3 border-b border-zinc-800 px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="grid grid-cols-12 gap-3 border-b border-[var(--glass-border)] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span className="col-span-3">Empresa</span>
               <span className="col-span-2 text-center">Inicio</span>
               <span className="col-span-2 text-center">Período</span>
@@ -186,7 +186,7 @@ export default function CompaniesPage() {
             </div>
 
             {/* Filas */}
-            <div className="divide-y divide-zinc-800/70">
+            <div className="divide-y divide-[var(--glass-border)]">
               {filtered.map((company) => {
                 const days = daysUntilExpiry(company.subscription_end)
                 const isExpiringSoon = days !== null && days > 0 && days <= 15
@@ -194,21 +194,21 @@ export default function CompaniesPage() {
                 return (
                   <div
                     key={company.id}
-                    className="grid grid-cols-12 items-center gap-3 px-5 py-3.5 hover:bg-zinc-800/30 transition-colors"
+                    className="grid grid-cols-12 items-center gap-3 px-5 py-3.5 hover:bg-[var(--glass-hover)] transition-colors"
                   >
                     {/* Empresa */}
                     <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-[11px] font-bold text-zinc-300">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--glass-hover)] text-[11px] font-bold text-foreground">
                         {company.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{company.name}</p>
+                        <p className="truncate text-sm font-semibold text-foreground">{company.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-zinc-500">{company.nit ?? 'Sin NIT'}</span>
-                          <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
+                          <span className="text-xs text-muted-foreground">{company.nit ?? 'Sin NIT'}</span>
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                             <Users className="h-2.5 w-2.5" />{company.user_count}
                           </span>
-                          <span className="flex items-center gap-0.5 text-[10px] text-zinc-600">
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                             <LayoutGrid className="h-2.5 w-2.5" />
                             {company.enabled_modules_count === 0 ? 'Todos' : company.enabled_modules_count}
                           </span>
@@ -217,22 +217,22 @@ export default function CompaniesPage() {
                     </div>
 
                     {/* Fecha inicio */}
-                    <div className="col-span-2 flex items-center justify-center gap-1.5 text-xs text-zinc-400">
-                      <Calendar className="h-3 w-3 text-zinc-600 shrink-0" />
+                    <div className="col-span-2 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
                       {formatDate(company.subscription_start)}
                     </div>
 
                     {/* Período */}
                     <div className="col-span-2 flex justify-center">
-                      <span className="rounded-lg bg-zinc-800 px-2.5 py-1 text-xs font-medium text-zinc-300">
+                      <span className="rounded-lg bg-[var(--glass)] border border-[var(--glass-border)] px-2.5 py-1 text-xs font-medium text-foreground">
                         {SUBSCRIPTION_PERIOD_LABELS[company.subscription_period]}
                       </span>
                     </div>
 
                     {/* Vencimiento */}
                     <div className="col-span-2 flex flex-col items-center">
-                      <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                        <Clock className={`h-3 w-3 shrink-0 ${isExpiringSoon ? 'text-amber-400' : 'text-zinc-600'}`} />
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Clock className={`h-3 w-3 shrink-0 ${isExpiringSoon ? 'text-amber-400' : 'text-muted-foreground'}`} />
                         {formatDate(company.subscription_end)}
                       </div>
                       {isExpiringSoon && (
@@ -268,7 +268,7 @@ export default function CompaniesPage() {
                     <div className="col-span-1 flex justify-end">
                       <Link
                         href={`/superadmin/companies/${company.id}`}
-                        className="flex items-center justify-center rounded-lg p-1.5 text-zinc-600 hover:bg-zinc-700 hover:text-indigo-400 transition-colors"
+                        className="flex items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-indigo-400 transition-colors"
                       >
                         <ArrowRight className="h-4 w-4" />
                       </Link>
@@ -283,11 +283,11 @@ export default function CompaniesPage() {
 
       {/* Modal crear empresa */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 isolate z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-popover text-popover-foreground ring-1 ring-foreground/10 p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-white">Nueva empresa</h2>
-              <button onClick={() => setShowCreate(false)} className="text-zinc-500 hover:text-white transition-colors">
+              <h2 className="text-lg font-bold text-foreground">Nueva empresa</h2>
+              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -295,75 +295,75 @@ export default function CompaniesPage() {
             <div className="space-y-4">
               {/* Nombre */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Nombre *</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Nombre *</label>
                 <input
                   type="text"
                   placeholder="Ej: Mi Empresa S.A.S."
                   value={newCompany.name}
                   onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* NIT */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">NIT</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">NIT</label>
                 <input
                   type="text"
                   placeholder="Ej: 900123456-1"
                   value={newCompany.nit}
                   onChange={(e) => setNewCompany({ ...newCompany, nit: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Email</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Email</label>
                 <input
                   type="email"
                   placeholder="empresa@email.com"
                   value={newCompany.email}
                   onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Divisor visual */}
-              <div className="h-px bg-zinc-700/50" />
+              <div className="h-px bg-[var(--glass-border)]" />
 
               {/* Propietario - Email */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Email del propietario *</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Email del propietario *</label>
                 <input
                   type="email"
                   placeholder="propietario@email.com"
                   value={newCompany.owner_email}
                   onChange={(e) => setNewCompany({ ...newCompany, owner_email: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
-                <p className="mt-1 text-[10px] text-zinc-500">Se creará automáticamente una cuenta con contraseña temporal</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Se creará automáticamente una cuenta con contraseña temporal</p>
               </div>
 
               {/* Propietario - Nombre */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Nombre del propietario *</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Nombre del propietario *</label>
                 <input
                   type="text"
                   placeholder="Ej: Juan Pérez"
                   value={newCompany.owner_first_name}
                   onChange={(e) => setNewCompany({ ...newCompany, owner_first_name: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Régimen fiscal */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Régimen fiscal</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Régimen fiscal</label>
                 <select
                   value={newCompany.fiscal_regime}
                   onChange={(e) => setNewCompany({ ...newCompany, fiscal_regime: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 >
                   <option value="no_iva">No responsable de IVA</option>
                   <option value="iva">Responsable de IVA</option>
@@ -373,7 +373,7 @@ export default function CompaniesPage() {
 
               {/* Período de suscripción */}
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
                   Período de suscripción *
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -395,7 +395,7 @@ export default function CompaniesPage() {
                         className={`flex flex-col items-center gap-1 rounded-xl border p-3 text-center transition-all ${
                           selected
                             ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400'
-                            : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600'
+                            : 'border-[var(--glass-border)] bg-[var(--glass)] text-muted-foreground hover:border-[var(--glass-border-strong)]'
                         }`}
                       >
                         <span className="text-sm font-bold">{SUBSCRIPTION_PERIOD_LABELS[period]}</span>
@@ -404,8 +404,8 @@ export default function CompaniesPage() {
                     )
                   })}
                 </div>
-                <p className="mt-1.5 text-[11px] text-zinc-600">
-                  La fecha de inicio es hoy con <strong className="text-zinc-500">15 días de prueba gratis</strong>. El propietario recibirá un email con sus credenciales de acceso.
+                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                  La fecha de inicio es hoy con <strong className="text-foreground">15 días de prueba gratis</strong>. El propietario recibirá un email con sus credenciales de acceso.
                 </p>
               </div>
             </div>
@@ -414,7 +414,7 @@ export default function CompaniesPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowCreate(false)}
-                className="flex-1 rounded-xl border border-zinc-700 py-2 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors"
+                className="flex-1 rounded-xl border border-[var(--glass-border)] py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
               >
                 Cancelar
               </button>

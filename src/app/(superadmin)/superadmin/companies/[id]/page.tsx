@@ -96,7 +96,7 @@ export default function CompanyDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -119,10 +119,10 @@ export default function CompanyDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
-        <Link href="/superadmin/companies" className="hover:text-white transition-colors">Empresas</Link>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Link href="/superadmin/companies" className="hover:text-foreground transition-colors">Empresas</Link>
         <span>/</span>
-        <span className="text-zinc-300">{company.name}</span>
+        <span className="text-foreground">{company.name}</span>
       </div>
 
       {/* Error */}
@@ -131,12 +131,12 @@ export default function CompanyDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800 text-xl font-bold text-zinc-300">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--glass-hover)] text-xl font-bold text-foreground">
             {company.name.slice(0, 2).toUpperCase()}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white">{company.name}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{company.name}</h1>
               {company.is_active ? (
                 <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
                   <CheckCircle className="h-3 w-3" /> Activa
@@ -147,7 +147,7 @@ export default function CompanyDetailPage() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-zinc-400">NIT: {company.nit ?? 'No registrado'}</p>
+            <p className="text-sm text-muted-foreground">NIT: {company.nit ?? 'No registrado'}</p>
           </div>
         </div>
         <button
@@ -163,39 +163,39 @@ export default function CompanyDetailPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Link
           href={`/superadmin/companies/${id}/modules`}
-          className="group flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-indigo-500/40 hover:bg-zinc-800/50 transition-all"
+          className="group flex items-center justify-between rounded-2xl glass-surface p-5 hover:border-indigo-500/40 hover:bg-[var(--glass-hover)] transition-all"
         >
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10">
               <LayoutGrid className="h-5 w-5 text-indigo-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Módulos</p>
-              <p className="text-xs text-zinc-400">Configurar módulos activos</p>
+              <p className="text-sm font-semibold text-foreground">Módulos</p>
+              <p className="text-xs text-muted-foreground">Configurar módulos activos</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-indigo-400 transition-colors" />
         </Link>
 
         <Link
           href={`/superadmin/companies/${id}/users`}
-          className="group flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-emerald-500/40 hover:bg-zinc-800/50 transition-all"
+          className="group flex items-center justify-between rounded-2xl glass-surface p-5 hover:border-emerald-500/40 hover:bg-[var(--glass-hover)] transition-all"
         >
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
               <Users className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Usuarios</p>
-              <p className="text-xs text-zinc-400">{userCount} usuario{userCount !== 1 ? 's' : ''}</p>
+              <p className="text-sm font-semibold text-foreground">Usuarios</p>
+              <p className="text-xs text-muted-foreground">{userCount} usuario{userCount !== 1 ? 's' : ''}</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-zinc-600 group-hover:text-emerald-400 transition-colors" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
         </Link>
 
         <Link
           href={`/superadmin/companies/${id}/subscription`}
-          className="group flex items-center justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-5 hover:border-purple-500/40 hover:bg-zinc-800/50 transition-all"
+          className="group flex items-center justify-between rounded-2xl glass-surface p-5 hover:border-purple-500/40 hover:bg-[var(--glass-hover)] transition-all"
         >
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
@@ -204,25 +204,25 @@ export default function CompanyDetailPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Suscripción</p>
-              <p className="text-xs text-zinc-400">{company.subscription_status}</p>
+              <p className="text-sm font-semibold text-foreground">Suscripción</p>
+              <p className="text-xs text-muted-foreground">{company.subscription_status}</p>
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-zinc-600 group-hover:text-purple-400 transition-colors" />
+          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-purple-400 transition-colors" />
         </Link>
       </div>
 
       {/* Info de la empresa */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900">
-        <div className="flex items-center gap-2 border-b border-zinc-800 px-6 py-4">
-          <Building2 className="h-4 w-4 text-zinc-500" />
-          <h2 className="text-sm font-semibold text-white">Información general</h2>
+      <div className="rounded-2xl glass-surface">
+        <div className="flex items-center gap-2 border-b border-[var(--glass-border)] px-6 py-4">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">Información general</h2>
         </div>
-        <div className="divide-y divide-zinc-800">
+        <div className="divide-y divide-[var(--glass-border)]">
           {infoRows.map((row) => (
             <div key={row.label} className="flex items-center justify-between px-6 py-3">
-              <span className="text-xs font-medium text-zinc-500">{row.label}</span>
-              <span className="text-sm text-zinc-200">{row.value}</span>
+              <span className="text-xs font-medium text-muted-foreground">{row.label}</span>
+              <span className="text-sm text-foreground">{row.value}</span>
             </div>
           ))}
         </div>
@@ -230,11 +230,11 @@ export default function CompanyDetailPage() {
 
       {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 isolate z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-popover text-popover-foreground ring-1 ring-foreground/10 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-white">Editar empresa</h2>
-              <button onClick={() => setShowEditModal(false)} className="text-zinc-500 hover:text-white">
+              <h2 className="text-lg font-bold text-foreground">Editar empresa</h2>
+              <button onClick={() => setShowEditModal(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -242,99 +242,99 @@ export default function CompanyDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Nombre */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Nombre *</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Nombre *</label>
                 <input
                   type="text"
                   value={editData.name ?? ''}
                   onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Razón social */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Razón social</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Razón social</label>
                 <input
                   type="text"
                   value={editData.legal_name ?? ''}
                   onChange={(e) => setEditData({ ...editData, legal_name: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* NIT */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">NIT</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">NIT</label>
                 <input
                   type="text"
                   value={editData.nit ?? ''}
                   onChange={(e) => setEditData({ ...editData, nit: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Email */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Email</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Email</label>
                 <input
                   type="email"
                   value={editData.email ?? ''}
                   onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Teléfono */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Teléfono</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Teléfono</label>
                 <input
                   type="text"
                   value={editData.phone ?? ''}
                   onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Dirección */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Dirección</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Dirección</label>
                 <input
                   type="text"
                   value={editData.address ?? ''}
                   onChange={(e) => setEditData({ ...editData, address: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Ciudad */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Ciudad</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Ciudad</label>
                 <input
                   type="text"
                   value={editData.city ?? ''}
                   onChange={(e) => setEditData({ ...editData, city: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Departamento */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Departamento</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Departamento</label>
                 <input
                   type="text"
                   value={editData.department ?? ''}
                   onChange={(e) => setEditData({ ...editData, department: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
               </div>
 
               {/* Régimen fiscal */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Régimen fiscal</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Régimen fiscal</label>
                 <select
                   value={editData.fiscal_regime ?? ''}
                   onChange={(e) => setEditData({ ...editData, fiscal_regime: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 >
                   <option value="no_iva">No responsable de IVA</option>
                   <option value="iva">Responsable de IVA</option>
@@ -344,11 +344,11 @@ export default function CompanyDetailPage() {
 
               {/* Estado */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-400">Estado</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Estado</label>
                 <select
                   value={editData.subscription_status ?? ''}
                   onChange={(e) => setEditData({ ...editData, subscription_status: e.target.value })}
-                  className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                 >
                   <option value="active">Activa</option>
                   <option value="pending">Pendiente pago</option>
@@ -362,7 +362,7 @@ export default function CompanyDetailPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 rounded-xl border border-zinc-700 py-2 text-sm text-zinc-400 hover:bg-zinc-800 transition-colors"
+                className="flex-1 rounded-xl border border-[var(--glass-border)] py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
               >
                 Cancelar
               </button>
