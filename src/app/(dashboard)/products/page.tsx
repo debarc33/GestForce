@@ -78,7 +78,11 @@ export default function ProductsPage() {
       let id = categoryCache.current.get(key)
       if (!id) {
         const created = await createCategory({ name: data.category_name, company_id: activeCompanyId })
-        id = created.id
+        const createdId = created?.id
+        if (typeof createdId !== 'string' || !createdId) {
+          throw new Error(`No se pudo crear la categoria "${data.category_name}".`)
+        }
+        id = createdId
         categoryCache.current.set(key, id)
       }
       category_id = id
