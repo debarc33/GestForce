@@ -411,7 +411,7 @@ export default function PayrollPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
+          <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
             <Table>
               <TableHeader className="bg-[var(--glass-hover)]/50">
                 {empTable.getHeaderGroups().map(hg => (
@@ -452,6 +452,51 @@ export default function PayrollPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden divide-y divide-[var(--glass-border)]">
+            {empTable.getRowModel().rows.length ? (
+              empTable.getRowModel().rows.map(row => {
+                const e = row.original
+                return (
+                  <div key={row.id} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <input type="checkbox" checked={row.getIsSelected()}
+                          onChange={row.getToggleSelectedHandler()}
+                          className="mt-1 h-4 w-4 accent-blue-600 cursor-pointer shrink-0" />
+                        <div className="min-w-0">
+                          <button onClick={() => setEditingEmployee(e)}
+                            className="font-medium text-primary hover:underline text-left">
+                            {e.name}
+                          </button>
+                          {e.position && (
+                            <p className="text-xs text-muted-foreground">{e.position}{e.department ? ` · ${e.department}` : ''}</p>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${e.is_active ? 'bg-green-100 text-green-700' : 'bg-zinc-100 text-muted-foreground'}`}>
+                        {e.is_active ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2 pl-7">
+                      <span className="text-xs text-muted-foreground">
+                        {CONTRACT_LABEL[e.contract_type] ?? e.contract_type} · Ingreso: {new Date(e.hire_date + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-sm font-medium tabular-nums text-foreground shrink-0">{fmtCOP(e.salary)}</span>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="h-40 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <Users className="h-10 w-10 opacity-30" />
+                <div className="text-center">
+                  <p className="text-sm font-medium">{search ? 'Ningún empleado coincide' : 'No hay empleados registrados'}</p>
+                  <p className="text-xs">{search ? 'Intenta con otros términos.' : 'Usa el botón "Nuevo empleado" para comenzar.'}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
