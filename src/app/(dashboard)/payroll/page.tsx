@@ -506,7 +506,7 @@ export default function PayrollPage() {
                 </div>
               ) : (
                 <>
-                  <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
+                  <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-x-auto">
                     <table className="w-full text-sm min-w-[1000px]">
                       <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
                         <tr>
@@ -548,6 +548,39 @@ export default function PayrollPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm divide-y divide-[var(--glass-border)]">
+                    {liqItems.map(item => (
+                      <div key={item.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground">{item.employee?.name}</p>
+                            {item.employee?.position && <p className="text-xs text-muted-foreground">{item.employee.position}</p>}
+                          </div>
+                          {!periodClosed && (
+                            <button onClick={() => setEditingItem(item)}
+                              className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-primary transition-colors">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span>Días: <span className="text-foreground">{(item.worked_days ?? 30)}/30</span></span>
+                          <span>Salario: <span className="text-foreground">{fmtCOP(item.salary)}</span></span>
+                          <span>Aux. transp.: <span className="text-foreground">{fmtCOP(item.transport_allowance)}</span></span>
+                          <span>Extras/bonos: <span className="text-foreground">{fmtCOP(item.overtime_pay + item.bonuses + item.other_income)}</span></span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-red-600">
+                          <span>Salud: -{fmtCOP(item.health_employee)}</span>
+                          <span>Pensión: -{fmtCOP(item.pension_employee)}</span>
+                          {item.withholding_tax > 0 && <span>Retención: -{fmtCOP(item.withholding_tax)}</span>}
+                        </div>
+                        <div className="flex items-center justify-between pt-1.5 border-t border-[var(--glass-border)]">
+                          <span className="text-xs text-muted-foreground">Neto a pagar</span>
+                          <span className="font-bold text-foreground tabular-nums">{fmtCOP(item.net_pay)}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -1379,7 +1412,7 @@ function PILATable({ items, fmtCOP }: { items: PayrollItemWithEmployee[]; fmtCOP
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
+      <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-[var(--glass-hover)]/50 border-b border-[var(--glass-border)]">
             <tr>
@@ -1405,6 +1438,24 @@ function PILATable({ items, fmtCOP }: { items: PayrollItemWithEmployee[]; fmtCOP
             </tr>
           </tbody>
         </table>
+      </div>
+      <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm divide-y divide-[var(--glass-border)]">
+        {rows.map(row => (
+          <div key={row.concepto} className="p-4 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-foreground">{row.concepto}</p>
+              <p className="font-semibold tabular-nums text-foreground">{fmtCOP(row.total)}</p>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Empleado ({row.pct_emp}): {row.emp > 0 ? fmtCOP(row.emp) : '—'}</span>
+              <span>Empresa ({row.pct_er}): {row.er > 0 ? fmtCOP(row.er) : '—'}</span>
+            </div>
+          </div>
+        ))}
+        <div className="flex items-center justify-between p-4 bg-[var(--glass-hover)]">
+          <span className="font-bold text-foreground">Total aportes PILA</span>
+          <span className="font-bold tabular-nums text-foreground">{fmtCOP(grandTotal)}</span>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">
         * ICBF y SENA aplican solo cuando la nómina total supera 10 SMLV.
