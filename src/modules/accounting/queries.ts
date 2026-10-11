@@ -226,8 +226,10 @@ export async function updateAccount(id: string, data: Partial<Omit<Account, 'id'
 // ── Crear asiento manual ──────────────────────────────────────────────────────
 
 export type JournalEntryInput = {
-  entry_date:  string
-  description: string
+  entry_date:   string
+  description:  string
+  entry_type?:  JournalEntry['entry_type']
+  reference_id?: string | null
   lines: { account_code: string; description?: string; debit: number; credit: number }[]
 }
 
@@ -257,13 +259,14 @@ export async function createJournalEntry(
   const { data: entry, error: entryError } = await supabase
     .from('journal_entries')
     .insert([{
-      company_id:  companyId,
+      company_id:   companyId,
       entry_number,
-      entry_date:  data.entry_date,
-      entry_type:  'adjustment',
-      description: data.description,
-      status:      'posted',
-      created_by:  user?.id,
+      entry_date:   data.entry_date,
+      entry_type:   data.entry_type ?? 'adjustment',
+      description:  data.description,
+      reference_id: data.reference_id ?? null,
+      status:       'posted',
+      created_by:   user?.id,
     }])
     .select()
     .single()
@@ -280,4 +283,69 @@ export async function createJournalEntry(
   if (linesError) throw new Error(linesError.message)
 
   return entry as JournalEntry
+}
+
+// ── Leer un comprobante puntual (p. ej. enlazado desde Finanzas → Gastos) ─────
+
+export function useJournalEntry(entryId?: string) {
+  return useQuery({
+    queryKey: ['journal_entry', entryId],
+    queryFn: async (): Promise<JournalEntry> => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('id', entryId!)
+        .single()
+      if (error) throw new Error(error.message)
+      return data as JournalEntry
+    },
+    enabled: !!entryId,
+  })
+}
+
+// ── Actualizar/eliminar un comprobante (p. ej. cuando el gasto que lo generó cambia) ─
+
+export async function updateJournalEntryMeta(
+  entryId: string,
+  data: { entry_date?: string; description?: string }
+): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('journal_entries').update(data).eq('id', entryId)
+  if (error) throw new Error(error.message)
+}
+
+export async function replaceJournalEntryLines(
+  entryId: string,
+  lines: { account_code: string; description?: string; debit: number; credit: number }[]
+): Promise<void> {
+  const supabase = createClient()
+
+  const totalDebit  = lines.reduce((s, l) => s + l.debit,  0)
+  const totalCredit = lines.reduce((s, l) => s + l.credit, 0)
+  if (Math.abs(totalDebit - totalCredit) > 0.01) {
+    throw new Error('El asiento no cuadra: total débitos debe ser igual a total créditos.')
+  }
+
+  const { error: delErr } = await supabase.from('journal_entry_lines').delete().eq('entry_id', entryId)
+  if (delErr) throw new Error(delErr.message)
+
+  const { error: insErr } = await supabase.from('journal_entry_lines').insert(
+    lines.map(l => ({
+      entry_id:     entryId,
+      account_code: l.account_code,
+      description:  l.description ?? null,
+      debit:        l.debit,
+      credit:       l.credit,
+    }))
+  )
+  if (insErr) throw new Error(insErr.message)
+}
+
+export async function deleteJournalEntry(entryId: string): Promise<void> {
+  const supabase = createClient()
+  const { error: linesErr } = await supabase.from('journal_entry_lines').delete().eq('entry_id', entryId)
+  if (linesErr) throw new Error(linesErr.message)
+  const { error } = await supabase.from('journal_entries').delete().eq('id', entryId)
+  if (error) throw new Error(error.message)
 }

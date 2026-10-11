@@ -6,6 +6,7 @@ import {
   Plus, Download, Search, Paperclip, FileText,
   ChevronDown, RefreshCw, Pencil, Trash2, ToggleLeft,
 } from 'lucide-react'
+import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import type { FinancePeriod } from '../queries'
@@ -360,10 +361,11 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                       <span className="text-muted-foreground/20">—</span>
                     )}
                     {e.journal_entry_id && (
-                      <span title="Comprobante contable registrado"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary/60">
+                      <Link href={`/accounting?entry=${e.journal_entry_id}`} target="_blank"
+                        title="Ver comprobante contable"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors">
                         <FileText className="h-3.5 w-3.5" />
-                      </span>
+                      </Link>
                     )}
                   </td>
                   <td className="px-4 py-3">

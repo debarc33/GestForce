@@ -172,7 +172,7 @@ export function useMonthlyBars(companyId?: string, year?: number) {
       const from = `${year}-01-01`
       const to   = `${year}-12-31`
 
-      const [invRes, supRes] = await Promise.all([
+      const [invRes, supRes, expRes] = await Promise.all([
         supabase
           .from('invoices')
           .select('issue_date, total')
@@ -188,6 +188,17 @@ export function useMonthlyBars(companyId?: string, year?: number) {
           .neq('status', 'cancelled')
           .gte('issue_date', from)
           .lte('issue_date', to),
+
+        // Gastos directos (pestaña Gastos) — antes no se incluían aquí, por lo que
+        // el total del gráfico no coincidía con el de la tarjeta KPI "Gastos" del Panel
+        // (que sí los suma, ver usePanelSummary más abajo).
+        supabase
+          .from('expenses')
+          .select('expense_date, amount')
+          .eq('company_id', companyId!)
+          .eq('status', 'pagado')
+          .gte('expense_date', from)
+          .lte('expense_date', to),
       ])
 
       const bars: MonthlyBar[] = MES_LABELS.map((mes) => ({ mes, ingresos: 0, gastos: 0 }))
@@ -199,6 +210,10 @@ export function useMonthlyBars(companyId?: string, year?: number) {
       for (const sup of (supRes.data ?? [])) {
         const m = new Date(sup.issue_date + 'T12:00:00').getMonth()
         bars[m].gastos += Number(sup.total)
+      }
+      for (const exp of (expRes.data ?? [])) {
+        const m = new Date(exp.expense_date + 'T12:00:00').getMonth()
+        bars[m].gastos += Number(exp.amount)
       }
 
       return bars

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Plus, Trash2, ChevronRight, Info } from 'lucide-react'
 import {
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import {
-  useChartOfAccounts, useJournalEntries, useJournalEntryLines,
+  useChartOfAccounts, useJournalEntries, useJournalEntryLines, useJournalEntry,
   seedChartOfAccounts, createAccount, createJournalEntry,
   type Account, type JournalEntry, type JournalEntryInput,
 } from '@/modules/accounting/queries'
@@ -59,12 +59,22 @@ const inp = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--gla
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccountingPage() {
+  return (
+    <Suspense fallback={null}>
+      <AccountingPageContent />
+    </Suspense>
+  )
+}
+
+function AccountingPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const entryParam = searchParams.get('entry')
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
   const cid = activeCompanyId ?? undefined
 
-  const [activeTab, setActiveTab]   = useState<TabId>('cuentas')
+  const [activeTab, setActiveTab]   = useState<TabId>(entryParam ? 'comprobantes' : 'cuentas')
   const [search, setSearch]         = useState('')
 
   // Período para comprobantes e informes
@@ -82,6 +92,15 @@ export default function AccountingPage() {
   const { data: accounts = [], isLoading: loadingCOA } = useChartOfAccounts(cid)
   const { data: entries  = [], isLoading: loadingJE  } = useJournalEntries(cid, fromDate, toDate)
   const { data: entryLines = [] } = useJournalEntryLines(selectedEntry?.id)
+
+  // Comprobante enlazado desde otra pantalla (p. ej. Finanzas -> Gastos, via ?entry=<id>).
+  // Se busca directamente por id en vez de depender de la lista ya filtrada por
+  // fromDate/toDate, porque el comprobante puede ser de un periodo distinto al que
+  // este seleccionado en este momento en Comprobantes.
+  const { data: linkedEntry } = useJournalEntry(entryParam ?? undefined)
+  useEffect(() => {
+    if (linkedEntry) setSelectedEntry(linkedEntry)
+  }, [linkedEntry])
 
   // Auto-seed PUC when company has no accounts
   useEffect(() => {

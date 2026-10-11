@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { createJournalEntry } from '@/modules/accounting/queries'
+import { createJournalEntry, deleteJournalEntry, updateJournalEntryMeta, replaceJournalEntryLines } from '@/modules/accounting/queries'
 import type { FinancePeriod } from './queries'
 import type {
   ExpenseFormValues, CategoryFormValues, RecurringFormValues,
@@ -165,23 +165,7 @@ export async function createExpense(
 ): Promise<Expense> {
   const supabase = createClient()
 
-  // 1. Opcionalmente crear comprobante contable
-  let journalEntryId: string | null = null
-  if (data.create_journal_entry && data.status === 'pagado' && category) {
-    const entry = await createJournalEntry(companyId, {
-      entry_date:  data.expense_date,
-      description: data.description,
-      lines: [
-        { account_code: category.account_code, debit: data.amount, credit: 0,
-          description: data.description },
-        { account_code: '111005',               debit: 0, credit: data.amount,
-          description: 'Pago gasto — Bancos nacionales' },
-      ],
-    })
-    journalEntryId = entry.id
-  }
-
-  // 2. Opcionalmente crear plantilla recurrente
+  // 1. Opcionalmente crear plantilla recurrente
   let recurringId: string | null = null
   if (data.is_recurring && data.frequency) {
     const { data: rec, error: recErr } = await supabase
@@ -204,7 +188,7 @@ export async function createExpense(
     recurringId = rec.id
   }
 
-  // 3. Insertar gasto
+  // 2. Insertar el gasto primero (sin comprobante todavía — hace falta su id para enlazarlo)
   const { data: result, error } = await supabase
     .from('expenses')
     .insert([{
@@ -216,18 +200,42 @@ export async function createExpense(
       payment_method:       data.payment_method,
       status:               data.status,
       notes:                data.notes || null,
-      journal_entry_id:     journalEntryId,
+      journal_entry_id:     null,
       recurring_expense_id: recurringId,
     }])
     .select(`*, category:expense_categories(*)`)
     .single()
   if (error) throw new Error(error.message)
+
+  // 3. Opcionalmente crear comprobante contable, enlazado al gasto real vía reference_id
+  if (data.create_journal_entry && data.status === 'pagado' && category) {
+    const entry = await createJournalEntry(companyId, {
+      entry_date:    data.expense_date,
+      description:   data.description,
+      entry_type:    'adjustment',
+      reference_id:  result.id,
+      lines: [
+        { account_code: category.account_code, debit: data.amount, credit: 0,
+          description: data.description },
+        { account_code: '111005',               debit: 0, credit: data.amount,
+          description: 'Pago gasto — Bancos nacionales' },
+      ],
+    })
+    const { error: updErr } = await supabase
+      .from('expenses')
+      .update({ journal_entry_id: entry.id })
+      .eq('id', result.id)
+    if (updErr) throw new Error(updErr.message)
+    result.journal_entry_id = entry.id
+  }
+
   return result as Expense
 }
 
 export async function updateExpense(
   id: string,
-  data: Partial<ExpenseFormValues>
+  data: Partial<ExpenseFormValues>,
+  category?: ExpenseCategory | null
 ): Promise<Expense> {
   const supabase = createClient()
   const { data: result, error } = await supabase
@@ -245,13 +253,43 @@ export async function updateExpense(
     .select(`*, category:expense_categories(*)`)
     .single()
   if (error) throw new Error(error.message)
+
+  // Si este gasto ya había generado un comprobante contable (lo marcaste al crearlo),
+  // mantenerlo sincronizado con los valores nuevos — antes quedaba con el monto/fecha
+  // viejos y nadie se enteraba.
+  if (result.journal_entry_id) {
+    const accountCode = category?.account_code ?? result.category?.account_code ?? '5195'
+    await updateJournalEntryMeta(result.journal_entry_id, {
+      entry_date:  result.expense_date,
+      description: result.description,
+    })
+    await replaceJournalEntryLines(result.journal_entry_id, [
+      { account_code: accountCode, debit: result.amount, credit: 0, description: result.description },
+      { account_code: '111005',    debit: 0, credit: result.amount, description: 'Pago gasto — Bancos nacionales' },
+    ])
+  }
+
   return result as Expense
 }
 
 export async function deleteExpense(id: string): Promise<void> {
   const supabase = createClient()
+
+  // Antes de borrar, revisar si este gasto tenía un comprobante contable enlazado
+  // (quedaba huérfano en Contabilidad si no se reversaba aquí).
+  const { data: existing, error: selErr } = await supabase
+    .from('expenses')
+    .select('journal_entry_id')
+    .eq('id', id)
+    .single()
+  if (selErr) throw new Error(selErr.message)
+
   const { error } = await supabase.from('expenses').delete().eq('id', id)
   if (error) throw new Error(error.message)
+
+  if (existing?.journal_entry_id) {
+    await deleteJournalEntry(existing.journal_entry_id)
+  }
 }
 
 export async function uploadReceipt(

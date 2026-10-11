@@ -82,7 +82,7 @@ export function ExpenseForm({
       const category = categories.find(c => c.id === values.category_id) ?? null
       let saved: Expense
       if (expense) {
-        saved = await updateExpense(expense.id, values)
+        saved = await updateExpense(expense.id, values, category)
       } else {
         saved = await createExpense(companyId, values, category)
       }

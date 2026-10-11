@@ -158,7 +158,7 @@ export default function FinancesPage() {
                   <p className="text-xs font-medium text-muted-foreground">Gastos</p>
                 </div>
                 <p className="text-xl font-bold text-foreground tabular-nums">{fmtCOP(panel?.gastos ?? 0)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Facturas de proveedor en el período</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Facturas de proveedor + gastos directos</p>
               </div>
 
               {/* IVA neto */}
