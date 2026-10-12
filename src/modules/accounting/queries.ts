@@ -177,6 +177,31 @@ export function useJournalEntryLines(entryId?: string) {
   })
 }
 
+// Total (débito, que en un asiento balanceado es igual al crédito) de cada
+// comprobante de una lista — usado en la tabla de Comprobantes para mostrar
+// el monto real en vez de un "—" fijo.
+export function useJournalEntryTotals(entryIds: string[]) {
+  const key = entryIds.slice().sort().join(',')
+  return useQuery({
+    queryKey: ['journal_entry_totals', key],
+    queryFn: async () => {
+      if (entryIds.length === 0) return {} as Record<string, number>
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('journal_entry_lines')
+        .select('entry_id, debit')
+        .in('entry_id', entryIds)
+      if (error) throw new Error(error.message)
+      const totals: Record<string, number> = {}
+      for (const row of data ?? []) {
+        totals[row.entry_id] = (totals[row.entry_id] ?? 0) + Number(row.debit)
+      }
+      return totals
+    },
+    enabled: entryIds.length > 0,
+  })
+}
+
 // ── Seed PUC ──────────────────────────────────────────────────────────────────
 
 export async function seedChartOfAccounts(companyId: string): Promise<void> {
@@ -247,12 +272,14 @@ export async function createJournalEntry(
     throw new Error('El asiento no cuadra: total débitos debe ser igual a total créditos.')
   }
 
-  // Generar número (CE-YYYY-NNNN)
+  // Generar número (CE-YYYY-NNNN), reiniciando la secuencia cada año
   const year = data.entry_date.slice(0, 4)
   const { count } = await supabase
     .from('journal_entries')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId)
+    .gte('entry_date', `${year}-01-01`)
+    .lte('entry_date', `${year}-12-31`)
   const seq = String((count ?? 0) + 1).padStart(4, '0')
   const entry_number = `CE-${year}-${seq}`
 

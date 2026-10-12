@@ -12,6 +12,7 @@ import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import {
   useChartOfAccounts, useJournalEntries, useJournalEntryLines, useJournalEntry,
+  useJournalEntryTotals,
   seedChartOfAccounts, createAccount, createJournalEntry,
   type Account, type JournalEntry, type JournalEntryInput,
 } from '@/modules/accounting/queries'
@@ -92,6 +93,11 @@ function AccountingPageContent() {
   const { data: accounts = [], isLoading: loadingCOA } = useChartOfAccounts(cid)
   const { data: entries  = [], isLoading: loadingJE  } = useJournalEntries(cid, fromDate, toDate)
   const { data: entryLines = [] } = useJournalEntryLines(selectedEntry?.id)
+
+  // Total real (débito = crédito) de cada comprobante del período visible,
+  // para la columna "Débito = Crédito" de la tabla (antes siempre mostraba "—")
+  const entryIds = useMemo(() => entries.map(e => e.id), [entries])
+  const { data: entryTotals = {} } = useJournalEntryTotals(entryIds)
 
   // Comprobante enlazado desde otra pantalla (p. ej. Finanzas -> Gastos, via ?entry=<id>).
   // Se busca directamente por id en vez de depender de la lista ya filtrada por
@@ -191,50 +197,80 @@ function AccountingPageContent() {
           {loadingCOA ? (
             <div className="h-48 animate-pulse rounded-xl bg-zinc-100" />
           ) : (
-            <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
-              <Table>
-                <TableHeader className="bg-[var(--glass-hover)]/50">
-                  <TableRow className="border-[var(--glass-border)]">
-                    {['Código','Nombre','Tipo','Naturaleza','Nivel'].map(h => (
-                      <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAccounts.length ? (
-                    filteredAccounts.map(acct => {
-                      const indent = (acct.code.length - 1) * 8
-                      return (
-                        <TableRow key={acct.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
-                          <TableCell className="py-2.5 font-mono text-sm text-foreground">{acct.code}</TableCell>
-                          <TableCell className="py-2.5">
-                            <span style={{ paddingLeft: indent }} className="text-sm text-foreground">
-                              {!acct.is_leaf && <span className="text-muted-foreground mr-1">▸</span>}
-                              {acct.name}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLOR[acct.account_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
-                              {ACCOUNT_TYPE_LABEL[acct.account_type] ?? acct.account_type}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-2.5 text-xs text-muted-foreground capitalize">{acct.nature}</TableCell>
-                          <TableCell className="py-2.5 text-xs text-muted-foreground">
-                            {acct.is_leaf ? 'Auxiliar' : 'Mayor'}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">
-                        {search ? 'Sin resultados.' : 'Cargando plan de cuentas...'}
-                      </TableCell>
+            <>
+              <div className="hidden md:block rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-[var(--glass-hover)]/50">
+                    <TableRow className="border-[var(--glass-border)]">
+                      {['Código','Nombre','Tipo','Naturaleza','Nivel'].map(h => (
+                        <TableHead key={h} className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{h}</TableHead>
+                      ))}
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAccounts.length ? (
+                      filteredAccounts.map(acct => {
+                        const indent = (acct.code.length - 1) * 8
+                        return (
+                          <TableRow key={acct.id} className="border-zinc-100 hover:bg-[var(--glass-hover)]/40">
+                            <TableCell className="py-2.5 font-mono text-sm text-foreground">{acct.code}</TableCell>
+                            <TableCell className="py-2.5">
+                              <span style={{ paddingLeft: indent }} className="text-sm text-foreground">
+                                {!acct.is_leaf && <span className="text-muted-foreground mr-1">▸</span>}
+                                {acct.name}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLOR[acct.account_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
+                                {ACCOUNT_TYPE_LABEL[acct.account_type] ?? acct.account_type}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-2.5 text-xs text-muted-foreground capitalize">{acct.nature}</TableCell>
+                            <TableCell className="py-2.5 text-xs text-muted-foreground">
+                              {acct.is_leaf ? 'Auxiliar' : 'Mayor'}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-32 text-center text-sm text-muted-foreground">
+                          {search ? 'Sin resultados.' : 'Cargando plan de cuentas...'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {filteredAccounts.length > 0 ? (
+                <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] shadow-sm overflow-hidden divide-y divide-[var(--glass-border)]">
+                  {filteredAccounts.map(acct => (
+                    <div key={acct.id} className="p-4 space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-mono text-sm font-medium text-foreground">{acct.code}</p>
+                          <p className="text-sm text-foreground">
+                            {!acct.is_leaf && <span className="text-muted-foreground mr-1">▸</span>}
+                            {acct.name}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLOR[acct.account_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
+                          {ACCOUNT_TYPE_LABEL[acct.account_type] ?? acct.account_type}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {acct.nature} · {acct.is_leaf ? 'Auxiliar' : 'Mayor'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="md:hidden rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-8 text-center text-sm text-muted-foreground">
+                  {search ? 'Sin resultados.' : 'Cargando plan de cuentas...'}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -264,7 +300,7 @@ function AccountingPageContent() {
             <div className="rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-12 text-center">
               <BookOpen className="h-10 w-10 text-zinc-200 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">No hay comprobantes en el período seleccionado.</p>
-              <p className="text-xs text-muted-foreground mt-1">Los asientos se generan automáticamente al emitir facturas, registrar pagos o cerrar nómina.</p>
+              <p className="text-xs text-muted-foreground mt-1">Los asientos se generan automáticamente al emitir una factura de venta, recibir una compra o cerrar nómina.</p>
             </div>
           ) : (
             <>
@@ -288,7 +324,7 @@ function AccountingPageContent() {
                           </span>
                         </TableCell>
                         <TableCell className="py-3 text-sm text-foreground">{entry.description}</TableCell>
-                        <TableCell className="py-3 text-sm text-muted-foreground">—</TableCell>
+                        <TableCell className="py-3 text-sm tabular-nums text-foreground">{entryTotals[entry.id] !== undefined ? fmtCOP(entryTotals[entry.id]) : '—'}</TableCell>
                         <TableCell className="py-3">
                           <button onClick={() => setSelectedEntry(entry)}
                             className="text-primary hover:underline text-xs flex items-center gap-1">
@@ -313,6 +349,9 @@ function AccountingPageContent() {
                       </span>
                     </div>
                     <p className="text-sm text-foreground">{entry.description}</p>
+                    {entryTotals[entry.id] !== undefined && (
+                      <p className="text-xs font-medium tabular-nums text-foreground">{fmtCOP(entryTotals[entry.id])}</p>
+                    )}
                     <button onClick={() => setSelectedEntry(entry)}
                       className="text-primary hover:underline text-xs flex items-center gap-1">
                       Ver <ChevronRight className="h-3 w-3" />
