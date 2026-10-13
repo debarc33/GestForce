@@ -130,3 +130,39 @@ export async function deleteProducts(ids: string[]) {
   const { error } = await supabase.from('products').delete().in('id', ids)
   if (error) throw new Error(error.message)
 }
+
+/**
+ * IDs, de entre los dados, que tienen historial real asociado (cotizaciones,
+ * facturas, órdenes de compra o movimientos de inventario) — para bloquear su
+ * eliminación, igual que ya se hace con Clientes (getCustomersWithDocuments).
+ */
+export async function getProductsWithDocuments(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+  const supabase = createClient()
+  const [q, inv, po, mov] = await Promise.all([
+    supabase.from('quote_items').select('product_id').in('product_id', ids),
+    supabase.from('invoice_items').select('product_id').in('product_id', ids),
+    supabase.from('purchase_order_items').select('product_id').in('product_id', ids),
+    supabase.from('inventory_movements').select('product_id').in('product_id', ids),
+  ])
+  const withDocs = new Set([
+    ...(q.data ?? []).map(r => r.product_id).filter(Boolean),
+    ...(inv.data ?? []).map(r => r.product_id).filter(Boolean),
+    ...(po.data ?? []).map(r => r.product_id).filter(Boolean),
+    ...(mov.data ?? []).map(r => r.product_id).filter(Boolean),
+  ])
+  return ids.filter(id => withDocs.has(id))
+}
+
+/**
+ * ¿Este producto está en nivel de "bajo stock / por reponer"? Si tiene un
+ * stock mínimo configurado (`stock_minimum > 0`) se usa ese umbral real; si
+ * no tiene uno configurado, se usa un umbral genérico (10 unidades) como
+ * referencia. No incluye "sin stock" (stock === 0), que es su propia
+ * categoría aparte.
+ */
+export function isLowStock(stock: number, stockMinimum?: number | null): boolean {
+  if (stock <= 0) return false
+  const min = stockMinimum ?? 0
+  return min > 0 ? stock <= min : stock < 10
+}

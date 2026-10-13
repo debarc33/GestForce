@@ -3,13 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tag } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tag, Ban } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { ProductsTable } from '@/modules/products/components/products-table'
 import { ProductForm } from '@/modules/products/components/product-form'
-import { createCategory, createProduct, updateProduct, deleteProducts, useCategories, useProducts } from '@/modules/products/queries'
+import {
+  createCategory, createProduct, updateProduct, deleteProducts, getProductsWithDocuments,
+  isLowStock, useCategories, useProducts,
+} from '@/modules/products/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
 import { readExcelRows, validateImportFile, mapProductRow, type ParsedProductRow } from '@/lib/import-excel'
@@ -18,9 +21,8 @@ import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-i
 const STOCK_FILTER_OPTIONS = [
   { label: 'Todo el inventario', value: 'all' },
   { label: 'En stock',           value: 'in' },
-  { label: 'Stock bajo',         value: 'low' },
-  { label: 'Sin stock',          value: 'out' },
   { label: 'Por reponer',        value: 'reorder' },
+  { label: 'Sin stock',          value: 'out' },
 ]
 
 export default function ProductsPage() {
@@ -37,6 +39,9 @@ export default function ProductsPage() {
   const [importOpen,     setImportOpen]     = useState(false)
   const [importFileName, setImportFileName] = useState('')
   const [importRows,     setImportRows]     = useState<ParsedImportRow<ParsedProductRow>[]>([])
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDocumentError, setShowDocumentError] = useState(false)
+  const [blockedCount,      setBlockedCount]      = useState(0)
   const categoryCache = useRef<Map<string, string>>(new Map())
   /** nombre (normalizado) -> id del producto existente, para completar en vez de duplicar. */
   const existingProductsByName = useRef<Map<string, string>>(new Map())
@@ -145,10 +150,9 @@ export default function ProductsPage() {
       )
     }
     type PR = typeof allProducts[number] & { stock_minimum?: number }
-    if (stockFilter === 'in')      data = data.filter(p => p.stock >= 10)
-    if (stockFilter === 'low')     data = data.filter(p => p.stock > 0 && p.stock < 10)
     if (stockFilter === 'out')     data = data.filter(p => p.stock === 0)
-    if (stockFilter === 'reorder') data = data.filter(p => { const m = (p as PR).stock_minimum ?? 0; return m > 0 && p.stock <= m })
+    if (stockFilter === 'reorder') data = data.filter(p => isLowStock(p.stock, (p as PR).stock_minimum))
+    if (stockFilter === 'in')      data = data.filter(p => p.stock > 0 && !isLowStock(p.stock, (p as PR).stock_minimum))
     exportToExcel(data, productColumns, `productos_${new Date().toISOString().slice(0, 10)}`)
   }
 
@@ -173,8 +177,19 @@ export default function ProductsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', activeCompanyId] })
       setSelectedIds([])
+      setShowDeleteConfirm(false)
     },
   })
+
+  async function handleDeleteClick() {
+    const blocked = await getProductsWithDocuments(selectedIds)
+    if (blocked.length > 0) {
+      setBlockedCount(blocked.length)
+      setShowDocumentError(true)
+    } else {
+      setShowDeleteConfirm(true)
+    }
+  }
 
   const inputClass =
     'w-full rounded-lg border border-zinc-200 bg-white px-3.5 py-2.5 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
@@ -186,7 +201,7 @@ export default function ProductsPage() {
         subtitle="Catálogo de productos, precios y stock."
         selectedCount={selectedIds.length}
         onAdd={() => setIsProductDialogOpen(true)}
-        onDelete={() => deleteMutation.mutate()}
+        onDelete={handleDeleteClick}
         onPrint={() => window.print()}
         onUpload={handleImportFile}
         onExport={handleExport}
@@ -238,6 +253,66 @@ export default function ProductsPage() {
             <DialogTitle className="text-lg font-semibold text-zinc-900">Nuevo producto</DialogTitle>
           </DialogHeader>
           <ProductForm onSuccess={() => setIsProductDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: No se puede eliminar (hay historial asociado) */}
+      <Dialog open={showDocumentError} onOpenChange={setShowDocumentError}>
+        <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Ban className="h-5 w-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-base font-semibold text-zinc-900">
+                No se puede eliminar
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-zinc-600 leading-relaxed">
+              {blockedCount === 1
+                ? 'Este producto tiene cotizaciones, facturas, compras o movimientos de inventario asociados.'
+                : `${blockedCount} de los productos seleccionados tienen cotizaciones, facturas, compras o movimientos de inventario asociados.`}
+              {' '}Los registros históricos deben conservarse por requisitos legales.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <button
+              onClick={() => setShowDocumentError(false)}
+              className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+            >
+              Entendido
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Confirmar eliminación */}
+      <Dialog open={showDeleteConfirm} onOpenChange={(v) => !deleteMutation.isPending && setShowDeleteConfirm(v)}>
+        <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold text-zinc-900">
+              ¿Eliminar {selectedIds.length === 1 ? 'este producto' : `estos ${selectedIds.length} productos`}?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-zinc-500 mt-1">
+              Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 justify-end mt-2">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleteMutation.isPending}
+              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {deleteMutation.isPending ? 'Eliminando...' : 'Sí, eliminar'}
+            </button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

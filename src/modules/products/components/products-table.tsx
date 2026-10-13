@@ -11,7 +11,7 @@ import {
 import { Package, AlertTriangle } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useProducts } from '../queries'
+import { useProducts, isLowStock } from '../queries'
 import { ProductForm } from './product-form'
 import { useCompanyStore } from '@/store/useCompanyStore'
 
@@ -34,9 +34,11 @@ type Product = {
 interface ProductsTableProps {
   onSelectionChange?: (ids: string[]) => void
   globalFilter?: string
-  /** 'all' | 'in' | 'low' | 'out' | 'reorder' */
+  /** 'all' | 'in' | 'reorder' | 'out' */
   stockFilter?: string
 }
+
+const PAGE_SIZES = [10, 20, 50]
 
 export function ProductsTable({
   onSelectionChange,
@@ -47,11 +49,14 @@ export function ProductsTable({
   const { data: products = [], isLoading, isError } = useProducts(activeCompanyId ?? undefined)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
 
-  // Resetear selección cuando cambia el filtro/búsqueda
+  // Resetear selección y página cuando cambia el filtro/búsqueda
   useEffect(() => {
     setRowSelection({})
     onSelectionChange?.([])
+    setPageIndex(0)
   }, [globalFilter, stockFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtrado en memoria
@@ -72,17 +77,22 @@ export function ProductsTable({
     // Filtro de stock
     if (stockFilter !== 'all') {
       data = data.filter((p) => {
-        const min = p.stock_minimum ?? 0
-        if (stockFilter === 'out')    return p.stock === 0
-        if (stockFilter === 'low')    return p.stock > 0 && p.stock < 10
-        if (stockFilter === 'in')     return p.stock >= 10
-        if (stockFilter === 'reorder') return min > 0 && p.stock <= min
+        if (stockFilter === 'out')     return p.stock === 0
+        if (stockFilter === 'reorder') return isLowStock(p.stock, p.stock_minimum)
+        if (stockFilter === 'in')      return p.stock > 0 && !isLowStock(p.stock, p.stock_minimum)
         return true
       })
     }
 
     return data
   }, [products, globalFilter, stockFilter])
+
+  // Paginación (en memoria, sobre los datos ya filtrados)
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize))
+  const paginatedData = useMemo(
+    () => filteredData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize),
+    [filteredData, pageIndex, pageSize]
+  )
 
   const columns: ColumnDef<Product>[] = [
     {
@@ -191,9 +201,12 @@ export function ProductsTable({
     },
   ]
 
-  // Ref para acceder a filteredData desde el effect sin incluirlo como dependencia
-  const filteredDataRef = useRef(filteredData)
-  filteredDataRef.current = filteredData
+  // Ref para acceder a paginatedData desde el effect sin incluirlo como
+  // dependencia. IMPORTANTE: debe ser paginatedData (lo que de verdad recibe
+  // la tabla vía `data:`), no filteredData completo -- los IDs de fila de
+  // @tanstack/react-table son el índice dentro del array que se le pasa.
+  const filteredDataRef = useRef(paginatedData)
+  filteredDataRef.current = paginatedData
 
   // Notificar al padre SOLO cuando cambia la selección (evita loops infinitos)
   useEffect(() => {
@@ -205,7 +218,7 @@ export function ProductsTable({
   }, [rowSelection]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const table = useReactTable({
-    data: filteredData,
+    data: paginatedData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
@@ -360,6 +373,54 @@ export function ProductsTable({
           </div>
         )}
       </div>
+
+      {filteredData.length > 0 && (
+        <div className="flex items-center justify-between rounded-2xl glass-surface border border-[var(--glass-border)] px-4 py-3">
+          <p className="text-[12px] text-muted-foreground">
+            Mostrando{' '}
+            <span className="font-medium text-foreground">
+              {pageIndex * pageSize + 1}–{Math.min((pageIndex + 1) * pageSize, filteredData.length)}
+            </span>{' '}
+            de{' '}
+            <span className="font-medium text-foreground">{filteredData.length}</span> resultados
+          </p>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+              <span>Filas</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPageIndex(0) }}
+                className="rounded-md border border-[var(--glass-border)] bg-[var(--glass)] px-1.5 py-0.5 text-[12px] text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--ring)]/20"
+              >
+                {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                disabled={pageIndex === 0}
+                title="Página anterior"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
+              >
+                ‹
+              </button>
+              <span className="px-1 text-[12px] text-muted-foreground">
+                Página <span className="font-medium text-foreground">{pageIndex + 1}</span> de {totalPages}
+              </span>
+              <button
+                onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={pageIndex >= totalPages - 1}
+                title="Página siguiente"
+                className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--glass-border)] text-muted-foreground hover:bg-[var(--glass)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-[13px]"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Dialog open={!!editProduct} onOpenChange={(open) => !open && setEditProduct(null)}>
         <DialogContent className="max-w-xl rounded-2xl glass-surface shadow-xl border-[var(--glass-border)]">
