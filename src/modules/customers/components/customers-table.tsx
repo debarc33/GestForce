@@ -141,9 +141,14 @@ export function CustomersTable({
     [filteredData, pageIndex, pageSize]
   )
 
-  // Sync selección → ids
-  const filteredDataRef = useRef(filteredData)
-  filteredDataRef.current = filteredData
+  // Sync selección → ids. IMPORTANTE: debe ser paginatedData (lo que de
+  // verdad recibe la tabla vía `data:`), no filteredData completo -- los IDs
+  // de fila de @tanstack/react-table son el índice dentro del array que se
+  // le pasa. Antes apuntaba a filteredData: en la página 2+ se resolvía el
+  // cliente en esa misma posición dentro de la lista completa, no el que se
+  // veía en pantalla (bug de seguridad de datos en acciones masivas).
+  const filteredDataRef = useRef(paginatedData)
+  filteredDataRef.current = paginatedData
 
   useEffect(() => {
     const ids = Object.keys(rowSelection)
