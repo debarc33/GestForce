@@ -208,16 +208,21 @@ export async function createExpense(
   if (error) throw new Error(error.message)
 
   // 3. Opcionalmente crear comprobante contable, enlazado al gasto real vía reference_id
-  if (data.create_journal_entry && data.status === 'pagado' && category) {
+  // Antes esto exigia "&& category" -- si el gasto no tenia categoria asignada, el
+  // checkbox "Crear comprobante contable" quedaba marcado pero no pasaba nada, sin
+  // ningun aviso. Ahora, igual que ya hace updateExpense() mas abajo, se usa la
+  // cuenta de la categoria si existe, o 5195 (Diversos) como respaldo.
+  if (data.create_journal_entry && data.status === 'pagado') {
+    const accountCode = category?.account_code ?? '5195'
     const entry = await createJournalEntry(companyId, {
       entry_date:    data.expense_date,
       description:   data.description,
       entry_type:    'adjustment',
       reference_id:  result.id,
       lines: [
-        { account_code: category.account_code, debit: data.amount, credit: 0,
+        { account_code: accountCode, debit: data.amount, credit: 0,
           description: data.description },
-        { account_code: '111005',               debit: 0, credit: data.amount,
+        { account_code: '111005',    debit: 0, credit: data.amount,
           description: 'Pago gasto — Bancos nacionales' },
       ],
     })

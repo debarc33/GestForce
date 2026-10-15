@@ -180,7 +180,11 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
 
   const totalFijo     = expenses.filter(e => e.category?.type === 'fijo').reduce((s, e) => s + e.amount, 0)
   const totalVariable = expenses.filter(e => e.category?.type === 'variable').reduce((s, e) => s + e.amount, 0)
-  const totalDirecto  = totalFijo + totalVariable
+  // Antes era totalFijo + totalVariable, lo que dejaba fuera del total los gastos
+  // sin categoria asignada (category_id null) -- el total real debe sumar TODOS los
+  // gastos del periodo, tengan o no categoria, igual que ya hacen el KPI de Finanzas
+  // > Panel y el grafico mensual Ingresos vs. Gastos.
+  const totalDirecto  = expenses.reduce((s, e) => s + e.amount, 0)
 
   // ── Mutaciones ───────────────────────────────────────────────────────────────
 
