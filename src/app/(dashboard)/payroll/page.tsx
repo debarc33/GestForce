@@ -118,6 +118,7 @@ export default function PayrollPage() {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false)
   const [loadingGenerate, setLoadingGenerate]   = useState(false)
+  const [generateError, setGenerateError]       = useState<string | null>(null)
 
   // Historial mes seleccionado
   const [histPeriodId, setHistPeriodId] = useState<string | null>(null)
@@ -234,6 +235,7 @@ export default function PayrollPage() {
   const handleOpenPeriod = async () => {
     if (!cid) return
     setLoadingGenerate(true)
+    setGenerateError(null)
     try {
       const period = await getOrCreatePeriod(cid, liqYear, liqMonth)
       setActivePeriodId(period.id)
@@ -243,6 +245,7 @@ export default function PayrollPage() {
       }
     } catch (e) {
       console.error(e)
+      setGenerateError(e instanceof Error ? e.message : 'No se pudo generar la liquidación de nómina.')
     } finally {
       setLoadingGenerate(false)
     }
@@ -544,6 +547,13 @@ export default function PayrollPage() {
               </span>
             )}
           </div>
+
+          {generateError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <p className="font-medium">No se pudo generar la liquidación de nómina.</p>
+              <p className="mt-0.5 text-red-600">{generateError}</p>
+            </div>
+          )}
 
           {activePeriodId && (
             <>
