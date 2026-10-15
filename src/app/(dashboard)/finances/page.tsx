@@ -28,7 +28,7 @@ type TabId = typeof TABS[number]['id']
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 
 const fmtCOP = (n: number) =>
-  '$ ' + Math.round(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+  '$ ' + (Math.round(n) || 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 const fmtDate = (d: string | null) =>
   d ? new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'

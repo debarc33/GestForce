@@ -24,7 +24,7 @@ import { recurringFormSchema, type RecurringFormValues, PAYMENT_METHODS, FREQUEN
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmtCOP = (n: number) =>
-  '$ ' + Math.round(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+  '$ ' + (Math.round(n) || 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 const fmtDate = (d: string) =>
   new Date(d + 'T12:00:00').toLocaleDateString('es-CO', {

@@ -18,7 +18,7 @@ export type NotificationItem = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmtCOP = (n: number) =>
-  '$ ' + Math.round(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+  '$ ' + (Math.round(n) || 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 

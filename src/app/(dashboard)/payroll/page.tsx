@@ -51,7 +51,7 @@ type TabId = typeof TABS[number]['id']
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-const fmtCOP = (n: number) => '$ ' + Math.round(n).toLocaleString('es-CO')
+const fmtCOP = (n: number) => '$ ' + (Math.round(n) || 0).toLocaleString('es-CO')
 const fmtDays = (n: number) => `${Math.round(n * 100) / 100} días`
 
 const CONTRACT_LABEL: Record<string, string> = {
