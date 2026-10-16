@@ -98,6 +98,19 @@ export function CustomersTable({
     setPageIndex(0)
   }, [globalFilter, fiscalFilter]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Resetear selección al cambiar de página. Los IDs de fila de
+  // @tanstack/react-table son el índice dentro de `paginatedData` (el
+  // array de la página actual) — si no se limpia aquí, una fila marcada
+  // en la página 2 (p. ej. índice 2) queda "pegada" en rowSelection y,
+  // al volver a la página 1, se renderiza como seleccionado el cliente
+  // que ocupe ese mismo índice ahí (uno totalmente distinto), sin que el
+  // usuario lo haya tocado — riesgo real en una eliminación/exportación
+  // masiva.
+  useEffect(() => {
+    setRowSelection({})
+    onSelectionChange?.([])
+  }, [pageIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Close "more" dropdown on outside click
   useEffect(() => {
     function handle(e: MouseEvent) {
