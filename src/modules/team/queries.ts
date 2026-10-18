@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/client'
-
 export interface CompanyUser {
   id: string
   user_id: string
@@ -31,42 +29,56 @@ export async function getCompanyUsers(companyId: string): Promise<CompanyUser[]>
 
 /**
  * Actualizar el rol de un usuario en una empresa
+ *
+ * Antes esto hacia el UPDATE directo contra company_users desde el
+ * cliente del navegador. Esa tabla nunca tuvo una politica RLS de
+ * UPDATE (solo SELECT, migraciones 012/013), asi que el cambio nunca
+ * se guardaba -- fallaba en silencio porque React Query no tenia
+ * onError, y el selector de rol volvia a su valor real al recargar la
+ * pagina. Ahora pasa por /api/company/users/[userId] (PATCH), que
+ * valida que quien llama sea admin de la empresa y usa el admin client
+ * para escribir -- bug encontrado y corregido el 16 oct 2026.
  */
 export async function updateUserRole(
   companyId: string,
   userId: string,
   newRole: string
 ): Promise<CompanyUser> {
-  const supabase = createClient()
+  const response = await fetch(`/api/company/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyId, role: newRole }),
+  })
 
-  const { data, error } = await supabase
-    .from('company_users')
-    .update({ role: newRole })
-    .eq('company_id', companyId)
-    .eq('user_id', userId)
-    .select()
-    .single()
+  if (!response.ok) {
+    const { error } = await response.json().catch(() => ({ error: null }))
+    throw new Error(error || 'Error al actualizar el rol del usuario')
+  }
 
-  if (error) throw new Error(error.message)
-  return data
+  return response.json()
 }
 
 /**
  * Eliminar un usuario de una empresa
+ *
+ * Mismo bug y mismo fix que updateUserRole arriba: antes el DELETE iba
+ * directo contra company_users desde el cliente y fallaba en silencio
+ * por falta de politica RLS. Ahora pasa por
+ * /api/company/users/[userId] (DELETE), con el mismo chequeo de admin.
  */
 export async function removeUserFromCompany(
   companyId: string,
   userId: string
 ): Promise<void> {
-  const supabase = createClient()
+  const response = await fetch(
+    `/api/company/users/${encodeURIComponent(userId)}?companyId=${encodeURIComponent(companyId)}`,
+    { method: 'DELETE' }
+  )
 
-  const { error } = await supabase
-    .from('company_users')
-    .delete()
-    .eq('company_id', companyId)
-    .eq('user_id', userId)
-
-  if (error) throw new Error(error.message)
+  if (!response.ok) {
+    const { error } = await response.json().catch(() => ({ error: null }))
+    throw new Error(error || 'Error al eliminar el usuario de la empresa')
+  }
 }
 
 /**

@@ -17,6 +17,9 @@ export function UsersTable({ companyId }: UsersTableProps) {
   const [inviteRole, setInviteRole] = useState('vendedor')
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null)
+  // Error al cambiar un rol o eliminar un usuario (ver nota en updateRoleMutation
+  // mas abajo: antes estos fallos eran completamente silenciosos).
+  const [teamActionError, setTeamActionError] = useState<string | null>(null)
 
   // Cargar usuarios
   const { data: users = [], isLoading } = useQuery({
@@ -25,20 +28,51 @@ export function UsersTable({ companyId }: UsersTableProps) {
   })
 
   // Mutation: cambiar rol
+  //
+  // BUG ENCONTRADO (16 oct 2026): esta mutacion nunca tuvo onError. El
+  // UPDATE real fallaba en silencio (ver nota en updateUserRole, en
+  // queries.ts, para la causa raiz y el fix), pero como aqui no habia
+  // forma de enterarse, el selector de rol mostraba el cambio como si
+  // hubiera funcionado (estado local optimista en selectedRole) hasta
+  // que la usuaria recargaba la pagina y el rol volvia a su valor real,
+  // sin ningun aviso de por medio. Ahora, ademas del fix de fondo
+  // (el UPDATE ya se guarda), se agrega onError para que CUALQUIER
+  // fallo futuro en este flujo (de la causa que sea) se muestre en
+  // pantalla en vez de desaparecer -- mismo criterio ya aplicado en
+  // Nomina el 15 oct (commit 5a4ef26).
   const updateRoleMutation = useMutation({
-    mutationFn: ({ userId, newRole }: { userId: string; newRole: string }) =>
+    mutationFn: ({ userId, newRole }: { userId: string; newRole: string; rowKey: string }) =>
       updateUserRole(companyId, userId, newRole),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company_users', companyId] })
       setSelectedRole({})
+      setTeamActionError(null)
+    },
+    onError: (error, variables) => {
+      setTeamActionError(error instanceof Error ? error.message : 'Error al cambiar el rol del usuario')
+      // Revertir el estado local optimista para esta fila: si se deja
+      // el valor "nuevo" en selectedRole, el selector seguiria
+      // mostrando un rol que en realidad nunca se guardo.
+      setSelectedRole(prev => {
+        const next = { ...prev }
+        delete next[variables.rowKey]
+        return next
+      })
     },
   })
 
   // Mutation: eliminar usuario
+  // Mismo bug y mismo fix que updateRoleMutation arriba: sin onError,
+  // un DELETE bloqueado (por ejemplo, por la regla de "no dejar la
+  // empresa sin admin") fallaba sin que la usuaria se enterara.
   const removeUserMutation = useMutation({
     mutationFn: (userId: string) => removeUserFromCompany(companyId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company_users', companyId] })
+      setTeamActionError(null)
+    },
+    onError: (error) => {
+      setTeamActionError(error instanceof Error ? error.message : 'Error al eliminar el usuario')
     },
   })
 
@@ -63,9 +97,19 @@ export function UsersTable({ companyId }: UsersTableProps) {
     },
   })
 
-  const handleRoleChange = (userId: string, newRole: string) => {
-    setSelectedRole(prev => ({ ...prev, [userId]: newRole }))
-    updateRoleMutation.mutate({ userId, newRole })
+  // BUG ENCONTRADO (16 oct 2026): esto llamaba a updateRoleMutation con
+  // user.id -- el id de la propia fila de company_users -- en vez de
+  // user.user_id (el id real del usuario en Supabase Auth, que es lo que
+  // updateUserRole necesita para encontrar la fila correcta por
+  // user_id). Quedaba enmascarado porque el UPDATE ya fallaba antes por
+  // falta de politica RLS (ver nota en queries.ts), asi que nunca se
+  // notaba que ademas buscaba por el id equivocado. rowKey sigue siendo
+  // user.id porque selectedRole solo necesita una llave local unica por
+  // fila para el estado optimista del selector; realUserId es lo que de
+  // verdad se le manda al servidor.
+  const handleRoleChange = (rowKey: string, realUserId: string, newRole: string) => {
+    setSelectedRole(prev => ({ ...prev, [rowKey]: newRole }))
+    updateRoleMutation.mutate({ userId: realUserId, newRole, rowKey })
   }
 
   const handleRemoveUser = (userId: string) => {
@@ -150,6 +194,15 @@ export function UsersTable({ companyId }: UsersTableProps) {
         </div>
       )}
 
+      {teamActionError && (
+        <div className="flex items-start justify-between gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 px-3 py-2">
+          <p className="text-xs text-red-600">{teamActionError}</p>
+          <button onClick={() => setTeamActionError(null)} className="text-xs text-red-600 hover:underline shrink-0">
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* Tabla de usuarios */}
       {users.length === 0 ? (
         <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-8 text-center">
@@ -198,7 +251,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
                     <td className="px-4 py-3">
                       <select
                         value={selectedRole[user.id] || user.role}
-                        onChange={e => handleRoleChange(user.id, e.target.value)}
+                        onChange={e => handleRoleChange(user.id, user.user_id, e.target.value)}
                         disabled={updateRoleMutation.isPending}
                         className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 disabled:opacity-50"
                       >
@@ -262,7 +315,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
                 </div>
                 <select
                   value={selectedRole[user.id] || user.role}
-                  onChange={e => handleRoleChange(user.id, e.target.value)}
+                  onChange={e => handleRoleChange(user.id, user.user_id, e.target.value)}
                   disabled={updateRoleMutation.isPending}
                   className="w-full px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 disabled:opacity-50"
                 >
