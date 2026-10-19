@@ -13,7 +13,7 @@ import {
   DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Users, FileSpreadsheet, Upload, Pencil, RefreshCw, Lock, AlertTriangle, Trash2 } from 'lucide-react'
+import { Users, FileSpreadsheet, Upload, Pencil, RefreshCw, Lock, AlertTriangle, Trash2, Ban } from 'lucide-react'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useCompany } from '@/modules/company/queries'
 import { exportToExcel, type ExcelColumn } from '@/lib/export-excel'
@@ -24,7 +24,7 @@ import {
   useEmployees, usePayrollPeriods, usePayrollItems,
   useAbsences, useSocialBenefitsSummary,
   getOrCreatePeriod, generatePayrollItems, updatePayrollItem,
-  closePayrollPeriod, deleteEmployees, createAbsence, deleteAbsence,
+  closePayrollPeriod, deleteEmployees, getEmployeesWithHistory, createAbsence, deleteAbsence,
   createEmployee, updateEmployee,
   mesLabel, calcPayroll,
   type Employee, type PayrollItemWithEmployee, type PayrollItem, type Absence,
@@ -101,6 +101,8 @@ export default function PayrollPage() {
   const [editingEmployee, setEditingEmployee]   = useState<Employee | null>(null)
   const [isNewEmployeeOpen, setIsNewEmployeeOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDeleteBlocked, setShowDeleteBlocked] = useState(false)
+  const [blockedEmployeeCount, setBlockedEmployeeCount] = useState(0)
   const [importOpen,     setImportOpen]     = useState(false)
   const [importFileName, setImportFileName] = useState('')
   const [importRows,     setImportRows]     = useState<ParsedImportRow<ParsedEmployeeRow>[]>([])
@@ -212,6 +214,20 @@ export default function PayrollPage() {
       setShowDeleteConfirm(false)
     },
   })
+
+  /** Revisa primero si algún empleado seleccionado tiene historial (liquidaciones
+   *  de nómina o ausencias) antes de mostrar la confirmación de borrado — igual
+   *  que en Productos y Clientes, para no dejar la base de datos rechazando el
+   *  borrado en silencio sin que la persona vea ningún mensaje. */
+  async function handleDeleteEmployeesClick() {
+    const blocked = await getEmployeesWithHistory(selectedIds)
+    if (blocked.length > 0) {
+      setBlockedEmployeeCount(blocked.length)
+      setShowDeleteBlocked(true)
+    } else {
+      setShowDeleteConfirm(true)
+    }
+  }
 
   const closePeriodMut = useMutation({
     mutationFn: () => closePayrollPeriod(activePeriodId!, cid!, liqYear, liqMonth, totals.total),
@@ -365,7 +381,7 @@ export default function PayrollPage() {
                 value={search} onChange={e => setSearch(e.target.value)}
                 className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none w-56" />
               {selectedIds.length > 0 && (
-                <button onClick={() => setShowDeleteConfirm(true)}
+                <button onClick={handleDeleteEmployeesClick}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
                   Eliminar ({selectedIds.length})
                 </button>
@@ -1079,6 +1095,33 @@ export default function PayrollPage() {
         </DialogContent>
       </Dialog>
 
+      {/* No se puede eliminar (hay historial de nómina asociado) */}
+      <Dialog open={showDeleteBlocked} onOpenChange={setShowDeleteBlocked}>
+        <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <Ban className="h-5 w-5 text-red-600" />
+              </div>
+              <DialogTitle className="text-base font-semibold">No se puede eliminar</DialogTitle>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              {blockedEmployeeCount === 1
+                ? 'Este empleado tiene liquidaciones de nómina o ausencias registradas asociadas.'
+                : `${blockedEmployeeCount} de los empleados seleccionados tienen liquidaciones de nómina o ausencias registradas asociadas.`}
+              {' '}Los registros históricos deben conservarse por requisitos legales.
+              {' '}En su lugar, puedes editar el empleado y desmarcar &quot;Empleado activo&quot; para inactivarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <button onClick={() => setShowDeleteBlocked(false)}
+              className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 transition-colors">
+              Entendido
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Eliminar empleados */}
       <Dialog open={showDeleteConfirm} onOpenChange={v => !deleteMut.isPending && setShowDeleteConfirm(v)}>
         <DialogContent className="max-w-sm rounded-2xl shadow-xl border-zinc-100">
@@ -1086,6 +1129,11 @@ export default function PayrollPage() {
             <DialogTitle>¿Eliminar {selectedIds.length === 1 ? 'este empleado' : `estos ${selectedIds.length} empleados`}?</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground mt-1">Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
+          {deleteMut.isError && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              {deleteMut.error instanceof Error ? deleteMut.error.message : 'No se pudo eliminar.'}
+            </p>
+          )}
           <DialogFooter className="flex gap-2 justify-end mt-2">
             <button onClick={() => setShowDeleteConfirm(false)} disabled={deleteMut.isPending}
               className="rounded-lg border border-[var(--glass-border)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)] disabled:opacity-50">

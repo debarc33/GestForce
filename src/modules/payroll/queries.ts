@@ -403,6 +403,28 @@ export async function deleteEmployees(ids: string[]) {
   if (error) throw new Error(error.message)
 }
 
+/**
+ * Devuelve, de la lista de ids dada, cuáles empleados tienen historial
+ * asociado (liquidaciones de nómina o ausencias registradas) y por lo tanto
+ * no se pueden eliminar definitivamente — la base de datos lo rechaza para
+ * no perder registros con valor legal/contable. Mismo patrón que
+ * `getProductsWithDocuments` en Productos y el bloqueo equivalente en
+ * Clientes.
+ */
+export async function getEmployeesWithHistory(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return []
+  const supabase = createClient()
+  const [items, absences] = await Promise.all([
+    supabase.from('payroll_items').select('employee_id').in('employee_id', ids),
+    supabase.from('employee_absences').select('employee_id').in('employee_id', ids),
+  ])
+  const withHistory = new Set([
+    ...(items.data ?? []).map(r => r.employee_id).filter(Boolean),
+    ...(absences.data ?? []).map(r => r.employee_id).filter(Boolean),
+  ])
+  return ids.filter(id => withHistory.has(id))
+}
+
 // ─── Ausencias ────────────────────────────────────────────────────────────────
 
 export function useAbsences(companyId?: string, employeeId?: string) {

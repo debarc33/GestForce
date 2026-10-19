@@ -40,6 +40,7 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
   })
 
   const watchContractType = form.watch('contract_type')
+  const watchArlRate = form.watch('arl_rate')
 
   useEffect(() => {
     if (employee) {
@@ -232,7 +233,18 @@ export function EmployeeForm({ employee, onSuccess, onCancel }: EmployeeFormProp
           </div>
           <div>
             <label className={lbl}>Clase de riesgo ARL</label>
-            <select {...form.register('arl_rate')} className={inp}>
+            {/* Campo controlado a propósito (en vez de form.register): la pestaña
+               "Seg. Social" solo se monta cuando el usuario la abre, y si se usa
+               register (no controlado) el valor que trae form.reset() al editar
+               un empleado no se refleja en el <select> cuando este se monta
+               después — se ve vacío aunque el valor sí esté guardado
+               correctamente. Con watch/setValue el valor se sincroniza sin
+               depender de cuándo se monta el elemento. */}
+            <select
+              value={watchArlRate}
+              onChange={e => form.setValue('arl_rate', Number(e.target.value), { shouldDirty: true })}
+              className={inp}
+            >
               {ARL_RATES.map(r => (
                 <option key={r.value} value={r.value}>{r.label}</option>
               ))}
