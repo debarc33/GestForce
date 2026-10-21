@@ -231,7 +231,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
     <div className="space-y-5">
 
       {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="rounded-2xl glass-surface p-4">
           <p className="text-xs font-medium text-muted-foreground mb-1">Gastos fijos</p>
           <p className="text-xl font-bold text-foreground tabular-nums">{fmtCOP(totalFijo)}</p>
@@ -301,7 +301,8 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
           </button>
         </div>
       ) : (
-        <div className="rounded-2xl glass-surface overflow-hidden">
+        <>
+        <div className="hidden md:block rounded-2xl glass-surface overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b border-[var(--glass-border)]">
               <tr>
@@ -402,6 +403,90 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
             </tfoot>
           </table>
         </div>
+
+        {/* Vista de tarjetas (móvil) */}
+        <div className="md:hidden rounded-2xl glass-surface overflow-hidden">
+          <div className="divide-y divide-[var(--glass-border)]">
+            {filtered.map(e => (
+              <div key={e.id} className="p-4 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{e.description}</p>
+                    {e.recurring_expense_id && (
+                      <span className="text-[10px] text-primary font-medium">↻ recurrente</span>
+                    )}
+                  </div>
+                  <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium border ${
+                    e.status === 'pagado'
+                      ? 'bg-green-500/10 border-green-500/20 text-green-600'
+                      : 'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                  }`}>
+                    {e.status === 'pagado' ? 'Pagado' : 'Pendiente'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {e.category ? (
+                      <>
+                        <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                          e.category.type === 'fijo'
+                            ? 'bg-blue-500/10 border-blue-500/20 text-primary'
+                            : 'bg-orange-500/10 border-orange-500/20 text-orange-600'
+                        }`}>
+                          {e.category.type === 'fijo' ? 'Fijo' : 'Variable'}
+                        </span>
+                        <span className="truncate">{e.category.name}</span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground/50">Sin categoría</span>
+                    )}
+                  </div>
+                  <span className="shrink-0">{fmtDate(e.expense_date)}</span>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-base font-semibold tabular-nums text-foreground">{fmtCOP(e.amount)}</span>
+                  <div className="flex items-center gap-0.5">
+                    {e.receipt_url && (
+                      <a href={e.receipt_url} target="_blank" rel="noreferrer"
+                        title="Ver soporte"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary hover:bg-primary/10 transition-colors">
+                        <Paperclip className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                    {e.journal_entry_id && (
+                      <Link href={`/accounting?entry=${e.journal_entry_id}`} target="_blank"
+                        title="Ver comprobante contable"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-primary/60 hover:bg-primary/10 hover:text-primary transition-colors">
+                        <FileText className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
+                    <button onClick={() => setEditingExpense(e)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors"
+                      title="Editar">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setConfirmDelete(e.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                      title="Eliminar">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t-2 border-[var(--glass-border)] bg-[var(--glass)] px-4 py-3 flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              {filtered.length} gasto{filtered.length !== 1 ? 's' : ''}
+            </span>
+            <span className="text-sm font-bold tabular-nums text-foreground">
+              {fmtCOP(filtered.reduce((s, e) => s + e.amount, 0))}
+            </span>
+          </div>
+        </div>
+        </>
       )}
 
       {/* Sección de Gastos Recurrentes */}

@@ -157,6 +157,14 @@ export async function POST(request: Request) {
     }
 
     // 4. Enviar email de bienvenida
+    // No se falla la creación de la empresa si el correo no sale (la empresa
+    // y el usuario ya quedaron creados en los pasos 1-3), pero SÍ hay que
+    // avisarle al superadmin si no se pudo enviar -- de lo contrario la
+    // contraseña temporal generada arriba se pierde para siempre (nunca se
+    // guarda en la base de datos) y el dueño de la empresa queda sin forma
+    // de entrar. Por eso se devuelve `email_sent` y, solo si falló, también
+    // `temporary_password` para que el panel se la pueda mostrar al superadmin.
+    let emailSent = true
     try {
       const trialEndDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000)
       await sendEmail({
@@ -173,10 +181,18 @@ export async function POST(request: Request) {
       })
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError)
-      // No fallar si el email no se envía
+      emailSent = false
     }
 
-    return NextResponse.json(company as SACompany, { status: 201 })
+    return NextResponse.json(
+      {
+        ...(company as SACompany),
+        email_sent: emailSent,
+        owner_email: body.owner_email,
+        ...(emailSent ? {} : { temporary_password: temporaryPassword }),
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('POST companies error:', error)
     return NextResponse.json(

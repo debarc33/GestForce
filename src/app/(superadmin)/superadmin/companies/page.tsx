@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Building2, Plus, Search, ArrowRight, Users, LayoutGrid,
   Loader2, X, Calendar, Clock, CheckCircle2, AlertCircle,
-  XCircle, PauseCircle,
+  XCircle, PauseCircle, Copy, Check, TriangleAlert,
 } from 'lucide-react'
 import type { SACompanyWithCounts, SubscriptionStatus, SubscriptionPeriod } from '@/types/superadmin'
 import { SUBSCRIPTION_PERIOD_LABELS, SUBSCRIPTION_STATUS_LABELS } from '@/types/superadmin'
@@ -48,6 +48,28 @@ export default function CompaniesPage() {
   const [filterStatus, setFilterStatus] = useState<SubscriptionStatus | 'all'>('all')
   const [showCreate, setShowCreate] = useState(false)
   const [saving, setSaving]         = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  // Cuando la empresa se crea pero el correo de bienvenida NO se pudo enviar,
+  // guardamos aquí las credenciales para mostrárselas al superadmin en pantalla
+  // -- si no, la contraseña temporal generada en el servidor se pierde para
+  // siempre y el dueño de la empresa queda sin forma de entrar.
+  const [emailFailure, setEmailFailure] = useState<{
+    company_name: string
+    owner_email: string
+    temporary_password: string
+  } | null>(null)
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null)
+
+  async function copyToClipboard(text: string, field: 'email' | 'password') {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField((f) => (f === field ? null : f)), 2000)
+    } catch {
+      // Si el portapapeles no está disponible, el superadmin igual puede
+      // seleccionar y copiar el texto manualmente -- no es bloqueante.
+    }
+  }
 
   const [newCompany, setNewCompany] = useState({
     name:            '',
@@ -88,15 +110,49 @@ export default function CompaniesPage() {
   async function createCompany() {
     if (!newCompany.name.trim()) return
     setSaving(true)
-    await fetch('/api/superadmin/companies', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(newCompany),
-    })
-    setSaving(false)
+    setCreateError(null)
+
+    try {
+      const res  = await fetch('/api/superadmin/companies', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(newCompany),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setCreateError(data?.error || 'No se pudo crear la empresa. Intenta de nuevo.')
+        setSaving(false)
+        return
+      }
+
+      setSaving(false)
+      setNewCompany({ name: '', nit: '', legal_name: '', email: '', fiscal_regime: 'no_iva', subscription_period: '1_year', owner_email: '', owner_first_name: '' })
+      fetchCompanies()
+
+      if (data.email_sent === false) {
+        // La empresa y el usuario SÍ se crearon -- solo falló el envío del
+        // correo. Dejamos el modal abierto, mostrando las credenciales, en
+        // vez de cerrarlo como si todo hubiera salido bien.
+        setEmailFailure({
+          company_name: data.name,
+          owner_email: data.owner_email,
+          temporary_password: data.temporary_password,
+        })
+      } else {
+        setShowCreate(false)
+      }
+    } catch {
+      setCreateError('No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.')
+      setSaving(false)
+    }
+  }
+
+  function closeCreateModal() {
     setShowCreate(false)
-    setNewCompany({ name: '', nit: '', legal_name: '', email: '', fiscal_regime: 'no_iva', subscription_period: '1_year', owner_email: '', owner_first_name: '' })
-    fetchCompanies()
+    setCreateError(null)
+    setEmailFailure(null)
+    setCopiedField(null)
   }
 
   // Contadores para el resumen rápido
@@ -356,11 +412,78 @@ export default function CompaniesPage() {
         <div className="fixed inset-0 isolate z-50 flex items-center justify-center bg-black/30 p-4">
           <div className="w-full max-w-md rounded-2xl bg-popover text-popover-foreground ring-1 ring-foreground/10 p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-foreground">Nueva empresa</h2>
-              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <h2 className="text-lg font-bold text-foreground">
+                {emailFailure ? 'Empresa creada' : 'Nueva empresa'}
+              </h2>
+              <button onClick={closeCreateModal} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            {emailFailure ? (
+              <div className="space-y-4">
+                <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
+                  <TriangleAlert className="h-5 w-5 shrink-0 text-amber-400" />
+                  <p className="text-sm text-amber-400">
+                    <strong>{emailFailure.company_name}</strong> y su usuario se crearon correctamente, pero el
+                    correo de bienvenida con las credenciales <strong>no se pudo enviar</strong>. Cópialas abajo y
+                    envíaselas tú misma por el medio que prefieras.
+                  </p>
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-4">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Email del propietario</label>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 truncate rounded-lg bg-popover px-3 py-2 text-sm text-foreground">
+                        {emailFailure.owner_email}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(emailFailure.owner_email, 'email')}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
+                        title="Copiar email"
+                      >
+                        {copiedField === 'email' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Contraseña temporal</label>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 truncate rounded-lg bg-popover px-3 py-2 text-sm text-foreground">
+                        {emailFailure.temporary_password}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(emailFailure.temporary_password, 'password')}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
+                        title="Copiar contraseña"
+                      >
+                        {copiedField === 'password' ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Recuerda recomendarle que cambie esta contraseña apenas entre.
+                </p>
+
+                <button
+                  onClick={closeCreateModal}
+                  className="w-full rounded-xl bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+                >
+                  Entendido
+                </button>
+              </div>
+            ) : (
+            <>
+            {createError && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5">
+                <TriangleAlert className="h-5 w-5 shrink-0 text-red-400" />
+                <p className="text-sm text-red-400">{createError}</p>
+              </div>
+            )}
 
             <div className="space-y-4">
               {/* Nombre */}
@@ -483,7 +606,7 @@ export default function CompaniesPage() {
             {/* Acciones */}
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => setShowCreate(false)}
+                onClick={closeCreateModal}
                 className="flex-1 rounded-xl border border-[var(--glass-border)] py-2 text-sm text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
               >
                 Cancelar
@@ -497,6 +620,8 @@ export default function CompaniesPage() {
                 Crear empresa
               </button>
             </div>
+            </>
+            )}
           </div>
         </div>
       )}
