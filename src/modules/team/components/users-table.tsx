@@ -2,8 +2,24 @@
 
 import { useState, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Loader, Plus } from 'lucide-react'
-import { getCompanyUsers, updateUserRole, removeUserFromCompany, inviteUserToCompany, AVAILABLE_ROLES, type CompanyUser } from '../queries'
+import { Trash2, Loader, Plus, Pencil, Check, X } from 'lucide-react'
+import { getCompanyUsers, updateUserRole, updateUserName, removeUserFromCompany, inviteUserToCompany, AVAILABLE_ROLES, type CompanyUser } from '../queries'
+
+/**
+ * Código consecutivo por empresa (COL-01, COL-02...), calculado por orden
+ * de ingreso (created_at ascendente) -- no se guarda en la base de datos,
+ * se deriva en el cliente a partir de la misma lista que ya se consulta.
+ */
+function useCollaboratorCodes(users: CompanyUser[]) {
+  return useMemo(() => {
+    const sorted = [...users].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    const map = new Map<string, string>()
+    sorted.forEach((u, i) => map.set(u.user_id, `COL-${String(i + 1).padStart(2, '0')}`))
+    return map
+  }, [users])
+}
 
 interface UsersTableProps {
   companyId: string
@@ -13,6 +29,7 @@ export function UsersTable({ companyId }: UsersTableProps) {
   const queryClient = useQueryClient()
   const [selectedRole, setSelectedRole] = useState<Record<string, string>>({})
   const [showInviteForm, setShowInviteForm] = useState(false)
+  const [inviteName, setInviteName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('vendedor')
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -20,12 +37,18 @@ export function UsersTable({ companyId }: UsersTableProps) {
   // Error al cambiar un rol o eliminar un usuario (ver nota en updateRoleMutation
   // mas abajo: antes estos fallos eran completamente silenciosos).
   const [teamActionError, setTeamActionError] = useState<string | null>(null)
+  // Edición en línea del nombre (para colaboradores invitados antes de que
+  // el formulario empezara a pedir nombre, o para corregir un error).
+  const [editingNameId, setEditingNameId] = useState<string | null>(null)
+  const [editingNameValue, setEditingNameValue] = useState('')
 
   // Cargar usuarios
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['company_users', companyId],
     queryFn: () => getCompanyUsers(companyId),
   })
+
+  const codeByUserId = useCollaboratorCodes(users)
 
   // Mutation: cambiar rol
   //
@@ -76,11 +99,37 @@ export function UsersTable({ companyId }: UsersTableProps) {
     },
   })
 
+  // Mutation: editar nombre (colaboradores invitados antes de pedir nombre,
+  // o para corregir uno existente).
+  const updateNameMutation = useMutation({
+    mutationFn: ({ userId, name }: { userId: string; name: string }) =>
+      updateUserName(companyId, userId, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['company_users', companyId] })
+      setEditingNameId(null)
+      setTeamActionError(null)
+    },
+    onError: (error) => {
+      setTeamActionError(error instanceof Error ? error.message : 'Error al actualizar el nombre')
+    },
+  })
+
+  const startEditName = (user: CompanyUser) => {
+    setEditingNameId(user.id)
+    setEditingNameValue(user.user_name ?? '')
+  }
+
+  const saveEditName = (userId: string) => {
+    if (!editingNameValue.trim()) return
+    updateNameMutation.mutate({ userId, name: editingNameValue.trim() })
+  }
+
   // Mutation: invitar usuario
   const inviteUserMutation = useMutation({
-    mutationFn: () => inviteUserToCompany(companyId, inviteEmail, inviteRole),
+    mutationFn: () => inviteUserToCompany(companyId, inviteEmail, inviteRole, inviteName),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['company_users', companyId] })
+      setInviteName('')
       setInviteEmail('')
       setInviteRole('vendedor')
       setInviteError(null)
@@ -119,6 +168,10 @@ export function UsersTable({ companyId }: UsersTableProps) {
   }
 
   const handleInviteUser = () => {
+    if (!inviteName.trim()) {
+      setInviteError('El nombre es requerido')
+      return
+    }
     if (!inviteEmail.trim()) {
       setInviteError('El email es requerido')
       return
@@ -136,6 +189,20 @@ export function UsersTable({ companyId }: UsersTableProps) {
       {/* TODO: Validar límite de usuarios según suscripción antes de permitir invitar */}
       {showInviteForm && (
         <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Nombre del colaborador</label>
+            <input
+              type="text"
+              value={inviteName}
+              onChange={(e) => {
+                setInviteName(e.target.value)
+                setInviteError(null)
+              }}
+              placeholder="Ej. María Pérez"
+              className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
+              autoFocus
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email del colaborador</label>
@@ -148,7 +215,6 @@ export function UsersTable({ companyId }: UsersTableProps) {
                 }}
                 placeholder="colaborador@example.com"
                 className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
-                autoFocus
               />
             </div>
             <div>
@@ -230,15 +296,62 @@ export function UsersTable({ companyId }: UsersTableProps) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--glass-border)]">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Código</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Nombre</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Email</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Rol</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Registrado</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Fecha de ingreso</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => (
                   <tr key={user.id} className="border-b border-[var(--glass-border)] hover:bg-[var(--glass-hover)] transition-colors">
+                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                      {codeByUserId.get(user.user_id)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground">
+                      {editingNameId === user.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            value={editingNameValue}
+                            onChange={(e) => setEditingNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEditName(user.user_id)
+                              if (e.key === 'Escape') setEditingNameId(null)
+                            }}
+                            className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => saveEditName(user.user_id)}
+                            disabled={updateNameMutation.isPending}
+                            className="rounded-lg p-1 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            title="Guardar"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingNameId(null)}
+                            className="rounded-lg p-1 text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
+                            title="Cancelar"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <span>{user.user_name ?? <span className="text-muted-foreground italic">Sin nombre</span>}</span>
+                          <button
+                            onClick={() => startEditName(user)}
+                            className="rounded-lg p-1 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
+                            title="Editar nombre"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-foreground">
                       {user.user_email ? (
                         <span>{user.user_email}</span>
@@ -289,15 +402,58 @@ export function UsersTable({ companyId }: UsersTableProps) {
               <div key={user.id} className="p-4 space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono text-muted-foreground">{codeByUserId.get(user.user_id)}</span>
+                      {editingNameId === user.id ? (
+                        <div className="flex items-center gap-1 min-w-0">
+                          <input
+                            value={editingNameValue}
+                            onChange={(e) => setEditingNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEditName(user.user_id)
+                              if (e.key === 'Escape') setEditingNameId(null)
+                            }}
+                            className="min-w-0 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => saveEditName(user.user_id)}
+                            disabled={updateNameMutation.isPending}
+                            className="shrink-0 rounded-lg p-1 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            title="Guardar"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingNameId(null)}
+                            className="shrink-0 rounded-lg p-1 text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
+                            title="Cancelar"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-foreground truncate flex items-center gap-1">
+                          {user.user_name ?? <span className="text-muted-foreground italic">Sin nombre</span>}
+                          <button
+                            onClick={() => startEditName(user)}
+                            className="shrink-0 rounded-lg p-1 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-foreground transition-colors"
+                            title="Editar nombre"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        </p>
+                      )}
+                    </div>
                     {user.user_email ? (
-                      <p className="text-sm text-foreground truncate">{user.user_email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.user_email}</p>
                     ) : (
                       <code className="bg-[var(--glass-hover)] px-2 py-1 rounded text-xs" title="No se pudo resolver el email de este usuario">
                         {user.user_id}
                       </code>
                     )}
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Registrado: {new Date(user.created_at).toLocaleDateString('es-CO')}
+                      Fecha de ingreso: {new Date(user.created_at).toLocaleDateString('es-CO')}
                     </p>
                   </div>
                   <button

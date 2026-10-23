@@ -6,8 +6,17 @@ import { countCompanyAdmins } from '@/lib/auth/company-admin-guard'
 const VALID_ROLES = ['admin', 'contador', 'vendedor', 'readonly']
 
 /**
- * PATCH /api/company/users/[userId]  body: { companyId, role }
- * Cambia el rol de un miembro de la empresa.
+ * PATCH /api/company/users/[userId]  body: { companyId, role?, name? }
+ * Cambia el rol y/o el nombre de un miembro de la empresa (al menos uno
+ * de los dos debe venir en el body).
+ *
+ * El cambio de nombre (22 oct 2026) se agregó para poder editar el
+ * nombre de colaboradores que ya habían sido invitados antes de que el
+ * formulario de invitación empezara a pedirlo -- esos quedaban
+ * mostrando "Sin nombre" en la tabla de Equipo sin forma de arreglarlo.
+ * Actualiza `user_metadata.first_name` en Supabase Auth (mismo campo
+ * que usa /invite al crear la cuenta), sin tocar el resto del
+ * user_metadata que ya tuviera la persona.
  *
  * BUG ENCONTRADO (16 oct 2026, probando en vivo Configuración → Equipo):
  * el selector de rol de cada usuario llamaba a updateUserRole(), que
@@ -48,13 +57,16 @@ export async function PATCH(
 ) {
   try {
     const { userId } = await params
-    const { companyId, role } = await req.json()
+    const { companyId, role, name } = await req.json()
+    const trimmedName: string | null = typeof name === 'string' && name.trim() ? name.trim() : null
 
-    if (!companyId || !role) {
-      return NextResponse.json({ error: 'companyId y role son requeridos' }, { status: 400 })
+    if (!companyId) {
+      return NextResponse.json({ error: 'companyId es requerido' }, { status: 400 })
     }
-
-    if (!VALID_ROLES.includes(role)) {
+    if (!role && trimmedName === null) {
+      return NextResponse.json({ error: 'Debes indicar un rol o un nombre para actualizar' }, { status: 400 })
+    }
+    if (role && !VALID_ROLES.includes(role)) {
       return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
     }
 
@@ -76,31 +88,46 @@ export async function PATCH(
       return NextResponse.json({ error: 'Usuario no encontrado en esta empresa' }, { status: 404 })
     }
 
-    // No dejar la empresa sin ningún admin: si este usuario es admin y
-    // se le está quitando ese rol, y es el único admin, se bloquea.
-    if (target.role === 'admin' && role !== 'admin') {
-      const adminCount = await countCompanyAdmins(admin, companyId)
-      if (adminCount <= 1) {
-        return NextResponse.json(
-          { error: 'No puedes quitarle el rol de administrador: es el único admin de esta empresa. Asigna primero el rol de administrador a otra persona.' },
-          { status: 400 }
-        )
+    let updatedRow: typeof target & Record<string, unknown> = target
+
+    if (role) {
+      // No dejar la empresa sin ningún admin: si este usuario es admin y
+      // se le está quitando ese rol, y es el único admin, se bloquea.
+      if (target.role === 'admin' && role !== 'admin') {
+        const adminCount = await countCompanyAdmins(admin, companyId)
+        if (adminCount <= 1) {
+          return NextResponse.json(
+            { error: 'No puedes quitarle el rol de administrador: es el único admin de esta empresa. Asigna primero el rol de administrador a otra persona.' },
+            { status: 400 }
+          )
+        }
+      }
+
+      const { data, error } = await admin
+        .from('company_users')
+        .update({ role })
+        .eq('company_id', companyId)
+        .eq('user_id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      updatedRow = data
+    }
+
+    if (trimmedName !== null) {
+      const { data: existingUser } = await admin.auth.admin.getUserById(userId)
+      const { error: nameError } = await admin.auth.admin.updateUserById(userId, {
+        user_metadata: { ...(existingUser?.user?.user_metadata ?? {}), first_name: trimmedName },
+      })
+      if (nameError) {
+        return NextResponse.json({ error: 'No se pudo actualizar el nombre: ' + nameError.message }, { status: 500 })
       }
     }
 
-    const { data, error } = await admin
-      .from('company_users')
-      .update({ role })
-      .eq('company_id', companyId)
-      .eq('user_id', userId)
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json(data)
+    return NextResponse.json({ ...updatedRow, user_name: trimmedName ?? undefined })
   } catch (error) {
     console.error('Error en PATCH /api/company/users/[userId]:', error)
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })

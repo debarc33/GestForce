@@ -5,6 +5,12 @@ export interface CompanyUser {
   role: string
   created_at: string
   user_email?: string
+  /**
+   * Nombre real de la persona, resuelto desde user_metadata (Supabase Auth).
+   * null cuando la cuenta se invitó antes de capturar nombre (invitaciones
+   * viejas) -- en ese caso la tabla de Equipo cae de vuelta al correo.
+   */
+  user_name?: string | null
 }
 
 /**
@@ -82,18 +88,19 @@ export async function removeUserFromCompany(
 }
 
 /**
- * Invitar un usuario a la empresa (requiere email)
+ * Invitar un usuario a la empresa (requiere email y nombre)
  * Llama al endpoint API que valida permisos y envía la invitación
  */
 export async function inviteUserToCompany(
   companyId: string,
   email: string,
-  role: string
+  role: string,
+  name: string
 ): Promise<{ success: boolean; message: string }> {
   const response = await fetch('/api/company/users/invite', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, role, companyId }),
+    body: JSON.stringify({ email, role, companyId, name }),
   })
 
   if (!response.ok) {
@@ -102,6 +109,28 @@ export async function inviteUserToCompany(
   }
 
   return response.json()
+}
+
+/**
+ * Actualizar el nombre de un colaborador ya invitado -- para arreglar
+ * cuentas invitadas antes de que el formulario empezara a pedir nombre
+ * (esas quedan mostrando "Sin nombre" en la tabla de Equipo).
+ */
+export async function updateUserName(
+  companyId: string,
+  userId: string,
+  name: string
+): Promise<void> {
+  const response = await fetch(`/api/company/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyId, name }),
+  })
+
+  if (!response.ok) {
+    const { error } = await response.json().catch(() => ({ error: null }))
+    throw new Error(error || 'Error al actualizar el nombre del colaborador')
+  }
 }
 
 // Tipos de roles disponibles

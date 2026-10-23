@@ -4,14 +4,14 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Package, Boxes, ArrowDownToLine, ArrowUpFromLine,
+  Package, Boxes,
   Settings2, Search, Download, Tag,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { ModuleToolbar } from '@/components/ui/module-toolbar'
 import { ProductsTable } from '@/modules/products/components/products-table'
 import { ProductForm } from '@/modules/products/components/product-form'
+import { CategoryManager } from '@/modules/products/components/category-manager'
 import { createCategory, createProduct, updateProduct, deleteProducts, useCategories, useProducts } from '@/modules/products/queries'
 import { createClient } from '@/lib/supabase/client'
 import { useCompanyStore } from '@/store/useCompanyStore'
@@ -75,7 +75,6 @@ function ProductosTab({ companyId }: { companyId: string }) {
 
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
-  const [categoryName, setCategoryName] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchValue, setSearchValue] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
@@ -193,17 +192,6 @@ function ProductosTab({ companyId }: { companyId: string }) {
     exportToExcel(data, productColumns, `productos_${new Date().toISOString().slice(0, 10)}`)
   }
 
-  const categoryMutation = useMutation({
-    mutationFn: () => {
-      return createCategory({ name: categoryName.trim(), company_id: companyId })
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', companyId] })
-      setCategoryName('')
-      setIsCategoryDialogOpen(false)
-    },
-  })
-
   const deleteMutation = useMutation({
     mutationFn: () => deleteProducts(selectedIds),
     onSuccess: () => {
@@ -211,9 +199,6 @@ function ProductosTab({ companyId }: { companyId: string }) {
       setSelectedIds([])
     },
   })
-
-  const inputClass =
-    'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3.5 py-2.5 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
   return (
     <div className="space-y-6">
@@ -275,43 +260,12 @@ function ProductosTab({ companyId }: { companyId: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Nueva Categoría */}
-      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent className="sm:max-w-[380px] rounded-2xl shadow-xl border-zinc-100">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-foreground">Nueva categoría</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-1">
-            <input
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && categoryMutation.mutate()}
-              className={inputClass}
-              placeholder="Ej. Ropa, Electrónica, Alimentos..."
-              autoFocus
-            />
-            {categoryMutation.isError && (
-              <p className="text-sm text-red-500">
-                {categoryMutation.error instanceof Error
-                  ? categoryMutation.error.message
-                  : 'Error al crear la categoría'}
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)} className="border-[var(--glass-border)]">
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => categoryMutation.mutate()}
-                disabled={!categoryName.trim() || categoryMutation.isPending}
-                className="bg-primary hover:bg-primary/90 text-white"
-              >
-                {categoryMutation.isPending ? 'Guardando...' : 'Crear'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog: Categorías (crear, renombrar, eliminar) */}
+      <CategoryManager
+        open={isCategoryDialogOpen}
+        onOpenChange={setIsCategoryDialogOpen}
+        companyId={companyId}
+      />
     </div>
   )
 }
@@ -797,16 +751,6 @@ export default function InventarioPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">
             Productos, catálogo, movimientos de stock y ajustes.
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5">
-            <ArrowDownToLine className="h-4 w-4 text-green-600" />
-            <span className="text-xs font-medium text-green-700">Entradas</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-            <ArrowUpFromLine className="h-4 w-4 text-red-600" />
-            <span className="text-xs font-medium text-red-700">Salidas</span>
-          </div>
         </div>
       </div>
 

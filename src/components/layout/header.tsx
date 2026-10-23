@@ -18,8 +18,7 @@ const MODULE_NAMES: Record<string, string> = {
   '/customers':  'Clientes',
   '/sales':      'Ventas',
   '/purchases':  'Compras',
-  '/products':   'Productos',
-  '/inventory':  'Inventario',
+  '/inventario': 'Inventario',
   '/finances':   'Finanzas',
   '/accounting': 'Contabilidad',
   '/payroll':    'Nómina',
@@ -31,7 +30,13 @@ const MODULE_NAMES: Record<string, string> = {
 const TAB_NAMES: Record<string, Record<string, string>> = {
   '/sales':      { quotes: 'Cotizaciones', invoices: 'Facturas', receipts: 'Recibos', customers: 'Clientes' },
   '/purchases':  { orders: 'Órdenes de Compra', invoices: 'Facturas Proveedor', payments: 'Pagos', suppliers: 'Proveedores' },
-  '/inventory':  { movements: 'Movimientos', kardex: 'Kardex', adjustments: 'Ajustes' },
+  // Las claves de pestaña son las que de verdad usa /inventario
+  // (src/app/(dashboard)/inventario/page.tsx: type Tab = 'productos' |
+  // 'movimientos' | 'kardex' | 'ajustes'). Antes esto apuntaba a
+  // '/inventory' (la página vieja en inglés) con ids en inglés
+  // (movements/adjustments) que nunca coincidían con la página real, así
+  // que el breadcrumb nunca mostraba la pestaña activa (22 oct 2026).
+  '/inventario': { productos: 'Productos', movimientos: 'Movimientos', kardex: 'Kardex', ajustes: 'Ajustes' },
   '/finances':   { overview: 'Panel', receivable: 'Cartera', payable: 'Obligaciones', taxes: 'Impuestos' },
   '/accounting': { accounts: 'Plan de Cuentas', entries: 'Comprobantes', reports: 'Informes' },
   '/payroll':    { employees: 'Empleados', liquidate: 'Liquidar', history: 'Historial', pila: 'Aportes PILA', absences: 'Ausencias', benefits: 'Prestaciones' },

@@ -51,8 +51,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'nav-purchases-ord', label: 'Compras · Órdenes',      section: 'Navegación', icon: ShoppingCart,                action: () => go('/purchases?tab=orders') },
     { id: 'nav-purchases-cxp', label: 'Compras · CxP',          section: 'Navegación', icon: CircleDollarSign,            action: () => go('/purchases/cxp') },
     { id: 'nav-suppliers',     label: 'Ir a Proveedores',       section: 'Navegación', icon: Truck,                       action: () => go('/suppliers') },
-    { id: 'nav-products',      label: 'Ir a Productos',         section: 'Navegación', icon: Boxes,           kbd: 'G P', action: () => go('/products') },
-    { id: 'nav-inventory',     label: 'Ir a Inventario',        section: 'Navegación', icon: Boxes,           kbd: 'G I', action: () => go('/inventory') },
+    // "Ir a Productos" se unificó con "Ir a Inventario" (22 oct 2026): el
+    // catálogo de productos vive dentro de /inventario, no en una página
+    // aparte, así que ya no tiene sentido tener dos atajos que llevan al
+    // mismo lugar.
+    { id: 'nav-inventory',     label: 'Ir a Inventario',        section: 'Navegación', icon: Boxes,           kbd: 'G I', action: () => go('/inventario') },
     { id: 'nav-finances',      label: 'Ir a Finanzas',          section: 'Navegación', icon: CircleDollarSign,            action: () => go('/finances') },
     { id: 'nav-accounting',    label: 'Ir a Contabilidad',      section: 'Navegación', icon: BookOpen,                    action: () => go('/accounting') },
     { id: 'nav-payroll',       label: 'Ir a Nómina',            section: 'Navegación', icon: Users2,                      action: () => go('/payroll') },
@@ -61,7 +64,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     { id: 'act-new-quote',    label: 'Nueva cotización',       section: 'Acciones', icon: Plus, kbd: 'N C', action: () => go('/sales/quotes/new') },
     { id: 'act-new-invoice',  label: 'Nueva factura',          section: 'Acciones', icon: Plus, kbd: 'N F', action: () => go('/sales/invoices/new') },
     { id: 'act-new-customer', label: 'Nuevo cliente',          section: 'Acciones', icon: Plus, kbd: 'N K', action: () => go('/customers?new=1') },
-    { id: 'act-new-product',  label: 'Nuevo producto',         section: 'Acciones', icon: Plus, kbd: 'N P', action: () => go('/products?new=1') },
+    { id: 'act-new-product',  label: 'Nuevo producto',         section: 'Acciones', icon: Plus, kbd: 'N P', action: () => go('/inventario?new=1') },
     { id: 'act-new-order',    label: 'Nueva orden de compra',  section: 'Acciones', icon: Plus,             action: () => go('/purchases/orders/new') },
 
     // Sistema

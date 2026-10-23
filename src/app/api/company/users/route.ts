@@ -50,9 +50,15 @@ export async function GET(req: NextRequest) {
     const usersWithEmail = await Promise.all(
       rows.map(async row => {
         const { data: authUser } = await admin.auth.admin.getUserById(row.user_id)
+        const metadata = authUser?.user?.user_metadata as Record<string, unknown> | undefined
+        const name =
+          (typeof metadata?.first_name === 'string' && metadata.first_name) ||
+          (typeof metadata?.full_name === 'string' && metadata.full_name) ||
+          null
         return {
           ...row,
           user_email: authUser?.user?.email ?? null,
+          user_name: name,
         }
       })
     )

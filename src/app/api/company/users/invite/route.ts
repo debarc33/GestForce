@@ -33,7 +33,7 @@ const VALID_ROLES = ['admin', 'contador', 'vendedor', 'readonly']
  */
 export async function POST(req: NextRequest) {
   try {
-    const { email, role, companyId } = await req.json()
+    const { email, role, companyId, name } = await req.json()
 
     if (!email || !role || !companyId) {
       return NextResponse.json(
@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    const trimmedName: string | null = typeof name === 'string' && name.trim() ? name.trim() : null
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${appUrl}/auth/callback`,
+        ...(trimmedName ? { data: { first_name: trimmedName } } : {}),
       })
 
       if (inviteError || !invited?.user) {
@@ -106,6 +109,17 @@ export async function POST(req: NextRequest) {
         redirectTo: `${appUrl}/auth/callback`,
       })
       sentPasswordReset = !resetError
+
+      // Si se indicó un nombre y la cuenta todavía no tenía uno guardado,
+      // lo completamos -- sin pisar un nombre que la persona ya tenga.
+      if (trimmedName) {
+        const { data: existingUser } = await admin.auth.admin.getUserById(userId)
+        if (existingUser?.user && !existingUser.user.user_metadata?.first_name) {
+          await admin.auth.admin.updateUserById(userId, {
+            user_metadata: { ...existingUser.user.user_metadata, first_name: trimmedName },
+          })
+        }
+      }
     }
 
     // ¿Ya pertenece a esta empresa?

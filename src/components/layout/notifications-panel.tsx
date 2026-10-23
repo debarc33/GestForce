@@ -93,7 +93,7 @@ export function NotificationsPanel() {
                   {lowStock.map((p) => (
                     <Link
                       key={p.id}
-                      href="/products"
+                      href="/inventario"
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left hover:bg-[var(--glass)] transition-colors"
                     >
