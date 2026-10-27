@@ -135,6 +135,8 @@ function ProductosTab({ companyId }: { companyId: string }) {
       sku: data.sku,
       description: data.description,
       price: data.price,
+      precio_compra: data.precio_compra,
+      margen_ganancia: data.margen_ganancia,
       stock: data.stock,
       stock_minimum: data.stock_minimum,
       unit: data.unit,
@@ -163,7 +165,14 @@ function ProductosTab({ companyId }: { companyId: string }) {
     { header: 'Nombre',       key: 'name',        width: 30 },
     { header: 'SKU',          key: 'sku',          width: 14 },
     { header: 'Descripción',  key: 'description',  width: 36 },
-    { header: 'Precio',       key: 'price',         width: 14 },
+    // Compra/Venta/Margen (25 oct 2026): el Excel no es obligatorio traerlos
+    // todos -- si una fila trae Compra pero deja Venta vacía, al importar se
+    // calcula sola con el Margen (mismo comportamiento que el formulario
+    // manual). "Precio" se sigue aceptando al importar como alias de "Venta"
+    // para no romper archivos viejos exportados antes de este cambio.
+    { header: 'Compra',       key: 'precio_compra',   width: 14 },
+    { header: 'Venta',        key: 'price',           width: 14 },
+    { header: 'Margen',       key: 'margen_ganancia', width: 12 },
     { header: 'Stock',        key: 'stock',         width: 10 },
     { header: 'Stock mínimo', key: 'stock_minimum', width: 12 },
     { header: 'Unidad',       key: 'unit',          width: 12 },

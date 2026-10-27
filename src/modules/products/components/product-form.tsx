@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -14,6 +14,8 @@ type Product = {
   sku: string | null
   description: string | null
   price: number
+  precio_compra: number | null
+  margen_ganancia: number | null
   stock: number
   stock_minimum: number
   unit: string
@@ -41,19 +43,35 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
     resolver: zodResolver(productFormSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       name: '', sku: '', description: '',
-      price: 0, stock: 0, stock_minimum: 0, unit: 'und',
+      price: 0, precio_compra: 0, margen_ganancia: 30,
+      stock: 0, stock_minimum: 0, unit: 'und',
       category_id: '', tax_type: 'iva' as const,
       tax_rate: 0.19, is_taxable: true,
     },
   })
 
+  // Controla si Venta ya tiene "dueño" (un valor que no se debe pisar con
+  // el cálculo automático): al editar un producto existente, su precio de
+  // venta guardado siempre cuenta como ya puesto a mano. Al crear uno
+  // nuevo, empieza en falso para que el cálculo automático funcione.
+  //
+  // No se usa simplemente "¿Venta está en 0?" porque eso se rompía al
+  // escribir Compra dígito por dígito: con el primer dígito (ej. "3" de
+  // "36000") Venta pasaba de 0 a 3.9 y, al dejar de estar "vacía", los
+  // siguientes dígitos ya no la recalculaban -- quedaba pegada en 3.9 en
+  // vez de 46.800 (reportado por Deisy, 27 oct 2026).
+  const ventaTouchedRef = useRef(!!product)
+
   useEffect(() => {
     if (product) {
+      ventaTouchedRef.current = true
       form.reset({
         name:        product.name,
         sku:         product.sku         ?? '',
         description: product.description ?? '',
-        price:         product.price,
+        price:           product.price,
+        precio_compra:   product.precio_compra   ?? 0,
+        margen_ganancia: product.margen_ganancia ?? 30,
         stock:         product.stock,
         stock_minimum: product.stock_minimum ?? 0,
         unit:          product.unit        || 'und',
@@ -62,6 +80,8 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
         tax_rate:    product.tax_rate    ?? 0.19,
         is_taxable:  product.is_taxable  ?? true,
       })
+    } else {
+      ventaTouchedRef.current = false
     }
   }, [product, form])
 
@@ -74,6 +94,7 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', activeCompanyId] })
       form.reset()
+      ventaTouchedRef.current = false
       onSuccess?.()
     },
   })
@@ -98,16 +119,68 @@ export function ProductForm({ product, onSuccess }: ProductFormProps) {
         </div>
       </div>
 
-      {/* Precio + Stock + Stock mínimo + Unidad */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* Compra + Venta + Margen */}
+      <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className={lbl}>Precio <span className="text-red-500">*</span></label>
-          <input {...form.register('price')} type="number" min="0" step="0.01"
-            className={inp} placeholder="0" />
+          <label className={lbl}>Compra</label>
+          <input
+            {...form.register('precio_compra', {
+              onChange: (e) => {
+                // Mientras Venta no haya sido tocada a mano, se recalcula
+                // en cada dígito que se escribe en Compra (ver nota junto a
+                // ventaTouchedRef más arriba).
+                if (ventaTouchedRef.current) return
+                const compra = Number(e.target.value) || 0
+                const margen = form.getValues('margen_ganancia') || 0
+                form.setValue('price', Number((compra * (1 + margen / 100)).toFixed(2)))
+              },
+            })}
+            type="number" min="0" step="0.01"
+            className={inp} placeholder="0"
+            title="Lo que te cuesta comprar o producir este producto" />
+          {form.formState.errors.precio_compra && (
+            <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.precio_compra.message}</p>
+          )}
+        </div>
+        <div>
+          <label className={lbl}>Venta <span className="text-red-500">*</span></label>
+          <input
+            {...form.register('price', {
+              // Si la clienta escribe aquí directamente, Venta queda
+              // "tocada" y el cálculo automático deja de pisarla.
+              onChange: () => { ventaTouchedRef.current = true },
+            })}
+            type="number" min="0" step="0.01"
+            className={inp} placeholder="0"
+            title="Precio al que se vende -- este es el que se usa en cotizaciones y facturas" />
           {form.formState.errors.price && (
             <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.price.message}</p>
           )}
         </div>
+        <div>
+          <label className={lbl}>Margen (%)</label>
+          <input
+            {...form.register('margen_ganancia', {
+              onChange: (e) => {
+                if (ventaTouchedRef.current) return
+                const margen = Number(e.target.value) || 0
+                const compra = form.getValues('precio_compra') || 0
+                if (compra) {
+                  form.setValue('price', Number((compra * (1 + margen / 100)).toFixed(2)))
+                }
+              },
+            })}
+            type="number" min="0" step="1"
+            className={inp} placeholder="30"
+            title="Porcentaje de ganancia sobre el precio de compra, usado para proponer el precio de Venta" />
+          {form.formState.errors.margen_ganancia && (
+            <p className="mt-0.5 text-xs text-red-600">{form.formState.errors.margen_ganancia.message}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Stock + Stock mínimo + Unidad */}
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className={lbl}>Stock <span className="text-red-500">*</span></label>
           <input {...form.register('stock')} type="number" min="0"

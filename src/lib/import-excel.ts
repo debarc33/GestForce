@@ -294,6 +294,10 @@ export type ParsedProductRow = {
   sku: string
   description: string
   price: number
+  /** Precio de compra (25 oct 2026). Opcional en el Excel -- 0 si no viene. */
+  precio_compra: number
+  /** Margen de ganancia %, usado solo si Venta viene vacía en la fila (ver abajo). */
+  margen_ganancia: number
   stock: number
   stock_minimum: number
   unit: string
@@ -307,9 +311,24 @@ export function mapProductRow(row: Record<string, string>): MapResult<ParsedProd
   const name = get(row, 'Nombre')
   if (name.length < 2) return { ok: false, message: 'El nombre es obligatorio (mínimo 2 caracteres).' }
 
-  const priceRaw = get(row, 'Precio')
-  const price = parseMoneyOrNumber(priceRaw)
-  if (price < 0) return { ok: false, message: 'El precio no puede ser negativo.' }
+  // "Venta" es el encabezado nuevo (ver product-form.tsx); se sigue aceptando
+  // "Precio" para no romper plantillas/exportes viejos que ya tenga Deisy.
+  const priceRaw = get(row, 'Venta', 'Precio')
+  let price = parseMoneyOrNumber(priceRaw)
+  if (price < 0) return { ok: false, message: 'El precio de venta no puede ser negativo.' }
+
+  const precio_compra = parseMoneyOrNumber(get(row, 'Compra'))
+  if (precio_compra < 0) return { ok: false, message: 'El precio de compra no puede ser negativo.' }
+
+  const margenRaw = get(row, 'Margen', 'Margen (%)', 'Margen de ganancia')
+  const margen_ganancia = margenRaw ? parseMoneyOrNumber(margenRaw) : 30
+
+  // Mismo comportamiento que en el formulario manual: si la fila trae
+  // Compra pero no trae Venta, se calcula sola con el margen (25 oct 2026).
+  // Si Venta sí viene en la fila, se respeta tal cual (no se recalcula).
+  if (!price && precio_compra) {
+    price = Number((precio_compra * (1 + margen_ganancia / 100)).toFixed(2))
+  }
 
   const stockRaw = get(row, 'Stock')
   const stock = stockRaw ? parseInt0(stockRaw) : 0
@@ -324,6 +343,8 @@ export function mapProductRow(row: Record<string, string>): MapResult<ParsedProd
       sku: get(row, 'SKU'),
       description: get(row, 'Descripción', 'Descripcion'),
       price,
+      precio_compra,
+      margen_ganancia,
       stock,
       stock_minimum: parseInt0(get(row, 'Stock mínimo', 'Stock minimo')),
       unit: matchEnum(get(row, 'Unidad'), UNITS, 'und'),

@@ -31,7 +31,14 @@ export const productFormSchema = z.object({
   name:        z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   sku:         z.string().optional().or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
-  price:       z.coerce.number().min(0, 'El precio no puede ser negativo'),
+  price:       z.coerce.number().min(0, 'El precio de venta no puede ser negativo'),
+  // Precio de compra y margen de ganancia (25 oct 2026) -- `price` sigue
+  // siendo el precio de VENTA (sin migración de datos, ya existía). Ambos
+  // campos son aditivos: en la base de datos son columnas nullable, pero
+  // aquí se tratan siempre como número (default 0 / 30) para que el
+  // cálculo automático del formulario sea simple.
+  precio_compra:   z.coerce.number().min(0, 'El precio de compra no puede ser negativo').default(0),
+  margen_ganancia: z.coerce.number().min(0, 'El margen no puede ser negativo').default(30),
   stock:         z.coerce.number().int().min(0, 'El stock no puede ser negativo'),
   stock_minimum: z.coerce.number().int().min(0, 'El stock mínimo no puede ser negativo').default(0),
   unit:          z.string().default('und'),

@@ -21,6 +21,8 @@ type Product = {
   sku: string | null
   description: string | null
   price: number
+  precio_compra: number | null
+  margen_ganancia: number | null
   stock: number
   stock_minimum: number
   unit: string
@@ -158,7 +160,11 @@ export function ProductsTable({
     },
     {
       accessorKey: 'price',
-      header: 'Precio',
+      // Se relabela a "Venta" (25 oct 2026): ahora que el producto también
+      // tiene precio de Compra (ver product-form.tsx), hay que distinguir
+      // cuál de los dos se muestra aquí -- `price` siempre fue y sigue
+      // siendo el precio de VENTA, el que se usa en cotizaciones/facturas.
+      header: 'Venta',
       cell: ({ row }) => (
         <span className="font-medium text-foreground">
           ${Number(row.original.price).toLocaleString('es-CO', { minimumFractionDigits: 2 })}
