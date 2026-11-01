@@ -133,10 +133,6 @@ export async function updateUserName(
   }
 }
 
-// Tipos de roles disponibles
-export const AVAILABLE_ROLES = [
-  { id: 'admin', label: 'Administrador' },
-  { id: 'contador', label: 'Contador' },
-  { id: 'vendedor', label: 'Vendedor' },
-  { id: 'readonly', label: 'Solo lectura' },
-] as const
+// Tipos de roles disponibles -- registro central en src/config/roles.ts
+// (antes esta lista estaba repetida a mano aquí; ver nota en roles.ts)
+export { ROLE_REGISTRY as AVAILABLE_ROLES } from '@/config/roles'

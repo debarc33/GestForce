@@ -12,6 +12,7 @@ import { CommandPalette } from '@/components/ui/command-palette'
 import { NotificationsPanel } from '@/components/layout/notifications-panel'
 import { ThemeToggle } from '@/components/layout/theme-toggle'
 import { HelpCenter } from '@/components/layout/help-center'
+import { ROLE_LABELS } from '@/config/roles'
 
 const MODULE_NAMES: Record<string, string> = {
   '/':           'Dashboard',
@@ -40,13 +41,6 @@ const TAB_NAMES: Record<string, Record<string, string>> = {
   '/finances':   { overview: 'Panel', receivable: 'Cartera', payable: 'Obligaciones', taxes: 'Impuestos' },
   '/accounting': { accounts: 'Plan de Cuentas', entries: 'Comprobantes', reports: 'Informes' },
   '/payroll':    { employees: 'Empleados', liquidate: 'Liquidar', history: 'Historial', pila: 'Aportes PILA', absences: 'Ausencias', benefits: 'Prestaciones' },
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  admin:    'Administrador',
-  contador: 'Contador',
-  vendedor: 'Vendedor',
-  readonly: 'Solo lectura',
 }
 
 function BreadcrumbInner() {

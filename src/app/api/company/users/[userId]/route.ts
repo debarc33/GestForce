@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCompanyAdmin } from '@/lib/auth/require-company-admin'
 import { countCompanyAdmins } from '@/lib/auth/company-admin-guard'
-
-const VALID_ROLES = ['admin', 'contador', 'vendedor', 'readonly']
+import { VALID_ROLES } from '@/config/roles'
 
 /**
  * PATCH /api/company/users/[userId]  body: { companyId, role?, name? }

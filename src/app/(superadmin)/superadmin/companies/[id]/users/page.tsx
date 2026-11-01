@@ -3,19 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Loader2, Plus, Trash2, X } from 'lucide-react'
+import { ROLE_LABELS } from '@/config/roles'
 
 type CompanyUser = {
   id: string
   user_id: string
   role: string
   created_at: string
-}
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrador',
-  contador: 'Contador',
-  vendedor: 'Vendedor',
-  readonly: 'Solo lectura',
 }
 
 export default function CompanyUsersPage() {
