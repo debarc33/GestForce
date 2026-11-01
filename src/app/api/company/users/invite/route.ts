@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCompanyAdmin } from '@/lib/auth/require-company-admin'
 import { checkCanAddUserWithRole } from '@/lib/auth/company-admin-guard'
-import { VALID_ROLES } from '@/config/roles'
 
 /**
  * POST /api/company/users/invite
@@ -48,10 +47,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 })
     }
 
-    if (!VALID_ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
-    }
-
     // Verifica sesión + que sea admin de ESTA empresa (nunca confiar en
     // companyId del cliente sin esto).
     const check = await requireCompanyAdmin(companyId)
@@ -60,6 +55,20 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
+
+    // El rol ahora es una fila editable en `roles` (migración 032, 1 nov
+    // 2026), no una lista fija -- se valida contra los roles de ESTA
+    // empresa en vez de contra un arreglo estático en el código.
+    const { data: roleRow } = await admin
+      .from('roles')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('name', role)
+      .maybeSingle()
+
+    if (!roleRow) {
+      return NextResponse.json({ error: 'Rol inválido para esta empresa' }, { status: 400 })
+    }
 
     // Regla: no se puede agregar un usuario con rol distinto de 'admin'
     // si la empresa todavía no tiene ningún administrador registrado.

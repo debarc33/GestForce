@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireCompanyAdmin } from '@/lib/auth/require-company-admin'
 import { countCompanyAdmins } from '@/lib/auth/company-admin-guard'
-import { VALID_ROLES } from '@/config/roles'
 
 /**
  * PATCH /api/company/users/[userId]  body: { companyId, role?, name? }
@@ -65,16 +64,28 @@ export async function PATCH(
     if (!role && trimmedName === null) {
       return NextResponse.json({ error: 'Debes indicar un rol o un nombre para actualizar' }, { status: 400 })
     }
-    if (role && !VALID_ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 })
-    }
-
     const check = await requireCompanyAdmin(companyId)
     if (!check.ok) {
       return NextResponse.json({ error: check.error }, { status: check.status })
     }
 
     const admin = createAdminClient()
+
+    // El rol ahora es una fila editable en `roles` (migración 032, 1 nov
+    // 2026) -- se valida contra los roles de ESTA empresa, no contra una
+    // lista fija.
+    if (role) {
+      const { data: roleRow } = await admin
+        .from('roles')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('name', role)
+        .maybeSingle()
+
+      if (!roleRow) {
+        return NextResponse.json({ error: 'Rol inválido para esta empresa' }, { status: 400 })
+      }
+    }
 
     const { data: target, error: targetError } = await admin
       .from('company_users')

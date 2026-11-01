@@ -133,6 +133,7 @@ export async function updateUserName(
   }
 }
 
-// Tipos de roles disponibles -- registro central en src/config/roles.ts
-// (antes esta lista estaba repetida a mano aquí; ver nota en roles.ts)
-export { ROLE_REGISTRY as AVAILABLE_ROLES } from '@/config/roles'
+// Los roles disponibles para invitar/asignar ya no son una lista fija --
+// cada empresa tiene las suyas, editables desde Configuración → Roles y
+// permisos (ver src/modules/roles/queries.ts, useCompanyRoles, migración
+// 032, 1 nov 2026). Antes esto exportaba un arreglo fijo de 4 roles.

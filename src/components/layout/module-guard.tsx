@@ -20,7 +20,8 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useEnabledModules } from '@/modules/company/module-queries'
-import { getModuleIdFromPath } from '@/config/modules'
+import { useMyModuleAccess } from '@/modules/roles/queries'
+import { getModuleIdFromPath, ALWAYS_ON_MODULE_IDS } from '@/config/modules'
 
 interface ModuleGuardProps {
   children: React.ReactNode
@@ -29,20 +30,31 @@ interface ModuleGuardProps {
 export function ModuleGuard({ children }: ModuleGuardProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { activeCompanyId } = useCompanyStore()
+  const { activeCompanyId, activeCompany } = useCompanyStore()
   const { data: enabledModules, isLoading } = useEnabledModules(activeCompanyId)
+  // Permisos por rol (migración 032, 1 nov 2026): bloquea también si el
+  // rol del usuario tiene "Sin acceso" a ese módulo, aunque la empresa
+  // sí lo tenga activo -- sin esto, alguien con un rol restringido podía
+  // escribir la URL directo y entrar igual, aunque el menú lo ocultara.
+  const { data: moduleAccess, isLoading: isLoadingAccess } = useMyModuleAccess(activeCompanyId ?? undefined, activeCompany?.role)
 
   useEffect(() => {
     // No actuar durante la carga inicial (evitar redirecciones prematuras)
-    if (isLoading || !enabledModules) return
+    if (isLoading || !enabledModules || isLoadingAccess) return
 
     const moduleId = getModuleIdFromPath(pathname)
+    if (!moduleId) return
 
-    // Si la ruta corresponde a un módulo y ese módulo no está habilitado → redirigir
-    if (moduleId && !enabledModules.has(moduleId)) {
+    if (!enabledModules.has(moduleId)) {
+      router.replace('/')
+      return
+    }
+
+    const isAlwaysOn = ALWAYS_ON_MODULE_IDS.includes(moduleId)
+    if (!isAlwaysOn && moduleAccess && moduleAccess[moduleId] === 'none') {
       router.replace('/')
     }
-  }, [pathname, enabledModules, isLoading, router])
+  }, [pathname, enabledModules, isLoading, moduleAccess, isLoadingAccess, router])
 
   // Renderizar siempre los hijos; la redirección es asíncrona vía useEffect
   return <>{children}</>

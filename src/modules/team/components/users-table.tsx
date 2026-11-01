@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Loader, Plus, Pencil, Check, X } from 'lucide-react'
-import { getCompanyUsers, updateUserRole, updateUserName, removeUserFromCompany, inviteUserToCompany, AVAILABLE_ROLES, type CompanyUser } from '../queries'
+import { getCompanyUsers, updateUserRole, updateUserName, removeUserFromCompany, inviteUserToCompany, type CompanyUser } from '../queries'
+import { useCompanyRoles } from '@/modules/roles/queries'
 
 /**
  * Código consecutivo por empresa (COL-01, COL-02...), calculado por orden
@@ -47,6 +48,23 @@ export function UsersTable({ companyId }: UsersTableProps) {
     queryKey: ['company_users', companyId],
     queryFn: () => getCompanyUsers(companyId),
   })
+
+  // Roles de la empresa -- ya no es una lista fija (ver src/modules/roles/queries.ts,
+  // migración 032, 1 nov 2026): cada empresa puede renombrar y agregar roles.
+  const { data: roles = [] } = useCompanyRoles(companyId)
+
+  // Si el rol por defecto del formulario de invitar ('vendedor') fue
+  // renombrado o borrado por esta empresa, no queda seleccionado ningún
+  // rol real en el <select> -- en cuanto se cargan los roles reales, se
+  // ajusta al primero disponible que no sea "admin" (para no invitar a
+  // alguien como administrador por descuido).
+  useEffect(() => {
+    if (roles.length === 0) return
+    if (roles.some(r => r.name === inviteRole)) return
+    const fallback = roles.find(r => r.name !== 'admin') ?? roles[0]
+    setInviteRole(fallback.name)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roles])
 
   const codeByUserId = useCollaboratorCodes(users)
 
@@ -224,9 +242,9 @@ export function UsersTable({ companyId }: UsersTableProps) {
                 onChange={(e) => setInviteRole(e.target.value)}
                 className="w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/15"
               >
-                {AVAILABLE_ROLES.map(role => (
-                  <option key={role.id} value={role.id}>
-                    {role.label}
+                {roles.map(role => (
+                  <option key={role.id} value={role.name}>
+                    {role.name}
                   </option>
                 ))}
               </select>
@@ -368,9 +386,9 @@ export function UsersTable({ companyId }: UsersTableProps) {
                         disabled={updateRoleMutation.isPending}
                         className="px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 disabled:opacity-50"
                       >
-                        {AVAILABLE_ROLES.map(role => (
-                          <option key={role.id} value={role.id}>
-                            {role.label}
+                        {roles.map(role => (
+                          <option key={role.id} value={role.name}>
+                            {role.name}
                           </option>
                         ))}
                       </select>
@@ -475,9 +493,9 @@ export function UsersTable({ companyId }: UsersTableProps) {
                   disabled={updateRoleMutation.isPending}
                   className="w-full px-3 py-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 disabled:opacity-50"
                 >
-                  {AVAILABLE_ROLES.map(role => (
-                    <option key={role.id} value={role.id}>
-                      {role.label}
+                  {roles.map(role => (
+                    <option key={role.id} value={role.name}>
+                      {role.name}
                     </option>
                   ))}
                 </select>

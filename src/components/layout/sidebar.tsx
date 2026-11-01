@@ -9,7 +9,8 @@ import { cn } from '@/lib/utils'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useSidebarStore } from '@/store/useSidebarStore'
 import { useEnabledModules } from '@/modules/company/module-queries'
-import { MODULE_REGISTRY, type ModuleDefinition } from '@/config/modules'
+import { useMyModuleAccess } from '@/modules/roles/queries'
+import { MODULE_REGISTRY, type ModuleDefinition, type ModuleId } from '@/config/modules'
 
 /**
  * GestForce — Floating Glass Sidebar
@@ -39,6 +40,10 @@ export function Sidebar() {
   const iconOnly = collapsed && !isMobileOpen
 
   const { data: enabledModules } = useEnabledModules(activeCompanyId)
+  // Permisos por rol (migración 032, 1 nov 2026): además de que la
+  // empresa tenga el módulo activo, el rol del usuario actual no debe
+  // tener "Sin acceso" en él (Configuración → Roles y permisos).
+  const { data: moduleAccess } = useMyModuleAccess(activeCompanyId ?? undefined, activeCompany?.role)
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set(MODULE_REGISTRY.filter(m => m.children).map(m => m.id))
@@ -51,9 +56,11 @@ export function Sidebar() {
     })
   }
 
-  const visibleModules = MODULE_REGISTRY.filter(
-    (m) => !enabledModules || enabledModules.has(m.id)
-  )
+  const visibleModules = MODULE_REGISTRY.filter((m) => {
+    if (enabledModules && !enabledModules.has(m.id)) return false
+    if (!m.alwaysOn && moduleAccess && moduleAccess[m.id as ModuleId] === 'none') return false
+    return true
+  })
 
   const filtered = visibleModules.filter(m => m.id !== 'settings')
   // Mover Tablero al final
