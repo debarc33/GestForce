@@ -126,6 +126,7 @@ export default function SettingsPage() {
   const [editingPayroll, setEditingPayroll]     = useState(false)
   const [editingLogo, setEditingLogo]           = useState(false)
   const [editingPrint, setEditingPrint]         = useState(false)
+  const [editingCosteo, setEditingCosteo]       = useState(false)
   const [activeGroup, setActiveGroup]           = useState('Empresa')
   const [companyForm, setCompanyForm]       = useState<CompanyProfileUpdate>({})
   const [companyError, setCompanyError]     = useState<string | null>(null)
@@ -195,6 +196,7 @@ export default function SettingsPage() {
         ica_rate:             company.ica_rate             ?? 0.00414,
         smlv:                 company.smlv                 ?? 1300000,
         transport_allowance:  company.transport_allowance  ?? 162000,
+        costing_method:       company.costing_method       ?? 'weighted_avg',
         invoice_footer:         company.invoice_footer         ?? '',
         quote_terms:            company.quote_terms            ?? '',
         print_paper_size:       company.print_paper_size       ?? 'carta',
@@ -381,6 +383,9 @@ export default function SettingsPage() {
     { label: 'Documentos', items: [
       { id: 'impresion',   label: 'Formatos de impresión' },
       { id: 'medios_pago', label: 'Medios de pago' },
+    ]},
+    { label: 'Inventario', items: [
+      { id: 'costeo',      label: 'Costeo de compras' },
     ]},
     { label: 'Suscripción', items: [
       { id: 'suscripcion', label: 'Plan y pagos' },
@@ -1301,6 +1306,70 @@ export default function SettingsPage() {
               <span className="text-muted-foreground">Umbral identificación comprador</span>
               <span className="font-mono font-medium text-foreground">
                 ${(company?.buyer_threshold ?? 212000).toLocaleString('es-CO')} COP
+              </span>
+            </div>
+          </div>
+        )}
+        </SettingsAccordion>
+      </section>
+
+      {/* ══ Inventario — Costeo de compras ═════════════════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Inventario' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Costeo de compras" defaultOpen>
+        <SectionHeader
+          title="Costeo de compras"
+          sub="Cómo se recalcula el precio de Compra de un producto cada vez que recibes una orden de compra."
+          editing={editingCosteo}
+          onEdit={() => setEditingCosteo(true)}
+          onSave={() => companyMut.mutate()}
+          onCancel={() => { setEditingCosteo(false); setCompanyError(null) }}
+        />
+        {editingCosteo ? (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
+            <label className={`flex items-start gap-3 rounded-lg border px-3.5 py-3 cursor-pointer transition-colors ${
+              (companyForm.costing_method ?? 'weighted_avg') === 'weighted_avg'
+                ? 'border-primary/40 bg-primary/5' : 'border-[var(--glass-border)] glass-surface'
+            }`}>
+              <input type="radio" name="costing_method" className="mt-1"
+                checked={(companyForm.costing_method ?? 'weighted_avg') === 'weighted_avg'}
+                onChange={() => setCompanyForm(prev => ({ ...prev, costing_method: 'weighted_avg' }))} />
+              <div>
+                <p className="text-sm font-medium text-foreground">Promedio ponderado (recomendado)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Mezcla el costo que ya tenías en inventario con el de la compra nueva, ponderado por cantidades.
+                  Refleja el costo real de todo el stock aunque hayas comprado a precios distintos en momentos distintos.
+                </p>
+              </div>
+            </label>
+            <label className={`flex items-start gap-3 rounded-lg border px-3.5 py-3 cursor-pointer transition-colors ${
+              companyForm.costing_method === 'last_price'
+                ? 'border-primary/40 bg-primary/5' : 'border-[var(--glass-border)] glass-surface'
+            }`}>
+              <input type="radio" name="costing_method" className="mt-1"
+                checked={companyForm.costing_method === 'last_price'}
+                onChange={() => setCompanyForm(prev => ({ ...prev, costing_method: 'last_price' }))} />
+              <div>
+                <p className="text-sm font-medium text-foreground">Precio por proveedor (último precio)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  El precio de Compra del producto siempre queda igual al de la última compra recibida, sin mezclar
+                  con lo que tenías antes.
+                </p>
+              </div>
+            </label>
+            <p className="text-xs text-muted-foreground">
+              En ambos casos, el precio de Venta se recalcula junto con el de Compra usando el margen de ganancia
+              configurado en cada producto.
+            </p>
+            {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[var(--glass-border)] glass-surface px-5 py-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Método de costeo</span>
+              <span className="font-medium text-foreground">
+                {(company?.costing_method ?? 'weighted_avg') === 'last_price'
+                  ? 'Precio por proveedor (último precio)'
+                  : 'Promedio ponderado'}
               </span>
             </div>
           </div>

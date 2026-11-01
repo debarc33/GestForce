@@ -9,8 +9,9 @@ import {
 } from '@tanstack/react-table'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Building2 } from 'lucide-react'
+import { Building2, Package } from 'lucide-react'
 import { SupplierForm } from './supplier-form'
+import { SupplierProductsDialog } from './supplier-products-dialog'
 import type { SupplierRow } from '../queries'
 
 interface SuppliersTableProps {
@@ -36,6 +37,7 @@ export function SuppliersTable({
   const { data: suppliers = [], isLoading, isError } = useSuppliers(activeCompanyId)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(null)
+  const [viewingProductsOf, setViewingProductsOf] = useState<SupplierRow | null>(null)
 
   useEffect(() => {
     setRowSelection({})
@@ -143,6 +145,21 @@ export function SuppliersTable({
           {row.original.payment_days != null ? `${row.original.payment_days} días` : '—'}
         </span>
       ),
+    },
+    {
+      id: 'acciones',
+      header: '',
+      cell: ({ row }) => (
+        <button
+          onClick={() => setViewingProductsOf(row.original)}
+          title="Ver productos comprados y sus precios"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
+        >
+          <Package className="h-3.5 w-3.5" />
+          Productos
+        </button>
+      ),
+      size: 40,
     },
   ]
 
@@ -252,6 +269,13 @@ export function SuppliersTable({
                       <span>{FISCAL_LABEL[s.fiscal_regime] ?? s.fiscal_regime}</span>
                       {s.payment_days != null && <span>· {s.payment_days} días de pago</span>}
                     </div>
+                    <button
+                      onClick={() => setViewingProductsOf(s)}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
+                    >
+                      <Package className="h-3.5 w-3.5" />
+                      Ver productos comprados
+                    </button>
                   </div>
                 </div>
               </div>
@@ -291,6 +315,13 @@ export function SuppliersTable({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Productos comprados a este proveedor (vista de proveedor) */}
+      <SupplierProductsDialog
+        supplierId={viewingProductsOf?.id ?? null}
+        supplierName={viewingProductsOf?.name ?? ''}
+        onOpenChange={(open) => { if (!open) setViewingProductsOf(null) }}
+      />
     </>
   )
 }

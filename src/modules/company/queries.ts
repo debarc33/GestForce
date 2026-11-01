@@ -45,6 +45,17 @@ export type CompanyProfile = {
   // ── Nómina ────────────────────────────────────────────────────────
   smlv:              number   // Salario mínimo legal vigente (actualizar cada enero)
   transport_allowance: number // Auxilio de transporte vigente
+  // ── Costeo de inventario (punto 2 del backlog, 27 oct 2026) ──────
+  // Cómo se recalcula el precio de Compra de un producto cuando llega
+  // una compra nueva (ver receive_purchase_order en
+  // supabase/migrations/031_producto_proveedores_costeo_compras.sql):
+  //   - 'weighted_avg': promedio ponderado entre el stock que ya tenía
+  //     (a su costo anterior) y la cantidad nueva (al costo de esta
+  //     compra). Es el default -- recomendado por reflejar el costo
+  //     real de todo el inventario.
+  //   - 'last_price': el precio de Compra pasa a ser siempre el de la
+  //     ÚLTIMA compra recibida, sin mezclar con lo que tenía antes.
+  costing_method:    'weighted_avg' | 'last_price'
   // ── Suscripción (solo lectura — la escribe el webhook de pagos) ───
   plan_id:              string | null   // 'nucleo' | 'comercial' | 'contable' | 'integral' | null
   subscription_period: '3_months' | '6_months' | '1_year' | null
@@ -150,6 +161,7 @@ export async function updateCompany(id: string, data: CompanyProfileUpdate) {
       ica_rate:             data.ica_rate             ?? 0.00414,
       smlv:                 data.smlv                 ?? 1300000,
       transport_allowance:  data.transport_allowance  ?? 162000,
+      costing_method:       data.costing_method       ?? 'weighted_avg',
       invoice_footer:         data.invoice_footer         ?? null,
       quote_terms:            data.quote_terms            ?? null,
       print_paper_size:       data.print_paper_size       ?? 'carta',

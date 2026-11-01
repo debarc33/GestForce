@@ -48,6 +48,15 @@ export default function PurchaseOrderDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['supplier_invoices'] })
       queryClient.invalidateQueries({ queryKey: ['supplier_invoice_by_order', id] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      // Recibir una orden crea una factura de proveedor pendiente de pago --
+      // sin esto, CxP (y los KPIs de Gastos/Obligaciones del Panel de
+      // Finanzas) se quedaban mostrando los datos de hace hasta 5 minutos
+      // (staleTime global en providers.tsx), así que la factura nueva no
+      // aparecía en CxP hasta que esa caché venciera sola. Encontrado 31 oct
+      // 2026 al probar Proveedores -> precio por proveedor.
+      queryClient.invalidateQueries({ queryKey: ['finance_obligaciones'] })
+      queryClient.invalidateQueries({ queryKey: ['finance_panel'] })
+      queryClient.invalidateQueries({ queryKey: ['finance_monthly'] })
       setConfirmReceive(false)
       if (invoiceId) router.push(`/purchases/invoices/${invoiceId}`)
     },

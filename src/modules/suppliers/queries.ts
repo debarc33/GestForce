@@ -136,6 +136,55 @@ export async function getSuppliersWithDocuments(ids: string[]): Promise<string[]
   return ids.filter(id => withDocs.has(id))
 }
 
+// ─── Productos comprados a este proveedor (vista de proveedor) ──────────
+// Punto 2 del backlog, 27 oct 2026 -- qué le compras y a qué precio. Lee
+// de `producto_proveedores` (migración 030), que `receive_purchase_order`
+// (migración 031) actualiza sola cada vez que se recibe una compra de ese
+// proveedor. Es de solo lectura.
+
+export type SupplierProductRow = {
+  product_id:   string
+  product_name: string
+  sku:          string | null
+  price:        number
+  updated_at:   string
+}
+
+export function useSupplierProducts(supplierId?: string) {
+  return useQuery({
+    queryKey: ['supplier_products', supplierId],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('producto_proveedores')
+        .select('product_id, price, updated_at')
+        .eq('supplier_id', supplierId!)
+        .order('updated_at', { ascending: false })
+      if (error) throw new Error(error.message)
+      const rows = data ?? []
+      if (rows.length === 0) return []
+
+      const productIds = [...new Set(rows.map(r => r.product_id))]
+      const { data: prods } = await supabase
+        .from('products')
+        .select('id, name, sku')
+        .in('id', productIds)
+      const productMap = Object.fromEntries(
+        (prods ?? []).map(p => [p.id, { name: p.name as string, sku: p.sku as string | null }])
+      )
+
+      return rows.map(r => ({
+        product_id:   r.product_id,
+        product_name: productMap[r.product_id]?.name ?? 'Producto eliminado',
+        sku:          productMap[r.product_id]?.sku ?? null,
+        price:        Number(r.price),
+        updated_at:   r.updated_at,
+      })) as SupplierProductRow[]
+    },
+    enabled: !!supplierId,
+  })
+}
+
 // ─── Cuentas bancarias del proveedor ─────────────────────────────────────
 
 export function useSupplierBankAccounts(supplierId?: string) {
