@@ -60,7 +60,7 @@ export async function PATCH(
     const admin = createAdminClient()
 
     const { data: role, error: roleError } = await admin
-      .from('roles')
+      .from('company_roles')
       .select('id, name, is_system')
       .eq('id', roleId)
       .eq('company_id', companyId)
@@ -78,7 +78,7 @@ export async function PATCH(
       const oldName = role.name
 
       const { error: updateError } = await admin
-        .from('roles')
+        .from('company_roles')
         .update({ name: trimmedName, updated_at: new Date().toISOString() })
         .eq('id', roleId)
 
@@ -114,7 +114,7 @@ export async function PATCH(
       }))
 
       const { error: permError } = await admin
-        .from('role_permissions')
+        .from('company_role_permissions')
         .upsert(rows, { onConflict: 'role_id,module_id' })
 
       if (permError) {
@@ -157,7 +157,7 @@ export async function DELETE(
     const admin = createAdminClient()
 
     const { data: role, error: roleError } = await admin
-      .from('roles')
+      .from('company_roles')
       .select('id, name, is_system')
       .eq('id', roleId)
       .eq('company_id', companyId)
@@ -188,7 +188,7 @@ export async function DELETE(
       )
     }
 
-    const { error: deleteError } = await admin.from('roles').delete().eq('id', roleId)
+    const { error: deleteError } = await admin.from('company_roles').delete().eq('id', roleId)
     if (deleteError) {
       return NextResponse.json({ error: deleteError.message }, { status: 500 })
     }

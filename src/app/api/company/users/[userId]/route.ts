@@ -76,7 +76,7 @@ export async function PATCH(
     // lista fija.
     if (role) {
       const { data: roleRow } = await admin
-        .from('roles')
+        .from('company_roles')
         .select('id')
         .eq('company_id', companyId)
         .eq('name', role)

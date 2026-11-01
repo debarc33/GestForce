@@ -47,7 +47,7 @@ async function fetchRolesWithPermissions(companyId: string): Promise<RoleWithPer
   const supabase = createClient()
 
   const { data: roles, error: rolesError } = await supabase
-    .from('roles')
+    .from('company_roles')
     .select('id, company_id, name, is_system')
     .eq('company_id', companyId)
     .order('is_system', { ascending: false })
@@ -59,7 +59,7 @@ async function fetchRolesWithPermissions(companyId: string): Promise<RoleWithPer
 
   const roleIds = roleRows.map(r => r.id)
   const { data: perms, error: permsError } = await supabase
-    .from('role_permissions')
+    .from('company_role_permissions')
     .select('role_id, module_id, access_level')
     .in('role_id', roleIds)
 

@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     // 2026), no una lista fija -- se valida contra los roles de ESTA
     // empresa en vez de contra un arreglo estático en el código.
     const { data: roleRow } = await admin
-      .from('roles')
+      .from('company_roles')
       .select('id')
       .eq('company_id', companyId)
       .eq('name', role)

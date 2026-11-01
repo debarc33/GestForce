@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/header'
 import { CompanyGuard } from '@/components/layout/company-guard'
 import { ModuleGuard } from '@/components/layout/module-guard'
 import { BackgroundLayer } from '@/components/ui/background-layer'
+import { MainContent } from '@/components/layout/main-content'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,16 +23,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             sube por encima de esa línea → nunca queda por debajo del header flotante.
               top  = 56 (header) + 14 (inset) + 14 (gap) = 84px
               left = 232 (sidebar) + 14 + 14 = 260px   (92px si está colapsado)
-            El selector :has detecta el sidebar colapsado (data-collapsed="true").
+            MainContent lee isCollapsed directo del store (ver ese archivo para
+            el porqué: el selector CSS :has() que había antes no funcionaba,
+            porque Sidebar y este contenido son hermanos, no padre/hijo).
           */}
-          <main className="content-scroll fixed z-[1] left-[260px] right-5 top-[84px] bottom-3 overflow-y-auto overflow-x-hidden transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] [&:has(aside[data-collapsed='true'])]:left-[92px] max-md:!left-3 max-md:!right-3">
-            {/* px-8 pt-8: el contenedor que esperan las cabeceras-banner de las
-                páginas (usan -mx-8 -mt-8 para sangrar hasta los bordes). Sin
-                este padding, el scroll propio recortaba el título por arriba. */}
-            <div className="mx-auto max-w-[1600px] px-8 pt-8 pb-8 max-md:px-4 max-md:pt-4 animate-[fadeIn_240ms_ease]">
-              {children}
-            </div>
-          </main>
+          <MainContent>{children}</MainContent>
         </div>
       </ModuleGuard>
     </CompanyGuard>

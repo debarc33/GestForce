@@ -6,6 +6,16 @@
 -- readonly) por una tabla editable por empresa, más una tabla de
 -- permisos por módulo (Sin acceso / Solo ver / Puede editar).
 --
+-- NOMBRES: se usan `company_roles` / `company_role_permissions` (no
+-- `roles` / `role_permissions`) porque al intentar correr una primera
+-- versión de esta migración, Supabase devolvió el error
+-- `column "is_system" of relation "roles" does not exist` -- es decir,
+-- ya existía una tabla `roles` en la base de datos de Deisy, creada en
+-- algún momento fuera de las migraciones versionadas (mismo patrón que
+-- `categories` y `products` en este proyecto), con una estructura
+-- distinta. Para no arriesgar tocar esa tabla desconocida, esta
+-- migración usa nombres propios que no chocan con nada existente.
+--
 -- IMPORTANTE: el rol "admin" queda protegido a propósito (no se
 -- puede renombrar ni borrar desde la pantalla nueva) porque el
 -- resto del código (requireCompanyAdmin, en
@@ -15,7 +25,7 @@
 -- para no arriesgar el acceso de administrador de nadie.
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE IF NOT EXISTS company_roles (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   company_id  UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
@@ -27,12 +37,12 @@ CREATE TABLE IF NOT EXISTS roles (
   UNIQUE(company_id, name)
 );
 
-CREATE INDEX IF NOT EXISTS idx_roles_company_id ON roles(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_roles_company_id ON company_roles(company_id);
 
-ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_roles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "company_members_can_read_roles"
-  ON roles
+CREATE POLICY "company_members_can_read_company_roles"
+  ON company_roles
   FOR SELECT
   USING (
     company_id IN (
@@ -44,9 +54,9 @@ CREATE POLICY "company_members_can_read_roles"
 -- cliente admin (service_role) -- mismo patrón que company_modules y
 -- company_users. Ningún usuario normal puede escribir aquí directo.
 
-CREATE TABLE IF NOT EXISTS role_permissions (
+CREATE TABLE IF NOT EXISTS company_role_permissions (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  role_id       UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  role_id       UUID NOT NULL REFERENCES company_roles(id) ON DELETE CASCADE,
   module_id     TEXT NOT NULL,
   -- 'none' (sin acceso) | 'view' (solo ver) | 'edit' (puede editar)
   access_level  TEXT NOT NULL DEFAULT 'edit' CHECK (access_level IN ('none', 'view', 'edit')),
@@ -54,16 +64,16 @@ CREATE TABLE IF NOT EXISTS role_permissions (
   UNIQUE(role_id, module_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_role_permissions_role_id ON role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_company_role_permissions_role_id ON company_role_permissions(role_id);
 
-ALTER TABLE role_permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_role_permissions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "company_members_can_read_role_permissions"
-  ON role_permissions
+CREATE POLICY "company_members_can_read_company_role_permissions"
+  ON company_role_permissions
   FOR SELECT
   USING (
     role_id IN (
-      SELECT id FROM roles WHERE company_id IN (
+      SELECT id FROM company_roles WHERE company_id IN (
         SELECT company_id FROM company_users WHERE user_id = auth.uid()
       )
     )
@@ -78,7 +88,7 @@ CREATE POLICY "company_members_can_read_role_permissions"
 -- habría ningún rol válido para asignarle.
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION seed_default_roles_for_new_company()
+CREATE OR REPLACE FUNCTION seed_default_company_roles_for_new_company()
 RETURNS TRIGGER AS $$
 DECLARE
   rid UUID;
@@ -86,12 +96,12 @@ DECLARE
   mod_id TEXT;
 BEGIN
   FOREACH role_name IN ARRAY ARRAY['admin', 'contador', 'vendedor', 'readonly'] LOOP
-    INSERT INTO roles (company_id, name, is_system)
+    INSERT INTO company_roles (company_id, name, is_system)
     VALUES (NEW.id, role_name, role_name = 'admin')
     RETURNING id INTO rid;
 
     FOREACH mod_id IN ARRAY ARRAY['ventas', 'compras', 'inventario', 'nomina', 'contabilidad', 'finanzas'] LOOP
-      INSERT INTO role_permissions (role_id, module_id, access_level)
+      INSERT INTO company_role_permissions (role_id, module_id, access_level)
       VALUES (rid, mod_id, 'edit');
     END LOOP;
   END LOOP;
@@ -99,11 +109,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS trg_seed_default_roles ON companies;
-CREATE TRIGGER trg_seed_default_roles
+DROP TRIGGER IF EXISTS trg_seed_default_company_roles ON companies;
+CREATE TRIGGER trg_seed_default_company_roles
   AFTER INSERT ON companies
   FOR EACH ROW
-  EXECUTE FUNCTION seed_default_roles_for_new_company();
+  EXECUTE FUNCTION seed_default_company_roles_for_new_company();
 
 -- ============================================================
 -- SIEMBRA: los 4 roles de siempre, para cada empresa que ya existe,
@@ -121,21 +131,21 @@ CREATE TRIGGER trg_seed_default_roles
 -- de abajo para que los roles de sistema lo sembren con 'edit'.
 -- ============================================================
 
-INSERT INTO roles (company_id, name, is_system)
+INSERT INTO company_roles (company_id, name, is_system)
 SELECT DISTINCT c.id, r.name, (r.name = 'admin')
 FROM companies c
 CROSS JOIN (VALUES ('admin'), ('contador'), ('vendedor'), ('readonly')) AS r(name)
 ON CONFLICT (company_id, name) DO NOTHING;
 
-INSERT INTO role_permissions (role_id, module_id, access_level)
+INSERT INTO company_role_permissions (role_id, module_id, access_level)
 SELECT ro.id, m.module_id, 'edit'
-FROM roles ro
+FROM company_roles ro
 CROSS JOIN (VALUES ('ventas'), ('compras'), ('inventario'), ('nomina'), ('contabilidad'), ('finanzas')) AS m(module_id)
 WHERE ro.name IN ('admin', 'contador', 'vendedor', 'readonly')
 ON CONFLICT (role_id, module_id) DO NOTHING;
 
 -- VERIFICACIÓN SUGERIDA DESPUÉS DE CORRER ESTO:
 -- SELECT c.name AS empresa, r.name AS rol, r.is_system, count(rp.id) AS modulos_con_permiso
--- FROM roles r JOIN companies c ON c.id = r.company_id
--- LEFT JOIN role_permissions rp ON rp.role_id = r.id
+-- FROM company_roles r JOIN companies c ON c.id = r.company_id
+-- LEFT JOIN company_role_permissions rp ON rp.role_id = r.id
 -- GROUP BY c.name, r.name, r.is_system ORDER BY c.name, r.name;

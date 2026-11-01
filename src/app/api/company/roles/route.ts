@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
 
     const { data: role, error: roleError } = await admin
-      .from('roles')
+      .from('company_roles')
       .insert([{ company_id: companyId, name: trimmedName, is_system: false }])
       .select()
       .single()
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
       access_level: 'none' as const,
     }))
 
-    const { error: permError } = await admin.from('role_permissions').insert(permRows)
+    const { error: permError } = await admin.from('company_role_permissions').insert(permRows)
     if (permError) {
       // No dejar un rol sin ninguna fila de permisos -- revertir su creación.
-      await admin.from('roles').delete().eq('id', role.id)
+      await admin.from('company_roles').delete().eq('id', role.id)
       return NextResponse.json({ error: 'Error al crear los permisos del rol: ' + permError.message }, { status: 500 })
     }
 
