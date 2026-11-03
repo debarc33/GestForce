@@ -22,7 +22,6 @@ import {
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { AppearanceTab } from '@/modules/settings/appearance-tab'
 import { UsersTable } from '@/modules/team'
-import { RolesPermissionsPanel } from '@/modules/roles/components/roles-permissions-panel'
 import { SettingsAccordion } from '@/components/settings/settings-accordion'
 import { SubscriptionSection } from '@/components/settings/subscription-section'
 
@@ -195,8 +194,8 @@ export default function SettingsPage() {
         fe_technical_key:     company.fe_technical_key     ?? '',
         buyer_threshold:      company.buyer_threshold      ?? 212000,
         ica_rate:             company.ica_rate             ?? 0.00414,
-        smlv:                 company.smlv                 ?? 1300000,
-        transport_allowance:  company.transport_allowance  ?? 162000,
+        smlv:                 company.smlv                 ?? 1750905,
+        transport_allowance:  company.transport_allowance  ?? 249095,
         costing_method:       company.costing_method       ?? 'weighted_avg',
         invoice_footer:         company.invoice_footer         ?? '',
         quote_terms:            company.quote_terms            ?? '',
@@ -719,16 +718,6 @@ export default function SettingsPage() {
         </SettingsAccordion>
       </section>
 
-      {/* ══ 5b. Roles y permisos ═══════════════════════════════════ */}
-      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Equipo' ? ' hidden' : ''}`}>
-        <SettingsAccordion title="Roles y permisos">
-        <p className="text-sm text-muted-foreground">
-          Crea roles, renómbralos y elige qué puede ver y editar cada uno en cada módulo activo de tu empresa.
-        </p>
-        {activeCompanyId && <RolesPermissionsPanel companyId={activeCompanyId} />}
-        </SettingsAccordion>
-      </section>
-
       {/* ══ 6. Nómina ═══════════════════════════════════════════════ */}
       <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Equipo' ? ' hidden' : ''}`}>
         <SettingsAccordion title="Valores de nómina">
@@ -746,16 +735,16 @@ export default function SettingsPage() {
               <div>
                 <label className={lbl}>SMLV — Salario mínimo mensual (COP)</label>
                 <input type="number" min={0} step={1000}
-                  value={companyForm.smlv ?? 1300000}
+                  value={companyForm.smlv ?? 1750905}
                   onChange={cfNum('smlv')}
-                  className={fieldCls} placeholder="1300000" />
+                  className={fieldCls} placeholder="1750905" />
               </div>
               <div>
                 <label className={lbl}>Auxilio de transporte (COP)</label>
                 <input type="number" min={0} step={1000}
-                  value={companyForm.transport_allowance ?? 162000}
+                  value={companyForm.transport_allowance ?? 249095}
                   onChange={cfNum('transport_allowance')}
-                  className={fieldCls} placeholder="162000" />
+                  className={fieldCls} placeholder="249095" />
                 <p className="text-xs text-muted-foreground mt-1">
                   Se aplica a empleados con salario ≤ 2 SMLV.
                 </p>
@@ -769,13 +758,13 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">SMLV mensual</span>
                 <span className="font-mono font-medium text-foreground">
-                  ${(company?.smlv ?? 1300000).toLocaleString('es-CO')} COP
+                  ${(company?.smlv ?? 1750905).toLocaleString('es-CO')} COP
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Auxilio de transporte</span>
                 <span className="font-mono font-medium text-foreground">
-                  ${(company?.transport_allowance ?? 162000).toLocaleString('es-CO')} COP
+                  ${(company?.transport_allowance ?? 249095).toLocaleString('es-CO')} COP
                 </span>
               </div>
             </div>
