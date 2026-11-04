@@ -9,6 +9,8 @@ import {
   useSupplierPayments, registerSupplierPayment,
 } from '@/modules/purchases/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 import Link from 'next/link'
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
@@ -31,6 +33,7 @@ export default function SupplierInvoiceDetailPage() {
   const id     = params.id as string
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('compras')
 
   const [showPayForm, setShowPayForm]       = useState(false)
   const [payAmount, setPayAmount]           = useState('')
@@ -112,7 +115,7 @@ export default function SupplierInvoiceDetailPage() {
           </span>
         </div>
         {canPay && (
-          <button onClick={() => setShowPayForm(!showPayForm)}
+          <button onClick={() => canEdit ? setShowPayForm(!showPayForm) : alertNoEditAccess()}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 transition-colors">
             <CreditCard className="h-3.5 w-3.5" />
             Registrar pago
@@ -182,7 +185,7 @@ export default function SupplierInvoiceDetailPage() {
               className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 transition-colors">
               Cancelar
             </button>
-            <button onClick={() => payMut.mutate()} disabled={payMut.isPending}
+            <button onClick={() => canEdit ? payMut.mutate() : alertNoEditAccess()} disabled={payMut.isPending}
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
               {payMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Guardar pago

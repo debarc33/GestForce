@@ -24,6 +24,8 @@ import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export
 import { readExcelRows, validateImportFile, mapSupplierRow } from '@/lib/import-excel'
 import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import { useObligaciones, type ObligacionRow } from '@/modules/finances/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────
 
@@ -92,6 +94,7 @@ function PurchasesPageInner() {
   const searchParams = useSearchParams()
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('compras')
 
   const tabParam = searchParams.get('tab') as TabId | null
 
@@ -191,6 +194,7 @@ function PurchasesPageInner() {
   // ─── Importar (solo disponible para la pestaña Proveedores) ───────────────
 
   async function handleImportFile(file: File) {
+    if (!canEdit) { alertNoEditAccess(); return }
     if (activeTab !== 'suppliers') {
       window.alert('La importación desde Excel todavía no está disponible para órdenes de compra, facturas de proveedor ni CxP. Por ahora solo puedes importar el directorio de Proveedores (pestaña "Proveedores").')
       return
@@ -317,8 +321,8 @@ function PurchasesPageInner() {
   const toolbarProps = {
     orders: {
       subtitle: 'Crea y gestiona órdenes de compra a proveedores.',
-      onAdd: () => router.push('/purchases/orders/new'),
-      onDelete: selectedIds.length > 0 ? handleOrderDelete : undefined,
+      onAdd: canEdit ? () => router.push('/purchases/orders/new') : alertNoEditAccess,
+      onDelete: selectedIds.length > 0 ? (canEdit ? handleOrderDelete : alertNoEditAccess) : undefined,
       filterOptions: ORDER_FILTERS,
       searchPlaceholder: 'Buscar por # OC o proveedor...',
     },
@@ -331,8 +335,8 @@ function PurchasesPageInner() {
     },
     suppliers: {
       subtitle: 'Directorio de proveedores de tu empresa.',
-      onAdd: () => setIsSupplierDialogOpen(true),
-      onDelete: selectedIds.length > 0 ? handleSupplierDelete : undefined,
+      onAdd: canEdit ? () => setIsSupplierDialogOpen(true) : alertNoEditAccess,
+      onDelete: selectedIds.length > 0 ? (canEdit ? handleSupplierDelete : alertNoEditAccess) : undefined,
       filterOptions: SUPPLIER_FILTERS,
       searchPlaceholder: 'Buscar por nombre, NIT, email...',
     },
@@ -357,6 +361,9 @@ function PurchasesPageInner() {
       <div>
         <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Compras</h1>
         <p className="mt-0.5 text-[13px] text-zinc-400">Gestiona órdenes de compra, facturas de proveedor y proveedores.</p>
+        {!canEdit && (
+          <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
+        )}
       </div>
 
       {/* Tabs underline */}

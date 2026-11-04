@@ -9,6 +9,8 @@ import {
   updatePurchaseOrderStatus, receivePurchaseOrder,
   useSupplierInvoiceByOrderId,
 } from '@/modules/purchases/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 import Link from 'next/link'
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
@@ -26,6 +28,7 @@ export default function PurchaseOrderDetailPage() {
   const id     = params.id as string
   const queryClient = useQueryClient()
 
+  const canEdit = useCanEditModule('compras')
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [confirmReceive, setConfirmReceive] = useState(false)
 
@@ -113,14 +116,14 @@ export default function PurchaseOrderDetailPage() {
         {/* Acciones */}
         <div className="flex items-center gap-2">
           {canSend && !sentMut.isSuccess && (
-            <button onClick={() => sentMut.mutate()} disabled={sentMut.isPending}
+            <button onClick={() => canEdit ? sentMut.mutate() : alertNoEditAccess()} disabled={sentMut.isPending}
               className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50">
               {sentMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               Marcar enviada
             </button>
           )}
           {canReceive && !confirmReceive && (
-            <button onClick={() => setConfirmReceive(true)}
+            <button onClick={() => canEdit ? setConfirmReceive(true) : alertNoEditAccess()}
               className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700 transition-colors">
               <PackageCheck className="h-3.5 w-3.5" />
               Recibir mercancía
@@ -140,7 +143,7 @@ export default function PurchaseOrderDetailPage() {
             </div>
           )}
           {canCancel && !confirmCancel && (
-            <button onClick={() => setConfirmCancel(true)}
+            <button onClick={() => canEdit ? setConfirmCancel(true) : alertNoEditAccess()}
               className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
               <Ban className="h-3.5 w-3.5" />
               Anular

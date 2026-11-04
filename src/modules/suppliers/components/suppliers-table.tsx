@@ -3,6 +3,8 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useSuppliers } from '../queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 import {
   flexRender, getCoreRowModel, useReactTable,
   type ColumnDef, type RowSelectionState,
@@ -35,9 +37,11 @@ export function SuppliersTable({
   const activeCompanyId = companyId || storeCompanyId || undefined
 
   const { data: suppliers = [], isLoading, isError } = useSuppliers(activeCompanyId)
+  const canEdit = useCanEditModule('compras')
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [editingSupplier, setEditingSupplier] = useState<SupplierRow | null>(null)
   const [viewingProductsOf, setViewingProductsOf] = useState<SupplierRow | null>(null)
+  const openEditor = (s: SupplierRow) => canEdit ? setEditingSupplier(s) : alertNoEditAccess()
 
   useEffect(() => {
     setRowSelection({})
@@ -90,7 +94,7 @@ export function SuppliersTable({
       cell: ({ row }) => (
         <div>
           <button
-            onClick={() => setEditingSupplier(row.original)}
+            onClick={() => openEditor(row.original)}
             className="font-medium text-primary hover:text-primary/80 hover:underline text-left transition-colors"
           >
             {row.original.name}
@@ -249,7 +253,7 @@ export function SuppliersTable({
                     className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-primary cursor-pointer" />
                   <div className="min-w-0 flex-1">
                     <button
-                      onClick={() => setEditingSupplier(s)}
+                      onClick={() => openEditor(s)}
                       className="truncate text-left font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
                     >
                       {s.name}
