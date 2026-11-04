@@ -22,6 +22,7 @@ import {
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { AppearanceTab } from '@/modules/settings/appearance-tab'
 import { UsersTable } from '@/modules/team'
+import { RolesPermissionsPanel } from '@/modules/roles/components/roles-permissions-panel'
 import { SettingsAccordion } from '@/components/settings/settings-accordion'
 import { SubscriptionSection } from '@/components/settings/subscription-section'
 
@@ -715,6 +716,16 @@ export default function SettingsPage() {
             </div>
           </>
         )}
+        </SettingsAccordion>
+      </section>
+
+      {/* ══ 5b. Roles y permisos ═══════════════════════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Equipo' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Roles y permisos">
+        <p className="text-sm text-muted-foreground">
+          Crea roles, renómbralos y elige qué puede ver y editar cada uno en cada módulo activo de tu empresa.
+        </p>
+        {activeCompanyId && <RolesPermissionsPanel companyId={activeCompanyId} />}
         </SettingsAccordion>
       </section>
 
