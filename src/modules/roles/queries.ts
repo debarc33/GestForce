@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { TOGGLEABLE_MODULES, type ModuleId } from '@/config/modules'
+import { useCompanyStore } from '@/store/useCompanyStore'
 
 /**
  * Roles y permisos editables por empresa (1 nov 2026).
@@ -110,6 +111,24 @@ export function useMyModuleAccess(companyId?: string, roleName?: string) {
     enabled: !!companyId && !!roleName,
     staleTime: 1000 * 60 * 5,
   })
+}
+
+/**
+ * true si el rol actual del usuario tiene acceso completo ("Puede editar")
+ * al módulo dado -- false si es "Solo ver" (o "Sin acceso", aunque a ese
+ * punto el sidebar/ModuleGuard ya bloquearon la entrada al módulo antes).
+ *
+ * El nivel de acceso aplica al módulo COMPLETO: Ventas, por ejemplo, cubre
+ * cotizaciones, facturas, recibos, CxC y clientes a la vez -- no hay un
+ * nivel distinto por pantalla dentro del mismo módulo.
+ *
+ * Usar junto con `alertNoEditAccess()` (src/lib/permissions.ts) en cada
+ * botón que crea/edita/elimina/aprueba algo dentro de un módulo.
+ */
+export function useCanEditModule(moduleId: ModuleId): boolean {
+  const { activeCompany, activeCompanyId } = useCompanyStore()
+  const { data: moduleAccess } = useMyModuleAccess(activeCompanyId ?? undefined, activeCompany?.role)
+  return (moduleAccess?.[moduleId] ?? 'edit') === 'edit'
 }
 
 // ─── Escritura (admin de la empresa) ──────────────────────────────────────

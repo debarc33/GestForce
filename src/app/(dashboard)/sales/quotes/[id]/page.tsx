@@ -12,6 +12,8 @@ import { DocumentViewer, type DocData } from '@/modules/sales/components/documen
 import { useCompany } from '@/modules/company/queries'
 import { CustomerSearch } from '@/components/ui/customer-search'
 import type { SaleItemValues } from '@/modules/sales/schemas'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -51,6 +53,7 @@ export default function EditQuotePage() {
   const id     = params.id as string
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('ventas')
 
   const [initialized, setInitialized] = useState(false)
   const [items, setItems]             = useState<SaleItemValues[]>([])
@@ -94,7 +97,7 @@ export default function EditQuotePage() {
     }
   }, [quote, quoteItems, loadingItems, initialized])
 
-  const editable = quote?.status === 'draft' || quote?.status === 'sent'
+  const editable = (quote?.status === 'draft' || quote?.status === 'sent') && canEdit
 
   const searchResults = useMemo(() => {
     if (!search.trim()) return []
@@ -257,14 +260,14 @@ export default function EditQuotePage() {
           {quote?.status === 'approved' && (
             <>
               <button
-                onClick={() => approveMut.mutate('ticket')}
+                onClick={() => canEdit ? approveMut.mutate('ticket') : alertNoEditAccess()}
                 disabled={approveMut.isPending}
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm">
                 {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
                 Ticket POS
               </button>
               <button
-                onClick={() => approveMut.mutate('invoice')}
+                onClick={() => canEdit ? approveMut.mutate('invoice') : alertNoEditAccess()}
                 disabled={approveMut.isPending}
                 className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 transition-colors">
                 {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileCheck className="h-3.5 w-3.5" />}

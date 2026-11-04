@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { approveQuote, updateQuoteStatus, type QuoteWithCustomer } from '../queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Status config ────────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [actionError, setActionError] = useState<string | null>(null)
   const [approvingId, setApprovingId] = useState<string | null>(null)
+  const canEdit = useCanEditModule('ventas')
 
   const filteredData = useMemo(() => {
     let data = quotes
@@ -126,6 +129,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
         {(status === 'draft' || status === 'sent') && (
           <button
             onClick={() => {
+              if (!canEdit) { alertNoEditAccess(); return }
               if (!q.customer?.email) {
                 window.alert('Este cliente no tiene un correo registrado. Agrega su correo en Clientes antes de enviarle la cotización.')
                 return
@@ -140,7 +144,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
         )}
         {/* Aprobar */}
         {(status === 'draft' || status === 'sent') && approvingId !== id && (
-          <button onClick={() => setApprovingId(id)} disabled={isPending}
+          <button onClick={() => canEdit ? setApprovingId(id) : alertNoEditAccess()} disabled={isPending}
             title="Aprobar cotización"
             className="rounded-md p-1.5 text-green-600 hover:bg-green-500/10 transition-colors disabled:opacity-40">
             <Check className="h-4 w-4" />
@@ -150,12 +154,12 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
           <div className="flex items-center gap-1 rounded-lg glass-surface px-2 py-1">
             <span className="text-xs text-muted-foreground mr-1">Aprobar como:</span>
             <button
-              onClick={() => { approveMut.mutate({ id, documentType: 'invoice' }); setApprovingId(null) }}
+              onClick={() => { if (!canEdit) return alertNoEditAccess(); approveMut.mutate({ id, documentType: 'invoice' }); setApprovingId(null) }}
               className="rounded px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               Factura
             </button>
             <button
-              onClick={() => { approveMut.mutate({ id, documentType: 'ticket' }); setApprovingId(null) }}
+              onClick={() => { if (!canEdit) return alertNoEditAccess(); approveMut.mutate({ id, documentType: 'ticket' }); setApprovingId(null) }}
               className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
               Ticket
             </button>
@@ -166,7 +170,7 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
         )}
         {/* Rechazar */}
         {(status === 'draft' || status === 'sent') && (
-          <button onClick={() => statusMut.mutate({ id, status: 'rejected' })} disabled={isPending}
+          <button onClick={() => canEdit ? statusMut.mutate({ id, status: 'rejected' }) : alertNoEditAccess()} disabled={isPending}
             title="Rechazar cotización"
             className="rounded-md p-1.5 text-red-600 hover:bg-red-500/10 transition-colors disabled:opacity-40">
             <X className="h-4 w-4" />

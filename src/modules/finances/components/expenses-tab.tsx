@@ -20,6 +20,8 @@ import { ExpenseForm } from './expense-form'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { recurringFormSchema, type RecurringFormValues, PAYMENT_METHODS, FREQUENCIES } from '../expense-schemas'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -151,6 +153,8 @@ function RecurringForm({
 
 export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
   const queryClient = useQueryClient()
+  // Finanzas en "Solo ver": bloquea crear/editar/eliminar gastos (fijos y recurrentes).
+  const canEdit = useCanEditModule('finanzas')
 
   const { data: expenses    = [], isLoading } = useExpenses(companyId, period)
   const { data: categories  = [] }             = useExpenseCategories(companyId)
@@ -254,7 +258,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => canEdit ? setShowForm(true) : alertNoEditAccess()}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
           <Plus className="h-3.5 w-3.5" />
           Nuevo gasto
@@ -295,7 +299,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl glass-surface py-16 text-center">
           <p className="text-sm text-muted-foreground">No hay gastos registrados en este período.</p>
-          <button onClick={() => setShowForm(true)}
+          <button onClick={() => canEdit ? setShowForm(true) : alertNoEditAccess()}
             className="mt-3 text-xs text-primary hover:underline">
             Registrar primer gasto →
           </button>
@@ -375,12 +379,12 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-0.5">
-                      <button onClick={() => setEditingExpense(e)}
+                      <button onClick={() => canEdit ? setEditingExpense(e) : alertNoEditAccess()}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors"
                         title="Editar">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => setConfirmDelete(e.id)}
+                      <button onClick={() => canEdit ? setConfirmDelete(e.id) : alertNoEditAccess()}
                         className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
                         title="Eliminar">
                         <Trash2 className="h-3.5 w-3.5" />
@@ -462,12 +466,12 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                         <FileText className="h-3.5 w-3.5" />
                       </Link>
                     )}
-                    <button onClick={() => setEditingExpense(e)}
+                    <button onClick={() => canEdit ? setEditingExpense(e) : alertNoEditAccess()}
                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass-strong)] hover:text-foreground transition-colors"
                       title="Editar">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => setConfirmDelete(e.id)}
+                    <button onClick={() => canEdit ? setConfirmDelete(e.id) : alertNoEditAccess()}
                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors"
                       title="Eliminar">
                       <Trash2 className="h-3.5 w-3.5" />
@@ -511,7 +515,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
           <div className="border-t border-[var(--glass-border)] p-4 space-y-3">
             <div className="flex justify-end">
               <button
-                onClick={() => setShowRecurringForm(true)}
+                onClick={() => canEdit ? setShowRecurringForm(true) : alertNoEditAccess()}
                 className="flex items-center gap-1.5 rounded-lg glass-surface border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
                 <Plus className="h-3.5 w-3.5" />
                 Nueva plantilla
@@ -550,7 +554,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
-                        onClick={() => generateMut.mutate(rec)}
+                        onClick={() => canEdit ? generateMut.mutate(rec) : alertNoEditAccess()}
                         disabled={generateMut.isPending}
                         title="Generar gasto hoy"
                         className="flex items-center gap-1 rounded-lg glass-surface border border-green-500/30 px-2.5 py-1.5 text-xs font-medium text-green-600 hover:bg-green-500/10 disabled:opacity-50 transition-colors">
@@ -558,7 +562,7 @@ export function ExpensesTab({ companyId, period }: ExpensesTabProps) {
                         Generar
                       </button>
                       <button
-                        onClick={() => toggleMut.mutate({ id: rec.id, active: false })}
+                        onClick={() => canEdit ? toggleMut.mutate({ id: rec.id, active: false }) : alertNoEditAccess()}
                         title="Desactivar plantilla"
                         className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-colors">
                         <ToggleLeft className="h-4 w-4" />

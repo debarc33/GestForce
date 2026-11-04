@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { UserSquare2, Pencil, MoreHorizontal, Mail, Phone } from 'lucide-react'
 import { CustomerForm } from './customer-form'
 import { cn } from '@/lib/utils'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 /* ── Types ───────────────────────────────────────────────────── */
 
@@ -86,6 +88,9 @@ export function CustomersTable({
   const { data: customers = [], isLoading, isError } = useCustomers(activeCompanyId)
   const [rowSelection, setRowSelection]   = useState<RowSelectionState>({})
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null)
+  // Clientes vive dentro del modulo Ventas -- mismo nivel de acceso.
+  const canEdit = useCanEditModule('ventas')
+  const openEditor = (c: Customer) => canEdit ? setEditingCustomer(c) : alertNoEditAccess()
   const [pageIndex, setPageIndex]         = useState(0)
   const [pageSize, setPageSize]           = useState(10)
   const [openMoreId, setOpenMoreId]       = useState<string | null>(null)
@@ -217,7 +222,7 @@ export function CustomersTable({
             </div>
             <div className="min-w-0">
               <button
-                onClick={() => setEditingCustomer(c)}
+                onClick={() => openEditor(c)}
                 className="font-semibold text-foreground hover:text-primary text-[13px] transition-colors text-left truncate max-w-[200px] hover:underline underline-offset-2"
               >
                 {c.name}
@@ -288,7 +293,7 @@ export function CustomersTable({
         return (
           <div className="flex items-center gap-0.5 justify-end">
             <button
-              onClick={() => setEditingCustomer(c)}
+              onClick={() => openEditor(c)}
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
               title="Editar"
             >
@@ -439,7 +444,7 @@ export function CustomersTable({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <button
-                          onClick={() => setEditingCustomer(c)}
+                          onClick={() => openEditor(c)}
                           className="truncate text-left text-[13px] font-semibold text-foreground hover:text-primary hover:underline underline-offset-2 transition-colors"
                         >
                           {c.name}
@@ -469,7 +474,7 @@ export function CustomersTable({
                       </div>
                       <div className="mt-2 flex items-center gap-1">
                         <button
-                          onClick={() => setEditingCustomer(c)}
+                          onClick={() => openEditor(c)}
                           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-[var(--glass)] hover:text-foreground transition-colors"
                           title="Editar"
                         >

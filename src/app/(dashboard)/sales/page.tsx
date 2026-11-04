@@ -25,6 +25,8 @@ import { exportToExcel, fmtMoney, fmtDate, type ExcelColumn } from '@/lib/export
 import { readExcelRows, validateImportFile, mapCustomerRow } from '@/lib/import-excel'
 import { ExcelImportDialog, type ParsedImportRow } from '@/components/ui/excel-import-dialog'
 import { useCartera, type CarteraRow } from '@/modules/finances/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Configuración de tabs ─────────────────────────────────────────────────
 
@@ -102,6 +104,9 @@ function SalesPageInner() {
   const searchParams = useSearchParams()
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
+  // Ventas en "Solo ver" (Configuración → Roles y permisos): aplica al
+  // módulo completo -- cotizaciones, facturas, recibos, CxC y clientes.
+  const canEdit = useCanEditModule('ventas')
 
   const tabParam      = searchParams.get('tab') as TabId | null
   const openReceiptId = searchParams.get('openReceipt') ?? undefined
@@ -230,6 +235,7 @@ function SalesPageInner() {
   // ─── Importar (solo disponible para la pestaña Clientes) ──────────────────
 
   async function handleImportFile(file: File) {
+    if (!canEdit) { alertNoEditAccess(); return }
     if (activeTab !== 'customers') {
       window.alert('La importación desde Excel todavía no está disponible para cotizaciones, facturas, recibos ni CxC. Por ahora solo puedes importar el directorio de Clientes (pestaña "Clientes").')
       return
@@ -374,18 +380,18 @@ function SalesPageInner() {
   const toolbarProps = {
     quotes: {
       subtitle: 'Crea y gestiona cotizaciones para tus clientes.',
-      onAdd: () => router.push('/sales/quotes/new'),
+      onAdd: canEdit ? () => router.push('/sales/quotes/new') : alertNoEditAccess,
       addLabel: undefined as string | undefined,
-      onDelete: () => deleteMut.mutate(),
+      onDelete: canEdit ? () => deleteMut.mutate() : alertNoEditAccess,
       filterOptions: QUOTE_FILTERS,
       searchPlaceholder: 'Buscar por # cotización o cliente...',
       extraButtons: undefined as React.ReactNode,
     },
     invoices: {
       subtitle: 'Facturas y tickets generados desde cotizaciones o directamente.',
-      onAdd: () => router.push('/sales/tickets/new'),
+      onAdd: canEdit ? () => router.push('/sales/tickets/new') : alertNoEditAccess,
       addLabel: 'Nuevo ticket',
-      onDelete: selectedIds.length > 0 ? handleInvoiceDelete : undefined,
+      onDelete: selectedIds.length > 0 ? (canEdit ? handleInvoiceDelete : alertNoEditAccess) : undefined,
       filterOptions: INVOICE_FILTERS,
       searchPlaceholder: 'Buscar por # factura, # cotización o cliente...',
       extraButtons: undefined as React.ReactNode,
@@ -401,9 +407,9 @@ function SalesPageInner() {
     },
     customers: {
       subtitle: 'Directorio de clientes de tu empresa.',
-      onAdd: () => setIsCustomerDialogOpen(true),
+      onAdd: canEdit ? () => setIsCustomerDialogOpen(true) : alertNoEditAccess,
       addLabel: undefined as string | undefined,
-      onDelete: selectedIds.length > 0 ? handleCustomerDelete : undefined,
+      onDelete: selectedIds.length > 0 ? (canEdit ? handleCustomerDelete : alertNoEditAccess) : undefined,
       filterOptions: CUSTOMER_FILTERS,
       searchPlaceholder: 'Buscar por nombre, email, teléfono...',
       extraButtons: undefined as React.ReactNode,
@@ -434,6 +440,9 @@ function SalesPageInner() {
       <div>
         <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Ventas</h1>
         <p className="mt-0.5 text-[13px] text-zinc-400">Gestiona cotizaciones, facturas, recibos y clientes.</p>
+        {!canEdit && (
+          <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
+        )}
       </div>
 
       {/* Tabs underline */}

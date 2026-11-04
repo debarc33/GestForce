@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { registerReceiptPayment, usePaymentMethods, useReceiptPayments, type ReceiptWithDetails } from '../queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 const STATUS_CFG: Record<string, { label: string; cls: string }> = {
   pending:   { label: 'Pendiente', cls: 'bg-red-500/10 border border-red-500/20 text-red-600' },
@@ -35,6 +37,7 @@ function ReceiptDialog({
 }) {
   const queryClient = useQueryClient()
   const router = useRouter()
+  const canEdit = useCanEditModule('ventas')
   const { data: paymentMethods = [] } = usePaymentMethods(companyId)
   const { data: payments = [] } = useReceiptPayments(receipt.id)
 
@@ -67,6 +70,7 @@ function ReceiptDialog({
   })
 
   const handleRegister = () => {
+    if (!canEdit) { alertNoEditAccess(); return }
     if (!methodId) { setError('Selecciona un medio de pago'); return }
     if (!amount || Number(amount) <= 0) { setError('El monto debe ser mayor a 0'); return }
     if (Number(amount) > receipt.balance) { setError(`El monto no puede superar el saldo de ${fmt(receipt.balance)}`); return }

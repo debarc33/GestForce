@@ -18,6 +18,8 @@ import { useCompany, getDianAlerts, isIvaResponsible } from '@/modules/company/q
 import { CustomerSearch } from '@/components/ui/customer-search'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import type { SaleItemValues } from '@/modules/sales/schemas'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ export default function EditInvoicePage() {
   const id     = params.id as string
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('ventas')
 
   const [initialized, setInitialized] = useState(false)
   const [items, setItems]             = useState<SaleItemValues[]>([])
@@ -195,12 +198,12 @@ export default function EditInvoicePage() {
           {/* Notas Crédito / Débito — solo facturas emitidas */}
           {invoice.status === 'issued' && !isTicket && (
             <>
-              <button onClick={() => setNoteType('credit')}
+              <button onClick={() => canEdit ? setNoteType('credit') : alertNoEditAccess()}
                 className="flex items-center gap-1.5 rounded-lg border border-orange-200 px-3 py-2 text-xs font-medium text-orange-600 hover:bg-orange-50 transition-colors">
                 <FileMinus className="h-4 w-4" />
                 Nota Crédito
               </button>
-              <button onClick={() => setNoteType('debit')}
+              <button onClick={() => canEdit ? setNoteType('debit') : alertNoEditAccess()}
                 className="flex items-center gap-1.5 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-primary hover:bg-blue-50 transition-colors">
                 <FilePlus className="h-4 w-4" />
                 Nota Débito
@@ -209,7 +212,7 @@ export default function EditInvoicePage() {
           )}
           {/* Anular — solo borradores heredados del sistema anterior */}
           {isDraft && !confirmCancel && (
-            <button onClick={() => setConfirmCancel(true)}
+            <button onClick={() => canEdit ? setConfirmCancel(true) : alertNoEditAccess()}
               className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
               <Ban className="h-4 w-4" />
               Anular
@@ -334,8 +337,8 @@ export default function EditInvoicePage() {
                 </label>
                 <select
                   value={invoice.agent_id ?? ''}
-                  onChange={e => agentMut.mutate(e.target.value === '' ? null : e.target.value)}
-                  disabled={agentMut.isPending}
+                  onChange={e => canEdit ? agentMut.mutate(e.target.value === '' ? null : e.target.value) : alertNoEditAccess()}
+                  disabled={agentMut.isPending || !canEdit}
                   className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 transition-colors disabled:opacity-60"
                 >
                   <option value="">— Sin agente —</option>
