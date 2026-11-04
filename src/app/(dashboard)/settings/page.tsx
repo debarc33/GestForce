@@ -622,14 +622,19 @@ export default function SettingsPage() {
                 <div><label className={lbl}>ID de Software</label>
                   <input value={companyForm.fe_software_id ?? ''} onChange={cf('fe_software_id')} className={fieldCls} /></div>
                 <div><label className={lbl}>PIN del Software</label>
-                  <input type="password" value={companyForm.fe_software_pin ?? ''} onChange={cf('fe_software_pin')} className={fieldCls} /></div>
+                  <input type="password" value={companyForm.fe_software_pin ?? ''} onChange={cf('fe_software_pin')}
+                    className={fieldCls} placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
               </div>
-              <div><label className={lbl}>Llave Técnica del PT</label>
+              <div><label className={lbl}>Llave Técnica</label>
                 <input type="password" value={companyForm.fe_technical_key ?? ''} onChange={cf('fe_technical_key')}
-                  className={fieldCls} placeholder="Clave técnica para el cálculo del CUFE" /></div>
+                  className={fieldCls} placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
+              {/* Seguridad (Fase A, 4 nov 2026): el PIN y la llave tecnica ya no se
+                  traen al navegador, por eso estos dos campos siempre aparecen
+                  vacios al editar -- dejarlos vacios conserva el valor guardado. */}
               <p className="text-xs text-muted-foreground rounded-lg bg-[var(--glass)] border border-[var(--glass-border)]/50 px-3 py-2">
-                El CUFE y el XML UBL 2.1 se calculan automáticamente al emitir cada factura.
-                La transmisión a la DIAN se realiza a través de tu Proveedor Tecnológico.
+                La generación automática de CUFE/XML se está reconstruyendo del lado del
+                servidor por seguridad (las credenciales ya no viajan al navegador).
+                Estará disponible de nuevo próximamente.
               </p>
               {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
             </div>

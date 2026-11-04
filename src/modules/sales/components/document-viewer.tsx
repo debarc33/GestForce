@@ -105,6 +105,13 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const isNote      = doc.type === 'credit_note' || doc.type === 'debit_note'
   const canExportXml = (doc.type === 'invoice' || isNote) && !isTicket
     && !!(doc.fe_software_id && doc.fe_technical_key)
+  // Fase A (seguridad, 4 nov 2026): fe_technical_key ya no llega al
+  // navegador (ver company/queries.ts), asi que canExportXml nunca sera
+  // true hoy. Mostramos un boton deshabilitado explicando por que, en vez
+  // de ocultar la funcion sin aviso -- se reconstruye del lado servidor en
+  // la Fase C de claude/plan-accion-facturacion-dian.md.
+  const feTemporarilyDisabled = (doc.type === 'invoice' || isNote) && !isTicket
+    && !!doc.fe_software_id && !doc.fe_technical_key
 
   const docTypeLabel =
     doc.type === 'quote'       ? 'COTIZACIÓN' :
@@ -620,6 +627,14 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors border border-green-300 disabled:opacity-40">
                 <FileCode2 className="h-3.5 w-3.5" />
                 {xmlBusy ? 'Generando...' : 'XML DIAN'}
+              </button>
+            )}
+            {feTemporarilyDisabled && (
+              <button disabled
+                title="Esta funcion se esta reconstruyendo del lado del servidor por seguridad. Estara disponible de nuevo pronto."
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 border border-zinc-200 cursor-not-allowed">
+                <FileCode2 className="h-3.5 w-3.5" />
+                XML DIAN (en reconstrucción)
               </button>
             )}
             <button onClick={handlePrint}

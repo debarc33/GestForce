@@ -105,7 +105,12 @@ export function getDianAlerts(company: CompanyProfile | undefined, currentSequen
   }
 
   // ── FE configurada ───────────────────────────────────────────────
-  const feConfigured = !!(company.fe_software_id && company.fe_technical_key)
+  // Seguridad (Fase A, 4 nov 2026): fe_technical_key ya no se trae al
+  // cliente, asi que este check ya no puede validarla aqui. Solo confirma
+  // que el ID de software este configurado; la validacion completa
+  // (incluyendo la llave tecnica) debe hacerse del lado servidor -- Fase C
+  // del plan de facturacion electronica (claude/plan-accion-facturacion-dian.md).
+  const feConfigured = !!company.fe_software_id
 
   return { rangeAlert, expiryAlert, feConfigured }
 }
@@ -115,9 +120,25 @@ export function useCompany(companyId?: string | null) {
     queryKey: ['company', companyId],
     queryFn: async () => {
       const supabase = createClient()
+      // Seguridad (Fase A, 4 nov 2026): ya NO se selecciona fe_software_pin
+      // ni fe_technical_key -- son secretos de facturacion electronica y este
+      // hook se usa en decenas de pantallas client-side; antes viajaban al
+      // navegador de cualquier usuario autenticado sin necesitarlo. Ver
+      // claude/informe-auditoria-facturacion-dian.md, Seccion 7.
       const { data, error } = await supabase
         .from('companies')
-        .select('*')
+        .select(`
+          id, name, nit, legal_name, address, city, department, phone, email,
+          fiscal_regime, logo_url, ciiu_code,
+          invoice_footer, quote_terms,
+          print_paper_size, print_show_logo, print_auto_dian_footer, print_legal_lines,
+          dian_resolution, dian_resolution_date, dian_prefix, dian_from_number,
+          dian_to_number, dian_validity_from, dian_validity_to,
+          fe_software_id, fe_api_url, fe_test_mode,
+          buyer_threshold, ica_rate, smlv, transport_allowance, costing_method,
+          plan_id, subscription_period, subscription_start, subscription_end, subscription_status,
+          show_plan_pricing, show_invoice_pack_pricing
+        `)
         .eq('id', companyId!)
         .single()
       if (error) throw new Error(error.message)
@@ -153,10 +174,16 @@ export async function updateCompany(id: string, data: CompanyProfileUpdate) {
       dian_validity_from:   data.dian_validity_from   ?? null,
       dian_validity_to:     data.dian_validity_to     ?? null,
       fe_software_id:       data.fe_software_id       ?? null,
-      fe_software_pin:      data.fe_software_pin      ?? null,
       fe_api_url:           data.fe_api_url           ?? null,
       fe_test_mode:         data.fe_test_mode         ?? true,
-      fe_technical_key:     data.fe_technical_key     ?? null,
+      // Seguridad (Fase A, 4 nov 2026): el formulario de Configuracion ya
+      // NO precarga el valor real de estos dos secretos (useCompany ya no
+      // los trae al cliente), asi que siempre empiezan vacios. Si el campo
+      // llega vacio aqui, NO se envia la clave al update -- de lo contrario
+      // cada guardado de cualquier otra seccion de Configuracion borraria
+      // el PIN/llave tecnica ya guardados en la base de datos.
+      ...(data.fe_software_pin  ? { fe_software_pin:  data.fe_software_pin  } : {}),
+      ...(data.fe_technical_key ? { fe_technical_key: data.fe_technical_key } : {}),
       buyer_threshold:      data.buyer_threshold      ?? 212000,
       ica_rate:             data.ica_rate             ?? 0.00414,
       smlv:                 data.smlv                 ?? 1300000,
