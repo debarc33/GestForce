@@ -618,16 +618,28 @@ export default function SettingsPage() {
               <div><label className={lbl}>URL API del Proveedor Tecnológico</label>
                 <input value={companyForm.fe_api_url ?? ''} onChange={cf('fe_api_url')}
                   className={fieldCls} placeholder="https://api.tupt.co/v1" /></div>
+              {/* Seguridad (Fase A, 4 nov 2026): autoComplete="off"/"new-password" --
+                  sin esto Chrome detecta "campo de texto + campo de contraseña uno
+                  al lado del otro" como un formulario de login y autocompleta los
+                  tres con el correo/contraseña REALES de inicio de sesión guardados
+                  en el navegador. Confirmado en vivo (4 nov 2026): sin este atributo,
+                  Chrome rellenaba "ID de Software" con el correo de login y "PIN del
+                  Software" con la contraseña real de la cuenta -- si alguien le daba
+                  Guardar sin fijarse, su contraseña real de GestForce habría quedado
+                  guardada en texto plano en la columna fe_software_pin. */}
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>ID de Software</label>
-                  <input value={companyForm.fe_software_id ?? ''} onChange={cf('fe_software_id')} className={fieldCls} /></div>
+                  <input value={companyForm.fe_software_id ?? ''} onChange={cf('fe_software_id')}
+                    className={fieldCls} autoComplete="off" /></div>
                 <div><label className={lbl}>PIN del Software</label>
                   <input type="password" value={companyForm.fe_software_pin ?? ''} onChange={cf('fe_software_pin')}
-                    className={fieldCls} placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
+                    className={fieldCls} autoComplete="new-password"
+                    placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
               </div>
               <div><label className={lbl}>Llave Técnica</label>
                 <input type="password" value={companyForm.fe_technical_key ?? ''} onChange={cf('fe_technical_key')}
-                  className={fieldCls} placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
+                  className={fieldCls} autoComplete="new-password"
+                  placeholder="Déjalo vacío para no cambiar el valor guardado" /></div>
               {/* Seguridad (Fase A, 4 nov 2026): el PIN y la llave tecnica ya no se
                   traen al navegador, por eso estos dos campos siempre aparecen
                   vacios al editar -- dejarlos vacios conserva el valor guardado. */}
