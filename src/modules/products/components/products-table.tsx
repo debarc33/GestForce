@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useProducts, isLowStock } from '../queries'
 import { ProductForm } from './product-form'
 import { useCompanyStore } from '@/store/useCompanyStore'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 type Product = {
   id: string
@@ -49,6 +51,8 @@ export function ProductsTable({
 }: ProductsTableProps) {
   const activeCompanyId = useCompanyStore((s) => s.activeCompanyId)
   const { data: products = [], isLoading, isError } = useProducts(activeCompanyId ?? undefined)
+  const canEdit = useCanEditModule('inventario')
+  const openEditor = (p: Product) => canEdit ? setEditProduct(p) : alertNoEditAccess()
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [pageIndex, setPageIndex] = useState(0)
@@ -138,7 +142,7 @@ export function ProductsTable({
       cell: ({ row }) => (
         <div>
           <button
-            onClick={() => setEditProduct(row.original)}
+            onClick={() => openEditor(row.original)}
             className="font-medium text-primary hover:text-primary/80 hover:underline text-left transition-colors"
           >
             {row.original.name}
@@ -334,7 +338,7 @@ export function ProductsTable({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <button
-                        onClick={() => setEditProduct(p)}
+                        onClick={() => openEditor(p)}
                         className="font-medium text-primary hover:text-primary/80 hover:underline text-left transition-colors"
                       >
                         {p.name}

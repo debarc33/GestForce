@@ -16,6 +16,8 @@ import {
   seedChartOfAccounts, createAccount, createJournalEntry,
   type Account, type JournalEntry, type JournalEntryInput,
 } from '@/modules/accounting/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
@@ -74,6 +76,7 @@ function AccountingPageContent() {
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
   const cid = activeCompanyId ?? undefined
+  const canEdit = useCanEditModule('contabilidad')
 
   const [activeTab, setActiveTab]   = useState<TabId>(entryParam ? 'comprobantes' : 'cuentas')
   const [search, setSearch]         = useState('')
@@ -147,6 +150,9 @@ function AccountingPageContent() {
       <div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">Contabilidad</h1>
         <p className="mt-0.5 text-[13px] text-muted-foreground">Plan de cuentas PUC, comprobantes y estados financieros.</p>
+        {!canEdit && (
+          <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
+        )}
       </div>
 
       {/* Tabs */}
@@ -180,7 +186,7 @@ function AccountingPageContent() {
                 className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm text-foreground hover:bg-[var(--glass-hover)]">
                 Exportar
               </button>
-              <button onClick={() => setShowNewAccount(true)}
+              <button onClick={() => canEdit ? setShowNewAccount(true) : alertNoEditAccess()}
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
                 <Plus className="h-4 w-4" />Nueva cuenta
               </button>
@@ -288,7 +294,7 @@ function AccountingPageContent() {
               <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
                 className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm focus:border-primary focus:outline-none" />
             </div>
-            <button onClick={() => setShowNewEntry(true)}
+            <button onClick={() => canEdit ? setShowNewEntry(true) : alertNoEditAccess()}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
               <Plus className="h-4 w-4" />Asiento manual
             </button>

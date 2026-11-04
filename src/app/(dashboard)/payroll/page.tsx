@@ -29,6 +29,8 @@ import {
   mesLabel, calcPayroll,
   type Employee, type PayrollItemWithEmployee, type PayrollItem, type Absence,
 } from '@/modules/payroll/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -94,6 +96,7 @@ export default function PayrollPage() {
   const { activeCompanyId } = useCompanyStore()
   const queryClient = useQueryClient()
   const cid = activeCompanyId ?? undefined
+  const canEdit = useCanEditModule('nomina')
 
   const [activeTab, setActiveTab]               = useState<TabId>('empleados')
   const [search, setSearch]                     = useState('')
@@ -160,8 +163,11 @@ export default function PayrollPage() {
       .map(i => filteredEmployees[parseInt(i)]?.id).filter(Boolean) as string[]
   , [rowSelection, filteredEmployees])
 
+  const openEmployeeEditor = (e: Employee) => canEdit ? setEditingEmployee(e) : alertNoEditAccess()
+
   // ── Importar empleados desde Excel ─────────────────────────────────────────
   async function handleImportFile(file: File) {
+    if (!canEdit) { alertNoEditAccess(); return }
     const fileError = validateImportFile(file)
     if (fileError) { window.alert(fileError); return }
     if (!cid) { window.alert('No hay una empresa activa seleccionada.'); return }
@@ -300,7 +306,7 @@ export default function PayrollPage() {
       header: 'Empleado',
       cell: ({ row }) => (
         <div>
-          <button onClick={() => setEditingEmployee(row.original)}
+          <button onClick={() => openEmployeeEditor(row.original)}
             className="font-medium text-primary hover:underline text-left">
             {row.original.name}
           </button>
@@ -356,6 +362,9 @@ export default function PayrollPage() {
       <div>
         <h1 className="text-xl font-bold text-foreground tracking-tight">Nómina</h1>
         <p className="mt-0.5 text-[13px] text-muted-foreground">Gestión de empleados, liquidación y prestaciones sociales.</p>
+        {!canEdit && (
+          <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
+        )}
       </div>
 
       {/* Tabs */}
@@ -381,7 +390,7 @@ export default function PayrollPage() {
                 value={search} onChange={e => setSearch(e.target.value)}
                 className="rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none w-56" />
               {selectedIds.length > 0 && (
-                <button onClick={handleDeleteEmployeesClick}
+                <button onClick={() => canEdit ? handleDeleteEmployeesClick() : alertNoEditAccess()}
                   className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
                   Eliminar ({selectedIds.length})
                 </button>
@@ -425,7 +434,7 @@ export default function PayrollPage() {
                 className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)]">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />Exportar
               </button>
-              <button onClick={() => setIsNewEmployeeOpen(true)}
+              <button onClick={() => canEdit ? setIsNewEmployeeOpen(true) : alertNoEditAccess()}
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
                 + Nuevo empleado
               </button>
@@ -487,7 +496,7 @@ export default function PayrollPage() {
                           onChange={row.getToggleSelectedHandler()}
                           className="mt-1 h-4 w-4 accent-blue-600 cursor-pointer shrink-0" />
                         <div className="min-w-0">
-                          <button onClick={() => setEditingEmployee(e)}
+                          <button onClick={() => openEmployeeEditor(e)}
                             className="font-medium text-primary hover:underline text-left">
                             {e.name}
                           </button>
@@ -545,14 +554,17 @@ export default function PayrollPage() {
               </select>
             </div>
             <button
-              onClick={() => { if (activePeriodId) { setShowRegenerateConfirm(true) } else { handleOpenPeriod() } }}
+              onClick={() => {
+                if (!canEdit) { alertNoEditAccess(); return }
+                if (activePeriodId) { setShowRegenerateConfirm(true) } else { handleOpenPeriod() }
+              }}
               disabled={loadingGenerate}
               className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 shadow-sm">
               <RefreshCw className={`h-4 w-4 ${loadingGenerate ? 'animate-spin' : ''}`} />
               {activePeriodId ? 'Regenerar' : 'Abrir nómina'}
             </button>
             {activePeriodId && !periodClosed && (
-              <button onClick={() => setShowCloseConfirm(true)}
+              <button onClick={() => canEdit ? setShowCloseConfirm(true) : alertNoEditAccess()}
                 className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-4 py-2 text-sm font-medium text-foreground hover:bg-[var(--glass-hover)]">
                 <Lock className="h-4 w-4" />Cerrar y aprobar
               </button>
@@ -613,7 +625,7 @@ export default function PayrollPage() {
                             <td className="px-3 py-3 tabular-nums font-bold text-foreground">{fmtCOP(item.net_pay)}</td>
                             <td className="px-3 py-3">
                               {!periodClosed && (
-                                <button onClick={() => setEditingItem(item)}
+                                <button onClick={() => canEdit ? setEditingItem(item) : alertNoEditAccess()}
                                   className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-primary transition-colors">
                                   <Pencil className="h-3.5 w-3.5" />
                                 </button>
@@ -633,7 +645,7 @@ export default function PayrollPage() {
                             {item.employee?.position && <p className="text-xs text-muted-foreground">{item.employee.position}</p>}
                           </div>
                           {!periodClosed && (
-                            <button onClick={() => setEditingItem(item)}
+                            <button onClick={() => canEdit ? setEditingItem(item) : alertNoEditAccess()}
                               className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-primary transition-colors">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
@@ -865,7 +877,7 @@ export default function PayrollPage() {
                 ))}
               </select>
             </div>
-            <button onClick={() => setIsNewAbsenceOpen(true)}
+            <button onClick={() => canEdit ? setIsNewAbsenceOpen(true) : alertNoEditAccess()}
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-sm">
               + Registrar ausencia
             </button>
@@ -911,7 +923,7 @@ export default function PayrollPage() {
                           </td>
                           <td className="px-3 py-3 text-muted-foreground max-w-xs truncate">{abs.description ?? '—'}</td>
                           <td className="px-3 py-3">
-                            <button onClick={() => setDeletingAbsenceId(abs.id)}
+                            <button onClick={() => canEdit ? setDeletingAbsenceId(abs.id) : alertNoEditAccess()}
                               className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-red-600 transition-colors">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -941,7 +953,7 @@ export default function PayrollPage() {
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ABSENCE_COLOR[abs.absence_type] ?? 'bg-zinc-100 text-muted-foreground'}`}>
                             {absenceLabel(abs.absence_type)}
                           </span>
-                          <button onClick={() => setDeletingAbsenceId(abs.id)}
+                          <button onClick={() => canEdit ? setDeletingAbsenceId(abs.id) : alertNoEditAccess()}
                             className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--glass-hover)] hover:text-red-600 transition-colors">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

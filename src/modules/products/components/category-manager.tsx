@@ -21,6 +21,8 @@ import {
   createCategory, updateCategory, deleteCategory,
   useCategoriesWithCounts, type CategoryWithCount,
 } from '../queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 // NOTA (23 oct 2026): este archivo tuvo por un momento un bloque de
 // diagnóstico temporal (useDebugInfo + recuadro amarillo) para encontrar
 // el bug de "no cargan las categorías". Ya se encontró la causa real
@@ -39,6 +41,7 @@ const inputClass =
 
 export function CategoryManager({ open, onOpenChange, companyId }: CategoryManagerProps) {
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('inventario')
   const { data: categories = [], isLoading, isError, error: listError } = useCategoriesWithCounts(companyId)
 
   const [newName, setNewName] = useState('')
@@ -97,12 +100,12 @@ export function CategoryManager({ open, onOpenChange, companyId }: CategoryManag
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && newName.trim() && createMutation.mutate()}
+                onKeyDown={(e) => e.key === 'Enter' && newName.trim() && (canEdit ? createMutation.mutate() : alertNoEditAccess())}
                 className={inputClass}
                 placeholder="Nueva categoría..."
               />
               <Button
-                onClick={() => createMutation.mutate()}
+                onClick={() => canEdit ? createMutation.mutate() : alertNoEditAccess()}
                 disabled={!newName.trim() || createMutation.isPending}
                 className="bg-primary hover:bg-primary/90 text-white shrink-0"
               >
@@ -139,7 +142,7 @@ export function CategoryManager({ open, onOpenChange, companyId }: CategoryManag
                           onChange={(e) => setEditingName(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && editingName.trim()) {
-                              updateMutation.mutate({ id: cat.id, name: editingName.trim() })
+                              canEdit ? updateMutation.mutate({ id: cat.id, name: editingName.trim() }) : alertNoEditAccess()
                             }
                             if (e.key === 'Escape') setEditingId(null)
                           }}
@@ -147,7 +150,7 @@ export function CategoryManager({ open, onOpenChange, companyId }: CategoryManag
                           autoFocus
                         />
                         <button
-                          onClick={() => editingName.trim() && updateMutation.mutate({ id: cat.id, name: editingName.trim() })}
+                          onClick={() => editingName.trim() && (canEdit ? updateMutation.mutate({ id: cat.id, name: editingName.trim() }) : alertNoEditAccess())}
                           disabled={updateMutation.isPending}
                           className="shrink-0 rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
                           title="Guardar"
@@ -169,14 +172,14 @@ export function CategoryManager({ open, onOpenChange, companyId }: CategoryManag
                           {cat.product_count} {cat.product_count === 1 ? 'producto' : 'productos'}
                         </span>
                         <button
-                          onClick={() => startEdit(cat)}
+                          onClick={() => canEdit ? startEdit(cat) : alertNoEditAccess()}
                           className="shrink-0 rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 transition-colors"
                           title="Renombrar"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteClick(cat)}
+                          onClick={() => canEdit ? handleDeleteClick(cat) : alertNoEditAccess()}
                           className="shrink-0 rounded-lg p-1.5 text-red-500 hover:bg-red-50 transition-colors"
                           title="Eliminar"
                         >

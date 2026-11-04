@@ -23,6 +23,8 @@ import {
   MOVEMENT_TYPE_LABELS, MOVEMENT_TYPE_COLORS,
   type MovementType,
 } from '@/modules/inventory/queries'
+import { useCanEditModule } from '@/modules/roles/queries'
+import { alertNoEditAccess } from '@/lib/permissions'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -72,6 +74,7 @@ const STOCK_FILTER_OPTIONS = [
 
 function ProductosTab({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('inventario')
 
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
@@ -89,6 +92,7 @@ function ProductosTab({ companyId }: { companyId: string }) {
   const { data: categories = [] } = useCategories(companyId)
 
   async function handleImportFile(file: File) {
+    if (!canEdit) { alertNoEditAccess(); return }
     const fileError = validateImportFile(file)
     if (fileError) { window.alert(fileError); return }
     try {
@@ -215,8 +219,8 @@ function ProductosTab({ companyId }: { companyId: string }) {
         title=""
         subtitle="Catálogo de productos, precios y stock."
         selectedCount={selectedIds.length}
-        onAdd={() => setIsProductDialogOpen(true)}
-        onDelete={selectedIds.length > 0 ? () => deleteMutation.mutate() : undefined}
+        onAdd={canEdit ? () => setIsProductDialogOpen(true) : alertNoEditAccess}
+        onDelete={selectedIds.length > 0 ? (canEdit ? () => deleteMutation.mutate() : alertNoEditAccess) : undefined}
         onPrint={() => window.print()}
         onUpload={handleImportFile}
         onExport={handleExport}
@@ -624,6 +628,7 @@ function KardexTab({ companyId }: { companyId: string }) {
 
 function AjustesTab({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient()
+  const canEdit = useCanEditModule('inventario')
   const { data: products = [] } = useProductsStock(companyId)
 
   const [selectedProduct, setSelectedProduct] = useState<string>('')
@@ -716,7 +721,7 @@ function AjustesTab({ companyId }: { companyId: string }) {
         )}
 
         <button
-          onClick={() => mut.mutate()}
+          onClick={() => canEdit ? mut.mutate() : alertNoEditAccess()}
           disabled={mut.isPending || !selectedProduct}
           className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
@@ -737,6 +742,7 @@ function AjustesTab({ companyId }: { companyId: string }) {
 export default function InventarioPage() {
   const router = useRouter()
   const { activeCompanyId } = useCompanyStore()
+  const canEdit = useCanEditModule('inventario')
   const [tab, setTab] = useState<Tab>('productos')
 
   useEffect(() => {
@@ -760,6 +766,9 @@ export default function InventarioPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">
             Productos, catálogo, movimientos de stock y ajustes.
           </p>
+          {!canEdit && (
+            <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
+          )}
         </div>
       </div>
 
