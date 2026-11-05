@@ -658,6 +658,11 @@ export type CreditDebitNote = {
   notes:       string | null
   status:      'issued' | 'cancelled'
   created_at:  string
+  /** CUDE + XML (Fase G) -- igual patrón que cufe/xml_ubl en invoices
+   *  (Fase C/F), ver migración 036. */
+  cude?:            string | null
+  xml_ubl?:         string | null
+  fe_generated_at?: string | null
 }
 
 export type CreditDebitNoteItem = {

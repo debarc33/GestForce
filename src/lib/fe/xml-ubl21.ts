@@ -10,6 +10,9 @@ import type { DocCompany, DocCustomer, DocItem } from '@/modules/sales/component
 
 export interface XMLInvoiceParams {
   invoiceNumber: string
+  /** CUFE (facturas) o CUDE (notas crédito/débito) ya calculado. El nombre
+   *  del campo se conserva por compatibilidad; el esquema del UUID (abajo)
+   *  sí distingue cuál es según invoiceTypeCode. */
   cufe:          string
   issueDate:     string   // YYYY-MM-DD
   issueTime:     string   // HH:mm:ss-05:00
@@ -75,9 +78,9 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
       </cac:TaxSubtotal>`).join('')
 
   const invoiceLines = p.items.map((item, i) => `
-    <cac:InvoiceLine>
+    <cac:${lineTag}>
       <cbc:ID>${i + 1}</cbc:ID>
-      <cbc:InvoicedQuantity unitCode="NAL">${item.quantity}</cbc:InvoicedQuantity>
+      <cbc:${qtyTag} unitCode="NAL">${item.quantity}</cbc:${qtyTag}>
       <cbc:LineExtensionAmount currencyID="COP">${fmt2(item.subtotal)}</cbc:LineExtensionAmount>
       <cac:TaxTotal>
         <cbc:TaxAmount currencyID="COP">${fmt2(item.tax)}</cbc:TaxAmount>
@@ -101,7 +104,7 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
         <cbc:PriceAmount currencyID="COP">${fmt6(item.unit_price)}</cbc:PriceAmount>
         <cbc:BaseQuantity unitCode="NAL">1</cbc:BaseQuantity>
       </cac:Price>
-    </cac:InvoiceLine>`).join('')
+    </cac:${lineTag}>`).join('')
 
   const billingReference = p.referencedInvoice ? `
   <cac:BillingReference>
@@ -111,12 +114,31 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
     </cac:InvoiceDocumentReference>
   </cac:BillingReference>` : ''
 
-  const rootTag    = p.invoiceTypeCode === '01' ? 'Invoice' : 'CreditNote'
+  // Fase G: antes esto SIEMPRE caía en 'CreditNote' para invoiceTypeCode
+  // '92' (Nota Débito) -- bug real, no solo de notas débito "pendientes":
+  // el XML de una nota débito habría salido con el tag raíz y el esquema
+  // UBL de una nota crédito. Corregido aquí, antes de que notas débito
+  // generen su primer XML real.
+  const rootTag    = p.invoiceTypeCode === '01' ? 'Invoice'
+    : p.invoiceTypeCode === '91' ? 'CreditNote' : 'DebitNote'
   const nsInvoice  = p.invoiceTypeCode === '01'
     ? 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2'
     : p.invoiceTypeCode === '91'
     ? 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'
     : 'urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2'
+  // El esquema UBL de CreditNote/DebitNote nombra sus líneas y su cantidad
+  // distinto al de Invoice (CreditNoteLine/CreditedQuantity,
+  // DebitNoteLine/DebitedQuantity) -- antes el código reusaba siempre
+  // InvoiceLine/InvoicedQuantity, lo que habría invalidado el XML de
+  // cualquier nota contra el XSD de la DIAN.
+  const lineTag    = p.invoiceTypeCode === '01' ? 'InvoiceLine'
+    : p.invoiceTypeCode === '91' ? 'CreditNoteLine' : 'DebitNoteLine'
+  const qtyTag     = p.invoiceTypeCode === '01' ? 'InvoicedQuantity'
+    : p.invoiceTypeCode === '91' ? 'CreditedQuantity' : 'DebitedQuantity'
+  // El Anexo Técnico llama "CUDE" (no "CUFE") al código de notas -- el
+  // esquema del UUID debe decirlo, aunque el valor del hash viaja en el
+  // mismo campo `cufe` de este tipo por compatibilidad.
+  const codeSchemeName = p.invoiceTypeCode === '01' ? 'CUFE-SHA384' : 'CUDE-SHA384'
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <${rootTag} xmlns="${nsInvoice}"
@@ -136,7 +158,7 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
   <cbc:ProfileID>DIAN 2.1</cbc:ProfileID>
   <cbc:ProfileExecutionID>${p.tipAmb}</cbc:ProfileExecutionID>
   <cbc:ID>${esc(p.invoiceNumber)}</cbc:ID>
-  <cbc:UUID schemeID="${p.tipAmb}" schemeName="CUFE-SHA384">${p.cufe}</cbc:UUID>
+  <cbc:UUID schemeID="${p.tipAmb}" schemeName="${codeSchemeName}">${p.cufe}</cbc:UUID>
   <cbc:IssueDate>${p.issueDate}</cbc:IssueDate>
   <cbc:IssueTime>${p.issueTime}</cbc:IssueTime>
   <cbc:InvoiceTypeCode>${p.invoiceTypeCode}</cbc:InvoiceTypeCode>

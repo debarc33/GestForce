@@ -78,8 +78,11 @@ export interface PdfDocData {
   customer?: PdfCustomer | null
   items: PdfItem[]
   /** CUFE ya calculado (Fase C) -- si existe, se muestra junto con su QR
-   *  (Fase F, solo facturas). */
+   *  (Fase F, facturas). */
   cufe?: string | null
+  /** CUDE ya calculado (Fase G) -- equivalente a cufe pero para notas
+   *  crédito/débito. */
+  cude?: string | null
   /** Momento en que se calculó el CUFE (invoices.fe_generated_at) -- de ahí
    *  se deriva HorFac para el contenido del QR. */
   fe_generated_at?: string | null
@@ -143,22 +146,26 @@ export function DocumentPdf({ doc }: { doc: PdfDocData }) {
     doc.type === 'credit_note' ? 'NOTA CRÉDITO' :
     doc.type === 'debit_note' ? 'NOTA DÉBITO' : 'FACTURA DE VENTA'
 
-  // Fase F: CUFE + QR -- solo facturas que ya tengan el CUFE calculado
-  // (Fase C, botón/ruta "XML DIAN"). Si todavía no se ha generado, no se
-  // muestra nada nuevo (mismo comportamiento de hoy).
-  const cufeData = (doc.type === 'invoice' && doc.cufe) ? (() => {
+  // Código (CUFE facturas, CUDE notas -- Fase G) + QR -- solo documentos que
+  // ya tengan el código calculado (botón/ruta "XML DIAN"). Si todavía no se
+  // ha generado, no se muestra nada (mismo comportamiento de hoy).
+  const isNote   = doc.type === 'credit_note' || doc.type === 'debit_note'
+  const docCode  = doc.type === 'invoice' ? doc.cufe : (isNote ? doc.cude : null)
+  const cufeData = docCode ? (() => {
     const testMode  = company?.fe_test_mode !== false
     const nitFac    = (company?.nit ?? '').replace(/[^0-9]/g, '')
     const docAdq    = (customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
     const icaRate   = Number(company?.ica_rate ?? 0)
     const valOtroIm = icaRate > 0 ? doc.subtotal * icaRate : 0
     const horFac    = doc.fe_generated_at ? isoToColombiaTime(doc.fe_generated_at) : '00:00:00-05:00'
+    const numLabel  = doc.type === 'credit_note' ? 'NumCr' : doc.type === 'debit_note' ? 'NumDb' : 'NumFac'
+    const codeLabel = isNote ? 'CUDE' : 'CUFE'
     const qrText = buildQrContent({
       numFac: doc.number, fecFac: doc.issue_date, horFac, nitFac, docAdq,
       valFac: doc.subtotal, valIva: doc.tax, valOtroIm, valTolFac: doc.total,
-      cufe: doc.cufe!, testMode,
+      cufe: docCode, testMode, numLabel, codeLabel,
     })
-    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(doc.cufe!, testMode) }
+    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(docCode, testMode) }
   })() : null
 
   return (
@@ -178,8 +185,8 @@ export function DocumentPdf({ doc }: { doc: PdfDocData }) {
         {!!cufeData && (
           <View style={styles.cufeBox}>
             <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.cufeLabel}>CUFE (Código Único de Factura Electrónica)</Text>
-              <Text style={styles.cufeText}>{doc.cufe}</Text>
+              <Text style={styles.cufeLabel}>{isNote ? 'CUDE (Código Único de Documento Electrónico)' : 'CUFE (Código Único de Factura Electrónica)'}</Text>
+              <Text style={styles.cufeText}>{docCode}</Text>
               <Text style={styles.cufeUrl}>Documento validable en: {cufeData.url}</Text>
             </View>
             <Svg viewBox={`0 0 ${cufeData.matrix.size} ${cufeData.matrix.size}`} style={{ width: 56, height: 56 }}>

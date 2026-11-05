@@ -521,6 +521,7 @@ export default function EditInvoicePage() {
           open={!!viewingNote}
           onClose={() => setViewingNote(null)}
           doc={{
+            id:                  viewingNote.id,
             type:                viewingNote.type === 'credit' ? 'credit_note' : 'debit_note',
             number:              viewingNote.note_number,
             issue_date:          viewingNote.issue_date,
@@ -534,10 +535,19 @@ export default function EditInvoicePage() {
             is_tax_responsible:  ivaMode,
             fe_software_id:      company?.fe_software_id ?? null,
             fe_test_mode:        company?.fe_test_mode ?? true,
+            // Fase G: CUDE + QR -- mismo patrón que cufe/fe_generated_at en
+            // el visor de la factura, arriba.
+            cude:                viewingNote.cude             ?? null,
+            fe_generated_at:     viewingNote.fe_generated_at  ?? null,
             company: company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
             customer: invoice.customer ? {
               name:       invoice.customer.name,
+              doc_type:   invoice.customer.doc_type ?? null,
+              doc_number: invoice.customer.doc_number ?? null,
               email:      invoice.customer.email ?? null,
+              phone:      invoice.customer.phone ?? null,
+              address:    invoice.customer.address ?? null,
+              city:       invoice.customer.city ?? null,
             } : null,
             items: noteItems.map(ni => ({
               product_name: ni.product_name,

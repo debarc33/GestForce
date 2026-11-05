@@ -91,7 +91,11 @@ export interface DocData {
   /** CUFE ya calculado (Fase C) -- si existe, se muestra con su QR (Fase F,
    *  solo facturas). */
   cufe?: string | null
-  /** Momento en que se calculó el CUFE (invoices.fe_generated_at). */
+  /** CUDE ya calculado (Fase G) -- equivalente a cufe pero para notas
+   *  crédito/débito. */
+  cude?: string | null
+  /** Momento en que se calculó el CUFE/CUDE (invoices.fe_generated_at o
+   *  credit_debit_notes.fe_generated_at). */
   fe_generated_at?: string | null
 }
 
@@ -113,31 +117,34 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const isNote      = doc.type === 'credit_note' || doc.type === 'debit_note'
   // Fase C (claude/plan-accion-facturacion-dian.md): el XML/CUFE se genera
   // ahora del lado del servidor (ruta /api/sales/documents/xml, que ahi si
-  // puede leer fe_technical_key) -- el cliente solo necesita saber que la
-  // empresa tiene FE configurada (fe_software_id) y el id del documento
-  // para pedirselo al servidor. Por ahora solo facturas; notas credito/
-  // debito quedan para la Fase G.
-  const canGenerateXml = doc.type === 'invoice' && !isTicket
+  // puede leer fe_technical_key/fe_software_pin) -- el cliente solo necesita
+  // saber que la empresa tiene FE configurada (fe_software_id) y el id del
+  // documento para pedirselo al servidor. Fase G extiende esto a notas
+  // crédito/débito (mismo botón, mismo endpoint, con { noteId } en vez de
+  // { invoiceId }).
+  const canGenerateXml = (doc.type === 'invoice' || isNote) && !isTicket
     && !!doc.fe_software_id && !!doc.id
-  const noteXmlPending = isNote && !!doc.fe_software_id
 
-  // Fase F: CUFE + QR -- solo facturas que ya tengan el CUFE calculado
-  // (Fase C). Se calcula de forma síncrona (sin useEffect/estado) para que
-  // handlePrint(), que captura el HTML ya renderizado, nunca capture un QR
-  // a medio generar.
-  const cufeData = (doc.type === 'invoice' && doc.cufe) ? (() => {
+  // Código (CUFE para facturas, CUDE para notas, Fase G) + QR -- solo
+  // documentos que ya tengan el código calculado (botón "XML DIAN"). Se
+  // calcula de forma síncrona (sin useEffect/estado) para que handlePrint(),
+  // que captura el HTML ya renderizado, nunca capture un QR a medio generar.
+  const docCode = doc.type === 'invoice' ? doc.cufe : (isNote ? doc.cude : null)
+  const cufeData = docCode ? (() => {
     const testMode  = doc.fe_test_mode !== false
     const nitFac    = (doc.company?.nit ?? '').replace(/[^0-9]/g, '')
     const docAdq    = (doc.customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
     const icaRate   = Number(doc.company?.ica_rate ?? 0)
     const valOtroIm = icaRate > 0 ? doc.subtotal * icaRate : 0
     const horFac    = doc.fe_generated_at ? isoToColombiaTime(doc.fe_generated_at) : '00:00:00-05:00'
+    const numLabel  = doc.type === 'credit_note' ? 'NumCr' : doc.type === 'debit_note' ? 'NumDb' : 'NumFac'
+    const codeLabel = isNote ? 'CUDE' : 'CUFE'
     const qrText = buildQrContent({
       numFac: doc.number, fecFac: doc.issue_date, horFac, nitFac, docAdq,
       valFac: doc.subtotal, valIva: doc.tax, valOtroIm, valTolFac: doc.total,
-      cufe: doc.cufe!, testMode,
+      cufe: docCode, testMode, numLabel, codeLabel,
     })
-    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(doc.cufe!, testMode) }
+    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(docCode, testMode) }
   })() : null
 
   const docTypeLabel =
@@ -242,9 +249,10 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     }
   }
 
-  // Fase C: el CUFE y el XML se generan y se guardan del lado del servidor
-  // (/api/sales/documents/xml) -- aquí solo se pide el resultado y se
-  // descarga. Ver la ruta API para el detalle de cómo se calculan.
+  // Fase C: el CUFE/CUDE y el XML se generan y se guardan del lado del
+  // servidor (/api/sales/documents/xml) -- aquí solo se pide el resultado y
+  // se descarga. Fase G: la misma ruta acepta { noteId } para notas
+  // crédito/débito. Ver la ruta API para el detalle de cómo se calculan.
   const handleDownloadXML = async () => {
     if (!doc.id) return
     setXmlBusy(true)
@@ -252,7 +260,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
       const res = await fetch('/api/sales/documents/xml', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: doc.id }),
+        body: JSON.stringify(isNote ? { noteId: doc.id } : { invoiceId: doc.id }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? 'No se pudo generar el XML')
@@ -280,7 +288,9 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     }
     setEmailBusy(true)
     try {
-      const documentType = doc.type === 'quote' ? 'quote' : 'invoice'
+      // Fase G: 'credit_note'/'debit_note' viajan tal cual -- send/route.ts
+      // ahora también los acepta (antes solo 'quote'/'invoice').
+      const documentType = doc.type
       const res = await fetch('/api/sales/documents/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -398,7 +408,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
         </div>
       </div>
 
-      {/* ── CUFE + QR (Fase F) ── */}
+      {/* ── CUFE/CUDE + QR (Fase F facturas, Fase G notas) ── */}
       {cufeData && (
         <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-100 bg-zinc-50">
           <svg
@@ -411,8 +421,8 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
             ))}
           </svg>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">CUFE</p>
-            <p className="font-mono text-[10px] text-zinc-600 break-all leading-snug">{doc.cufe}</p>
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">{isNote ? 'CUDE' : 'CUFE'}</p>
+            <p className="font-mono text-[10px] text-zinc-600 break-all leading-snug">{docCode}</p>
             <p className="text-[9px] text-zinc-400 mt-0.5 break-all">Verificar en: {cufeData.url}</p>
           </div>
         </div>
@@ -637,14 +647,6 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors border border-green-300 disabled:opacity-40">
                 <FileCode2 className="h-3.5 w-3.5" />
                 {xmlBusy ? 'Generando...' : 'XML DIAN'}
-              </button>
-            )}
-            {noteXmlPending && (
-              <button disabled
-                title="La Facturación Electrónica para notas crédito/débito todavía se está construyendo (próxima fase)."
-                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 border border-zinc-200 cursor-not-allowed">
-                <FileCode2 className="h-3.5 w-3.5" />
-                XML DIAN (próximamente)
               </button>
             )}
             <button onClick={handlePrint}

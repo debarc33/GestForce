@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# certificados de prueba / firma FE (nunca deben ir al repositorio)
+*.p12
+*.pfx

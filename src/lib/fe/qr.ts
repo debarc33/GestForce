@@ -43,17 +43,29 @@ export interface QrFields {
   valOtroIm: number
   /** Valor total de la factura */
   valTolFac: number
-  /** CUFE ya calculado (Fase C) */
+  /** CUFE (facturas) o CUDE (notas, Fase G) ya calculado */
   cufe:      string
   /** true = ambiente de habilitación/pruebas, false = producción */
   testMode:  boolean
+  /** Fase G: nombre del campo "Num" en el bloque del QR -- el Anexo Técnico
+   *  no define un formato de QR distinto para Notas Crédito/Débito (no se
+   *  encontró una sección separada para ellas en 11.7); por decisión propia
+   *  se reusa el mismo bloque de campos de la factura, solo relabeled
+   *  ("NumCr"/"NumDb" en vez de "NumFac", "CUDE" en vez de "CUFE") para
+   *  mantener consistencia visual con Fase F. Por defecto 'NumFac'. */
+  numLabel?:  string
+  /** Fase G: nombre del campo del código al final del bloque ("CUFE" o
+   *  "CUDE"). Por defecto 'CUFE'. */
+  codeLabel?: string
 }
 
 /** Construye el texto exacto que debe codificar el QR (campos + URL final). */
 export function buildQrContent(f: QrFields): string {
   const money = (n: number) => Number(n ?? 0).toFixed(2)
+  const numLabel  = f.numLabel  ?? 'NumFac'
+  const codeLabel = f.codeLabel ?? 'CUFE'
   return [
-    `NumFac: ${f.numFac}`,
+    `${numLabel}: ${f.numFac}`,
     `FecFac: ${f.fecFac}`,
     `HorFac: ${f.horFac}`,
     `NitFac: ${f.nitFac}`,
@@ -62,7 +74,7 @@ export function buildQrContent(f: QrFields): string {
     `ValIva: ${money(f.valIva)}`,
     `ValOtroIm: ${money(f.valOtroIm)}`,
     `ValTolFac: ${money(f.valTolFac)}`,
-    `CUFE: ${f.cufe}`,
+    `${codeLabel}: ${f.cufe}`,
     buildVerificationUrl(f.cufe, f.testMode),
   ].join('\n')
 }
