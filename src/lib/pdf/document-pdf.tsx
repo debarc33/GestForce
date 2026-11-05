@@ -1,4 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Svg, Rect } from '@react-pdf/renderer'
+import { buildQrContent, buildQrMatrix, buildQrRects, buildVerificationUrl, isoToColombiaTime } from '@/lib/fe/qr'
 
 const fmt = (n: number) => '$' + Number(n ?? 0).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 const fmtDate = (d?: string | null) =>
@@ -34,6 +35,9 @@ export interface PdfCompany {
   dian_validity_to?: string | null
   invoice_footer?: string | null
   print_legal_lines?: string | null
+  // ── Facturación Electrónica (Fase F: CUFE + QR) ──────────────────────
+  fe_test_mode?: boolean | null
+  ica_rate?: number | null
 }
 
 export interface PdfCustomer {
@@ -73,6 +77,12 @@ export interface PdfDocData {
   company?: PdfCompany | null
   customer?: PdfCustomer | null
   items: PdfItem[]
+  /** CUFE ya calculado (Fase C) -- si existe, se muestra junto con su QR
+   *  (Fase F, solo facturas). */
+  cufe?: string | null
+  /** Momento en que se calculó el CUFE (invoices.fe_generated_at) -- de ahí
+   *  se deriva HorFac para el contenido del QR. */
+  fe_generated_at?: string | null
 }
 
 // NOTA: estilos con StyleSheet.create de @react-pdf/renderer -- es un motor
@@ -115,6 +125,13 @@ const styles = StyleSheet.create({
   notesBox: { backgroundColor: '#fafafa', borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 4, padding: 8, marginTop: 12 },
   footer: { marginTop: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f4f4f5' },
   footerLine: { fontSize: 7, color: '#71717a', textAlign: 'center', marginBottom: 2 },
+  cufeBox: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 10, padding: 8,
+    borderWidth: 1, borderColor: '#e4e4e7', borderRadius: 4, backgroundColor: '#fafafa',
+  },
+  cufeLabel: { fontSize: 7, fontWeight: 700, color: '#71717a', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+  cufeText: { fontSize: 6.5, fontFamily: 'Courier', color: '#3f3f46', lineHeight: 1.3 },
+  cufeUrl: { fontSize: 6, color: '#a1a1aa', marginTop: 3 },
 })
 
 export function DocumentPdf({ doc }: { doc: PdfDocData }) {
@@ -125,6 +142,24 @@ export function DocumentPdf({ doc }: { doc: PdfDocData }) {
     doc.type === 'quote' ? 'COTIZACIÓN' :
     doc.type === 'credit_note' ? 'NOTA CRÉDITO' :
     doc.type === 'debit_note' ? 'NOTA DÉBITO' : 'FACTURA DE VENTA'
+
+  // Fase F: CUFE + QR -- solo facturas que ya tengan el CUFE calculado
+  // (Fase C, botón/ruta "XML DIAN"). Si todavía no se ha generado, no se
+  // muestra nada nuevo (mismo comportamiento de hoy).
+  const cufeData = (doc.type === 'invoice' && doc.cufe) ? (() => {
+    const testMode  = company?.fe_test_mode !== false
+    const nitFac    = (company?.nit ?? '').replace(/[^0-9]/g, '')
+    const docAdq    = (customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
+    const icaRate   = Number(company?.ica_rate ?? 0)
+    const valOtroIm = icaRate > 0 ? doc.subtotal * icaRate : 0
+    const horFac    = doc.fe_generated_at ? isoToColombiaTime(doc.fe_generated_at) : '00:00:00-05:00'
+    const qrText = buildQrContent({
+      numFac: doc.number, fecFac: doc.issue_date, horFac, nitFac, docAdq,
+      valFac: doc.subtotal, valIva: doc.tax, valOtroIm, valTolFac: doc.total,
+      cufe: doc.cufe!, testMode,
+    })
+    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(doc.cufe!, testMode) }
+  })() : null
 
   return (
     <Document>
@@ -139,6 +174,22 @@ export function DocumentPdf({ doc }: { doc: PdfDocData }) {
             <Text style={{ fontSize: 8, marginTop: 4 }}>{fmtDate(doc.issue_date)}</Text>
           </View>
         </View>
+
+        {!!cufeData && (
+          <View style={styles.cufeBox}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={styles.cufeLabel}>CUFE (Código Único de Factura Electrónica)</Text>
+              <Text style={styles.cufeText}>{doc.cufe}</Text>
+              <Text style={styles.cufeUrl}>Documento validable en: {cufeData.url}</Text>
+            </View>
+            <Svg viewBox={`0 0 ${cufeData.matrix.size} ${cufeData.matrix.size}`} style={{ width: 56, height: 56 }}>
+              <Rect x={0} y={0} width={cufeData.matrix.size} height={cufeData.matrix.size} fill="#ffffff" />
+              {buildQrRects(cufeData.matrix).map((r, i) => (
+                <Rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="#18181b" />
+              ))}
+            </Svg>
+          </View>
+        )}
 
         <View style={styles.row}>
           <View style={styles.col}>

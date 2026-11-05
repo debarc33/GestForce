@@ -132,6 +132,10 @@ export default function EditInvoicePage() {
     notes:           invoice.notes,
     fe_software_id:  company?.fe_software_id  ?? null,
     fe_test_mode:    company?.fe_test_mode    ?? true,
+    // Fase F: CUFE + QR -- ya se calculan y persisten desde la Fase C
+    // (botón "XML DIAN"); aquí solo se leen para mostrarlos.
+    cufe:            invoice.cufe             ?? null,
+    fe_generated_at: invoice.fe_generated_at  ?? null,
     company:    company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
     customer:   invoice.customer ? {
       name:       invoice.customer.name,

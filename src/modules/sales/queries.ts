@@ -46,6 +46,13 @@ export type InvoiceWithCustomer = {
   agent_id: string | null
   customer: { id: string; name: string; email: string | null } | null
   agent: { id: string; name: string; commission_rate: number | null } | null
+  // ── Facturación Electrónica (Fase C: CUFE/XML server-side) ────────
+  // Columnas agregadas en la migración 034_invoice_fe_fields.sql. Hasta
+  // ahora el cliente nunca las leía directo (handleDownloadXML las pedía
+  // frescas a la API) -- la Fase F (CUFE + QR en PDF/visor) sí las necesita
+  // aquí para mostrarlas sin tener que volver a llamar al servidor.
+  cufe: string | null
+  fe_generated_at: string | null
 }
 
 export type ReceiptWithDetails = {

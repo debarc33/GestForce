@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Printer, Mail, X, FileCode2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { downloadXML } from '@/lib/fe/xml-ubl21'
+import { buildQrContent, buildQrMatrix, buildQrRects, buildVerificationUrl, isoToColombiaTime } from '@/lib/fe/qr'
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -34,6 +35,8 @@ export interface DocCompany {
   print_show_logo?: boolean | null
   print_auto_dian_footer?: boolean | null
   print_legal_lines?: string | null
+  // Fase F (CUFE + QR): tasa ICA para calcular ValOtroIm del contenido del QR
+  ica_rate?: number | null
 }
 
 export interface DocCustomer {
@@ -85,6 +88,11 @@ export interface DocData {
    *  del lado del servidor, que la lee directo de la base de datos. */
   fe_software_id?: string | null
   fe_test_mode?: boolean
+  /** CUFE ya calculado (Fase C) -- si existe, se muestra con su QR (Fase F,
+   *  solo facturas). */
+  cufe?: string | null
+  /** Momento en que se calculó el CUFE (invoices.fe_generated_at). */
+  fe_generated_at?: string | null
 }
 
 interface Props {
@@ -112,6 +120,25 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const canGenerateXml = doc.type === 'invoice' && !isTicket
     && !!doc.fe_software_id && !!doc.id
   const noteXmlPending = isNote && !!doc.fe_software_id
+
+  // Fase F: CUFE + QR -- solo facturas que ya tengan el CUFE calculado
+  // (Fase C). Se calcula de forma síncrona (sin useEffect/estado) para que
+  // handlePrint(), que captura el HTML ya renderizado, nunca capture un QR
+  // a medio generar.
+  const cufeData = (doc.type === 'invoice' && doc.cufe) ? (() => {
+    const testMode  = doc.fe_test_mode !== false
+    const nitFac    = (doc.company?.nit ?? '').replace(/[^0-9]/g, '')
+    const docAdq    = (doc.customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
+    const icaRate   = Number(doc.company?.ica_rate ?? 0)
+    const valOtroIm = icaRate > 0 ? doc.subtotal * icaRate : 0
+    const horFac    = doc.fe_generated_at ? isoToColombiaTime(doc.fe_generated_at) : '00:00:00-05:00'
+    const qrText = buildQrContent({
+      numFac: doc.number, fecFac: doc.issue_date, horFac, nitFac, docAdq,
+      valFac: doc.subtotal, valIva: doc.tax, valOtroIm, valTolFac: doc.total,
+      cufe: doc.cufe!, testMode,
+    })
+    return { matrix: buildQrMatrix(qrText), url: buildVerificationUrl(doc.cufe!, testMode) }
+  })() : null
 
   const docTypeLabel =
     doc.type === 'quote'       ? 'COTIZACIÓN' :
@@ -370,6 +397,26 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
           <p className="text-xs text-blue-200 mt-1">{fmtDate(doc.issue_date)}</p>
         </div>
       </div>
+
+      {/* ── CUFE + QR (Fase F) ── */}
+      {cufeData && (
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-100 bg-zinc-50">
+          <svg
+            viewBox={`0 0 ${cufeData.matrix.size} ${cufeData.matrix.size}`}
+            width="64" height="64"
+            className="shrink-0 rounded border border-zinc-200 bg-white"
+          >
+            {buildQrRects(cufeData.matrix).map((r, i) => (
+              <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} fill="#18181b" />
+            ))}
+          </svg>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">CUFE</p>
+            <p className="font-mono text-[10px] text-zinc-600 break-all leading-snug">{doc.cufe}</p>
+            <p className="text-[9px] text-zinc-400 mt-0.5 break-all">Verificar en: {cufeData.url}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Cuerpo del documento ── */}
       <div className="p-5 space-y-4">

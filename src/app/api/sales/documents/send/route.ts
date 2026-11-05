@@ -96,6 +96,12 @@ export async function POST(req: NextRequest) {
       tax: Number(record.tax),
       total: Number(record.total),
       notes: record.notes ?? null,
+      // Fase F: CUFE + QR -- record es 'invoices' o 'quotes' según
+      // documentType; las cotizaciones no tienen estas columnas, por lo que
+      // llegan undefined/null (DocumentPdf solo pinta el bloque si
+      // doc.type === 'invoice' y doc.cufe existe, igual que en el visor).
+      cufe: (record as { cufe?: string | null }).cufe ?? null,
+      fe_generated_at: (record as { fe_generated_at?: string | null }).fe_generated_at ?? null,
       company: company ?? null,
       customer: customer ?? null,
       items: (items ?? []).map((i: {
