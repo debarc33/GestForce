@@ -15,6 +15,7 @@ import {
 } from '@/modules/sales/queries'
 import {
   useCompany, updateCompany, isIvaResponsible, getDianAlerts, useFeStatus,
+  uploadCertificate,
   useCompanyBankAccounts, createCompanyBankAccount,
   deleteCompanyBankAccount, setCompanyBankAccountPrimary,
   type CompanyProfileUpdate, type CompanyBankAccount,
@@ -104,6 +105,13 @@ function DianExpiryBadge({ alert }: { alert: 'warning' | 'expired' | null }) {
   return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-700"><AlertCircle className="h-3 w-3" />Vencida</span>
 }
 
+function DianCertBadge({ alert, configured }: { alert: 'warning' | 'expired' | null; configured: boolean }) {
+  if (!configured) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground"><Settings2 className="h-3 w-3" />Sin certificado</span>
+  if (!alert) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-500/10 border border-green-500/20 text-green-700"><Check className="h-3 w-3" />Vigente</span>
+  if (alert === 'warning') return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-700"><AlertTriangle className="h-3 w-3" />Por vencer</span>
+  return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-700"><AlertCircle className="h-3 w-3" />Vencido</span>
+}
+
 function FEBadge({ configured, testMode }: { configured: boolean; testMode: boolean }) {
   if (!configured) return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-[var(--glass)] border border-[var(--glass-border)] text-muted-foreground"><Settings2 className="h-3 w-3" />Sin configurar</span>
   if (testMode)    return <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-amber-500/10 border border-amber-500/20 text-amber-700"><Zap className="h-3 w-3" />Habilitación</span>
@@ -137,6 +145,13 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview]   = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoError, setLogoError]       = useState<string | null>(null)
+
+  // Certificado digital de firma (Fase D)
+  const [editingCert, setEditingCert]   = useState(false)
+  const [certFile, setCertFile]         = useState<File | null>(null)
+  const [certPassword, setCertPassword] = useState('')
+  const [certUploading, setCertUploading] = useState(false)
+  const [certError, setCertError]       = useState<string | null>(null)
   const logoInputRef                    = useRef<HTMLInputElement>(null)
 
   // Bank accounts state
@@ -258,6 +273,50 @@ export default function SettingsPage() {
     }
   }
 
+  // Certificado digital de firma (Fase D, claude/plan-accion-facturacion-dian.md)
+  function handleCertFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!/\.(p12|pfx)$/i.test(file.name)) { setCertError('El archivo debe ser .p12 o .pfx.'); return }
+    if (file.size > 5 * 1024 * 1024) { setCertError('El archivo no puede superar 5 MB.'); return }
+    setCertFile(file)
+    setCertError(null)
+  }
+
+  async function uploadCert() {
+    if (!activeCompanyId || certUploading) return
+    // Validación básica antes de intentar cargar nada (Deisy, 5 nov 2026):
+    // no llamar al servidor si falta el archivo o la contraseña viene vacía.
+    if (!certFile) { setCertError('Selecciona el archivo del certificado (.p12/.pfx).'); return }
+    if (!certPassword) { setCertError('La contraseña del certificado no puede estar vacía.'); return }
+    setCertUploading(true)
+    setCertError(null)
+    try {
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          resolve(result.split(',')[1] ?? '')
+        }
+        reader.onerror = () => reject(new Error('No se pudo leer el archivo del certificado'))
+        reader.readAsDataURL(certFile)
+      })
+      // La contraseña viaja una sola vez, por HTTPS, al servidor -- este
+      // componente nunca la guarda ni la reutiliza después de esta llamada.
+      await uploadCertificate(activeCompanyId, { fileBase64, fileName: certFile.name, password: certPassword })
+      queryClient.invalidateQueries({ queryKey: ['company', activeCompanyId] })
+      setCertFile(null)
+      setCertPassword('')
+      setEditingCert(false)
+    } catch (e: unknown) {
+      // El servidor ya devuelve mensajes especificos (contraseña vacía,
+      // contraseña incorrecta, archivo invalido) -- se muestran tal cual.
+      setCertError(e instanceof Error ? e.message : 'Error al subir el certificado')
+    } finally {
+      setCertUploading(false)
+    }
+  }
+
   const saveCompany = (closeSection: () => void) => useMutation({
     mutationFn: () => updateCompany(activeCompanyId!, companyForm),
     onSuccess: () => {
@@ -331,7 +390,7 @@ export default function SettingsPage() {
     setCompanyForm(prev => ({ ...prev, [field]: value }))
 
   const ivaMode    = isIvaResponsible(company?.fiscal_regime)
-  const { rangeAlert, expiryAlert } = getDianAlerts(company)
+  const { rangeAlert, expiryAlert, certAlert } = getDianAlerts(company)
   // Fase C (claude/plan-accion-facturacion-dian.md): getDianAlerts() ya no
   // puede confirmar la Llave Técnica (no llega al cliente desde la Fase A),
   // así que el estado real "FE configurada" se pregunta al servidor.
@@ -673,6 +732,64 @@ export default function SettingsPage() {
           )}
         </SettingsAccordion>
         </section>
+
+      {/* ══ 3b. Certificado digital de firma (Fase D) ════════════════ */}
+      <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>
+        <SettingsAccordion title="Certificado digital de firma">
+          <SectionHeader
+            title="Certificado digital de firma"
+            sub="Certificado .p12/.pfx propio de esta empresa, usado para firmar tus documentos electrónicos ante la DIAN."
+            editing={editingCert}
+            onEdit={() => setEditingCert(true)}
+            onSave={uploadCert}
+            onCancel={() => { setEditingCert(false); setCertFile(null); setCertPassword(''); setCertError(null) }}
+            badge={<DianCertBadge alert={certAlert} configured={!!company?.fe_cert_valid_to} />}
+          />
+
+          {editingCert ? (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
+              <div>
+                <label className={lbl}>Archivo del certificado (.p12 / .pfx)</label>
+                <input type="file" accept=".p12,.pfx" onChange={handleCertFileChange}
+                  className={fieldCls} />
+                {certFile && <p className="text-xs text-muted-foreground mt-1">Seleccionado: {certFile.name}</p>}
+              </div>
+              <div>
+                <label className={lbl}>Contraseña del certificado</label>
+                {/* Campo tipo password -- oculta los caracteres mientras se
+                    escriben. La contraseña viaja una sola vez al servidor
+                    para validar el certificado y cifrarla; nunca se guarda
+                    en texto plano (ver claude/plan-accion-facturacion-dian.md,
+                    Fase D). */}
+                <input type="password" value={certPassword} onChange={e => setCertPassword(e.target.value)}
+                  className={fieldCls} autoComplete="new-password"
+                  placeholder="Contraseña del archivo .p12/.pfx" />
+              </div>
+              <p className="text-xs text-muted-foreground rounded-lg bg-[var(--glass)] border border-[var(--glass-border)]/50 px-3 py-2">
+                Las fechas de vigencia se toman automáticamente del propio certificado al subirlo
+                (no hay que escribirlas a mano) -- así se evita un error de digitación en algo tan importante.
+                La contraseña se cifra antes de guardarse y nunca queda en texto plano en la base de datos.
+              </p>
+              {certError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{certError}</p>}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
+              {company?.fe_cert_valid_to ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div><p className="text-xs text-muted-foreground">Archivo</p><p className="text-foreground truncate">{company?.fe_cert_filename ?? '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Contraseña</p><p className="text-foreground">••••••••</p></div>
+                  <div><p className="text-xs text-muted-foreground">Vigente desde</p><p className="text-foreground">{company?.fe_cert_valid_from ?? '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Vigente hasta</p><p className="text-foreground">{company?.fe_cert_valid_to ?? '—'}</p></div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-3">
+                  Sube el certificado digital .p12/.pfx de esta empresa para habilitar la firma de documentos electrónicos.
+                </p>
+              )}
+            </div>
+          )}
+        </SettingsAccordion>
+      </section>
 
       {/* ══ 4. ICA municipal ════════════════════════════════════════ */}
       <section className={`border-b border-[var(--glass-border)]${activeGroup !== 'Fiscal' ? ' hidden' : ''}`}>

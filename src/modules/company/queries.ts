@@ -38,6 +38,15 @@ export type CompanyProfile = {
   fe_api_url:        string | null
   fe_test_mode:      boolean
   fe_technical_key:  string | null
+  // ── Certificado digital de firma (Fase D) ─────────────────────────
+  // Metadatos no sensibles -- el archivo .p12/.pfx y su contraseña
+  // (cifrada) viven aparte, en company_certificates, de acceso
+  // exclusivamente server-side. Ver claude/plan-accion-facturacion-dian.md
+  // y src/lib/fe/certificate.ts.
+  fe_cert_filename:    string | null
+  fe_cert_valid_from:  string | null   // YYYY-MM-DD
+  fe_cert_valid_to:    string | null   // YYYY-MM-DD
+  fe_cert_uploaded_at: string | null
   // ── Umbrales ─────────────────────────────────────────────────────
   buyer_threshold:   number   // default 212000 COP
   // ── Impuestos municipales ─────────────────────────────────────────
@@ -81,7 +90,7 @@ export function isIvaResponsible(regime: string | null | undefined): boolean {
  * Retorna null para cada alerta si no hay datos configurados.
  */
 export function getDianAlerts(company: CompanyProfile | undefined, currentSequence?: number) {
-  if (!company) return { rangeAlert: null, expiryAlert: null, feConfigured: false }
+  if (!company) return { rangeAlert: null, expiryAlert: null, certAlert: null, feConfigured: false }
 
   // ── Alerta de rango ──────────────────────────────────────────────
   let rangeAlert: 'warning' | 'critical' | null = null
@@ -104,6 +113,19 @@ export function getDianAlerts(company: CompanyProfile | undefined, currentSequen
     else if (daysLeft <= 30) expiryAlert = 'warning'
   }
 
+  // ── Alerta de vigencia del certificado digital (Fase D) ──────────
+  // Ventana de 7 dias (mas corta que los 30 dias de la resolucion DIAN):
+  // sin certificado vigente, NINGUNA factura se puede firmar, es mas
+  // urgente que el aviso de la resolucion.
+  let certAlert: 'warning' | 'expired' | null = null
+  if (company.fe_cert_valid_to) {
+    const daysLeft = Math.floor(
+      (new Date(company.fe_cert_valid_to).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    )
+    if (daysLeft < 0)  certAlert = 'expired'
+    else if (daysLeft <= 7) certAlert = 'warning'
+  }
+
   // ── FE configurada ───────────────────────────────────────────────
   // Seguridad (Fase A, 4 nov 2026): fe_technical_key ya no se trae al
   // cliente, asi que este check ya no puede validarla aqui. Solo confirma
@@ -112,7 +134,7 @@ export function getDianAlerts(company: CompanyProfile | undefined, currentSequen
   // del plan de facturacion electronica (claude/plan-accion-facturacion-dian.md).
   const feConfigured = !!company.fe_software_id
 
-  return { rangeAlert, expiryAlert, feConfigured }
+  return { rangeAlert, expiryAlert, certAlert, feConfigured }
 }
 
 export function useCompany(companyId?: string | null) {
@@ -135,6 +157,7 @@ export function useCompany(companyId?: string | null) {
           dian_resolution, dian_resolution_date, dian_prefix, dian_from_number,
           dian_to_number, dian_validity_from, dian_validity_to,
           fe_software_id, fe_api_url, fe_test_mode,
+          fe_cert_filename, fe_cert_valid_from, fe_cert_valid_to, fe_cert_uploaded_at,
           buyer_threshold, ica_rate, smlv, transport_allowance, costing_method,
           plan_id, subscription_period, subscription_start, subscription_end, subscription_status,
           show_plan_pricing, show_invoice_pack_pricing
@@ -166,6 +189,27 @@ export function useFeStatus(companyId?: string | null) {
     },
     enabled: !!companyId,
   })
+}
+
+/**
+ * Sube o reemplaza el certificado digital (.p12/.pfx) de una empresa.
+ * Fase D de claude/plan-accion-facturacion-dian.md -- la contraseña se
+ * envía una sola vez al servidor (por HTTPS) para que la valide y la
+ * cifre; este archivo nunca la guarda ni la reutiliza después de la
+ * llamada.
+ */
+export async function uploadCertificate(
+  companyId: string,
+  params: { fileBase64: string; fileName: string; password: string }
+) {
+  const res = await fetch('/api/company/certificate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyId, ...params }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data?.error ?? 'No se pudo subir el certificado')
+  return data as { ok: true; validFrom: string; validTo: string; subject: string }
 }
 
 export async function updateCompany(id: string, data: CompanyProfileUpdate) {

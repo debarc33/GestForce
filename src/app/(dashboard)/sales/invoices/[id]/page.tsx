@@ -74,7 +74,7 @@ export default function EditInvoicePage() {
   })
   const invoiceReceipts = allReceipts.filter(r => r.invoice_id === id)
 
-  const { expiryAlert } = getDianAlerts(company)
+  const { expiryAlert, certAlert } = getDianAlerts(company)
   const ivaMode         = isIvaResponsible(company?.fiscal_regime)
   const buyerThreshold  = company?.buyer_threshold ?? 212000
 
@@ -254,6 +254,22 @@ export default function EditInvoicePage() {
         <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700 -mt-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           La resolución DIAN está próxima a vencer. Renuévala antes de que se agote.
+        </div>
+      )}
+
+      {/* 1b-bis · Alerta certificado digital de firma (Fase D) */}
+      {certAlert === 'expired' && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 -mt-2">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          El certificado digital de firma está vencido. No se podrán firmar nuevos documentos electrónicos.
+          <button onClick={() => router.push('/settings')} className="underline font-medium ml-1">Ir a Configuración</button>
+        </div>
+      )}
+      {certAlert === 'warning' && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700 -mt-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          El certificado digital de firma está próximo a vencer (menos de 7 días). Renuévalo para no quedarte sin poder facturar.
+          <button onClick={() => router.push('/settings')} className="underline font-medium ml-1">Ir a Configuración</button>
         </div>
       )}
 
