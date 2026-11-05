@@ -148,6 +148,26 @@ export function useCompany(companyId?: string | null) {
   })
 }
 
+/**
+ * Verifica del lado del servidor si la Facturación Electrónica está
+ * realmente completa (ID de Software + Llave Técnica). Fase C de
+ * claude/plan-accion-facturacion-dian.md: desde la Fase A, la Llave Técnica
+ * ya no llega al cliente, así que ese chequeo no se puede hacer aquí mismo
+ * -- se le pregunta a /api/company/fe-status, que solo responde un booleano.
+ */
+export function useFeStatus(companyId?: string | null) {
+  return useQuery({
+    queryKey: ['fe-status', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/company/fe-status?companyId=${companyId}`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo verificar el estado de Facturación Electrónica')
+      return data as { configured: boolean }
+    },
+    enabled: !!companyId,
+  })
+}
+
 export async function updateCompany(id: string, data: CompanyProfileUpdate) {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()

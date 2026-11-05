@@ -27,6 +27,11 @@ export interface CUFEParams {
   clTec:    string
   /** "1" = Producción, "2" = Habilitación/Pruebas */
   tipAmb:   '1' | '2'
+  /** Valor total de ICA (impuesto de industria y comercio), si la empresa
+   *  lo cobra en este documento. Antes siempre se enviaba en 0 -- ver Fase C
+   *  de claude/plan-accion-facturacion-dian.md. Opcional: por defecto 0,
+   *  igual que el comportamiento anterior. */
+  valImp3?: number
 }
 
 /**
@@ -46,8 +51,8 @@ export async function calculateCUFE(params: CUFEParams): Promise<string> {
     fmt(params.valImp1),
     '04',             // CodImp2 = INC (siempre 0 para bienes/servicios generales)
     '0.00',
-    '03',             // CodImp3 = ICA (siempre 0 salvo configuración especial)
-    '0.00',
+    '03',             // CodImp3 = ICA
+    fmt(params.valImp3 ?? 0),
     fmt(params.valTot),
     params.nitOFE,
     params.numAdq,

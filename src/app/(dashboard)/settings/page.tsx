@@ -14,7 +14,7 @@ import {
   type PaymentMethod,
 } from '@/modules/sales/queries'
 import {
-  useCompany, updateCompany, isIvaResponsible, getDianAlerts,
+  useCompany, updateCompany, isIvaResponsible, getDianAlerts, useFeStatus,
   useCompanyBankAccounts, createCompanyBankAccount,
   deleteCompanyBankAccount, setCompanyBankAccountPrimary,
   type CompanyProfileUpdate, type CompanyBankAccount,
@@ -331,7 +331,12 @@ export default function SettingsPage() {
     setCompanyForm(prev => ({ ...prev, [field]: value }))
 
   const ivaMode    = isIvaResponsible(company?.fiscal_regime)
-  const { rangeAlert, expiryAlert, feConfigured } = getDianAlerts(company)
+  const { rangeAlert, expiryAlert } = getDianAlerts(company)
+  // Fase C (claude/plan-accion-facturacion-dian.md): getDianAlerts() ya no
+  // puede confirmar la Llave Técnica (no llega al cliente desde la Fase A),
+  // así que el estado real "FE configurada" se pregunta al servidor.
+  const { data: feStatus } = useFeStatus(company?.id)
+  const feConfigured = feStatus?.configured ?? false
 
   // El título de cada sección lo provee el acordeón (SettingsAccordion); aquí
   // solo mostramos la descripción + badge + acciones para no repetir el nombre.
@@ -644,9 +649,9 @@ export default function SettingsPage() {
                   traen al navegador, por eso estos dos campos siempre aparecen
                   vacios al editar -- dejarlos vacios conserva el valor guardado. */}
               <p className="text-xs text-muted-foreground rounded-lg bg-[var(--glass)] border border-[var(--glass-border)]/50 px-3 py-2">
-                La generación automática de CUFE/XML se está reconstruyendo del lado del
-                servidor por seguridad (las credenciales ya no viajan al navegador).
-                Estará disponible de nuevo próximamente.
+                El CUFE y el XML se generan en el servidor al hacer clic en &quot;XML DIAN&quot;
+                dentro de una factura — las credenciales nunca viajan al navegador.
+                Para notas crédito/débito esta función todavía se está construyendo.
               </p>
               {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
             </div>

@@ -131,7 +131,6 @@ export default function EditInvoicePage() {
     total:      Number(invoice.total),
     notes:           invoice.notes,
     fe_software_id:  company?.fe_software_id  ?? null,
-    fe_technical_key: company?.fe_technical_key ?? null,
     fe_test_mode:    company?.fe_test_mode    ?? true,
     company:    company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
     customer:   invoice.customer ? {
@@ -514,7 +513,6 @@ export default function EditInvoicePage() {
             note_reason:         viewingNote.reason,
             is_tax_responsible:  ivaMode,
             fe_software_id:      company?.fe_software_id ?? null,
-            fe_technical_key:    company?.fe_technical_key ?? null,
             fe_test_mode:        company?.fe_test_mode ?? true,
             company: company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
             customer: invoice.customer ? {

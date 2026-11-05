@@ -3,8 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Printer, Mail, X, FileCode2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { calculateCUFE, getColombiaTime } from '@/lib/fe/cufe'
-import { generateXMLUBL21, downloadXML } from '@/lib/fe/xml-ubl21'
+import { downloadXML } from '@/lib/fe/xml-ubl21'
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -81,9 +80,10 @@ export interface DocData {
   referenced_invoice?: string | null
   /** Solo para NC/ND: razón */
   note_reason?: string | null
-  /** Credenciales FE — para mostrar botón XML */
+  /** Credenciales FE — para mostrar botón XML. fe_technical_key ya no se usa
+   *  aquí (Fase C, claude/plan-accion-facturacion-dian.md): el XML se genera
+   *  del lado del servidor, que la lee directo de la base de datos. */
   fe_software_id?: string | null
-  fe_technical_key?: string | null
   fe_test_mode?: boolean
 }
 
@@ -103,15 +103,15 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const isTicket    = doc.document_type === 'ticket'
   const isTaxResp   = doc.is_tax_responsible ?? true
   const isNote      = doc.type === 'credit_note' || doc.type === 'debit_note'
-  const canExportXml = (doc.type === 'invoice' || isNote) && !isTicket
-    && !!(doc.fe_software_id && doc.fe_technical_key)
-  // Fase A (seguridad, 4 nov 2026): fe_technical_key ya no llega al
-  // navegador (ver company/queries.ts), asi que canExportXml nunca sera
-  // true hoy. Mostramos un boton deshabilitado explicando por que, en vez
-  // de ocultar la funcion sin aviso -- se reconstruye del lado servidor en
-  // la Fase C de claude/plan-accion-facturacion-dian.md.
-  const feTemporarilyDisabled = (doc.type === 'invoice' || isNote) && !isTicket
-    && !!doc.fe_software_id && !doc.fe_technical_key
+  // Fase C (claude/plan-accion-facturacion-dian.md): el XML/CUFE se genera
+  // ahora del lado del servidor (ruta /api/sales/documents/xml, que ahi si
+  // puede leer fe_technical_key) -- el cliente solo necesita saber que la
+  // empresa tiene FE configurada (fe_software_id) y el id del documento
+  // para pedirselo al servidor. Por ahora solo facturas; notas credito/
+  // debito quedan para la Fase G.
+  const canGenerateXml = doc.type === 'invoice' && !isTicket
+    && !!doc.fe_software_id && !!doc.id
+  const noteXmlPending = isNote && !!doc.fe_software_id
 
   const docTypeLabel =
     doc.type === 'quote'       ? 'COTIZACIÓN' :
@@ -215,61 +215,24 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     }
   }
 
+  // Fase C: el CUFE y el XML se generan y se guardan del lado del servidor
+  // (/api/sales/documents/xml) -- aquí solo se pide el resultado y se
+  // descarga. Ver la ruta API para el detalle de cómo se calculan.
   const handleDownloadXML = async () => {
-    if (!doc.fe_technical_key || !doc.fe_software_id) return
+    if (!doc.id) return
     setXmlBusy(true)
     try {
-      const tipAmb = doc.fe_test_mode === false ? '1' : '2'
-      const nitOFE = (doc.company?.nit ?? '').replace(/[^0-9]/g, '')
-      const numAdq = (doc.customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
-      const horFac = getColombiaTime()
-
-      const cufe = await calculateCUFE({
-        numFac:   doc.number,
-        fecFac:   doc.issue_date,
-        horFac,
-        valFac:   doc.subtotal,
-        valImp1:  doc.tax,
-        valTot:   doc.total,
-        nitOFE,
-        numAdq,
-        clTec:    doc.fe_technical_key,
-        tipAmb,
+      const res = await fetch('/api/sales/documents/xml', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: doc.id }),
       })
-
-      const invoiceTypeCode =
-        doc.type === 'credit_note' ? '91' :
-        doc.type === 'debit_note'  ? '92' : '01'
-
-      const xml = generateXMLUBL21({
-        invoiceNumber:    doc.number,
-        cufe,
-        issueDate:        doc.issue_date,
-        issueTime:        horFac,
-        dueDate:          doc.due_date,
-        tipAmb,
-        softwareId:       doc.fe_software_id,
-        invoiceTypeCode,
-        referencedInvoice: doc.referenced_invoice,
-        company: {
-          ...doc.company!,
-          nit:       doc.company?.nit ?? '',
-          ciiu_code: (doc.company as DocCompany & { ciiu_code?: string | null })?.ciiu_code,
-        },
-        customer: {
-          ...doc.customer!,
-          name: doc.customer?.name ?? 'Consumidor Final',
-        },
-        items:     doc.items,
-        subtotal:  doc.subtotal,
-        taxTotal:  doc.tax,
-        total:     doc.total,
-        notes:     doc.notes,
-      })
-
-      downloadXML(xml, doc.number.replace(/[^a-zA-Z0-9-]/g, '_'))
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo generar el XML')
+      downloadXML(data.xml, doc.number.replace(/[^a-zA-Z0-9-]/g, '_'))
     } catch (e) {
-      console.error('Error generando XML:', e)
+      const message = e instanceof Error ? e.message : 'No se pudo generar el XML'
+      window.alert(message)
     } finally {
       setXmlBusy(false)
     }
@@ -622,19 +585,19 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
                 {emailBusy ? 'Enviando...' : 'Enviar al correo'}
               </button>
             )}
-            {canExportXml && (
+            {canGenerateXml && (
               <button onClick={handleDownloadXML} disabled={xmlBusy}
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors border border-green-300 disabled:opacity-40">
                 <FileCode2 className="h-3.5 w-3.5" />
                 {xmlBusy ? 'Generando...' : 'XML DIAN'}
               </button>
             )}
-            {feTemporarilyDisabled && (
+            {noteXmlPending && (
               <button disabled
-                title="Esta funcion se esta reconstruyendo del lado del servidor por seguridad. Estara disponible de nuevo pronto."
+                title="La Facturación Electrónica para notas crédito/débito todavía se está construyendo (próxima fase)."
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-400 border border-zinc-200 cursor-not-allowed">
                 <FileCode2 className="h-3.5 w-3.5" />
-                XML DIAN (en reconstrucción)
+                XML DIAN (próximamente)
               </button>
             )}
             <button onClick={handlePrint}
