@@ -3,6 +3,7 @@
 import {
   Users, Package, ShoppingCart, CircleDollarSign,
   ArrowUpRight, TrendingUp, FileText, UserPlus, ReceiptText,
+  Boxes, Wallet,
 } from 'lucide-react'
 import { useCompanyStore } from '@/store/useCompanyStore'
 import { useCustomers } from '@/modules/customers/queries'
@@ -59,6 +60,17 @@ export default function DashboardPage() {
     .filter(inv => isDateThisMonth(inv.issue_date, now) && inv.status === 'issued')
     .reduce((sum, inv) => sum + Number(inv.total ?? 0), 0)
 
+  // Costo y valor de venta del inventario completo (todos los productos del
+  // catálogo, sin filtros -- a diferencia de la pestaña Productos de
+  // Inventario, que recalcula esto mismo sobre lo que esté filtrado/buscado
+  // en pantalla). costo = stock x precio de compra; valor de venta = stock x
+  // precio de venta. precio_compra puede venir null en productos antiguos
+  // creados antes de que existiera ese campo -- se trata como 0.
+  const costoInventario = (products ?? [])
+    .reduce((sum, p) => sum + Number(p.stock ?? 0) * Number(p.precio_compra ?? 0), 0)
+  const valorInventario = (products ?? [])
+    .reduce((sum, p) => sum + Number(p.stock ?? 0) * Number(p.price ?? 0), 0)
+
   const stats = [
     {
       label: 'Clientes',
@@ -89,6 +101,22 @@ export default function DashboardPage() {
       value: loadingInvoices ? '—' : fmtMoneyCOP(facturacionTotal),
       sub: 'Este mes',
       icon: CircleDollarSign,
+      iconBg: 'bg-[var(--accent-bg)]',
+      iconColor: 'text-[var(--accent)]',
+    },
+    {
+      label: 'Costo inventario',
+      value: loadingProducts ? '—' : fmtMoneyCOP(costoInventario),
+      sub: 'Stock x precio de compra',
+      icon: Boxes,
+      iconBg: 'bg-[var(--accent-bg)]',
+      iconColor: 'text-[var(--accent)]',
+    },
+    {
+      label: 'Valor inventario',
+      value: loadingProducts ? '—' : fmtMoneyCOP(valorInventario),
+      sub: 'Stock x precio de venta',
+      icon: Wallet,
       iconBg: 'bg-[var(--accent-bg)]',
       iconColor: 'text-[var(--accent)]',
     },
@@ -143,7 +171,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <div
             key={stat.label}

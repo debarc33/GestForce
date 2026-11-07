@@ -185,7 +185,7 @@ export function useFeStatus(companyId?: string | null) {
       const res = await fetch(`/api/company/fe-status?companyId=${companyId}`)
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? 'No se pudo verificar el estado de Facturación Electrónica')
-      return data as { configured: boolean }
+      return data as { configured: boolean; pinConfigured: boolean }
     },
     enabled: !!companyId,
   })

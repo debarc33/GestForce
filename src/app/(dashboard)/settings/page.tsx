@@ -720,7 +720,15 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                   <div><p className="text-xs text-muted-foreground">URL del PT</p><p className="text-foreground truncate">{company?.fe_api_url ?? '—'}</p></div>
                   <div><p className="text-xs text-muted-foreground">ID de Software</p><p className="font-mono text-foreground">{company?.fe_software_id ?? '—'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">PIN</p><p className="text-foreground">••••••••</p></div>
+                  {/* Hallazgo 7 nov 2026: el PIN (para CUDE de notas crédito/débito) es
+                      un secreto aparte de la Llave Técnica (para CUFE de facturas) --
+                      antes esta fila mostraba "••••••••" solo por tener Llave Técnica
+                      configurada, aunque el PIN nunca se hubiera guardado. */}
+                  <div><p className="text-xs text-muted-foreground">PIN</p><p className="text-foreground">
+                    {feStatus?.pinConfigured
+                      ? '••••••••'
+                      : <span className="text-[var(--warning)]">No configurado</span>}
+                  </p></div>
                   <div><p className="text-xs text-muted-foreground">Llave Técnica</p><p className="text-foreground">••••••••</p></div>
                 </div>
               ) : (

@@ -98,6 +98,12 @@ export function ProductsTable({
         if (stockFilter === 'out')     return p.stock === 0
         if (stockFilter === 'reorder') return isLowStock(p.stock, p.stock_minimum)
         if (stockFilter === 'in')      return p.stock > 0 && !isLowStock(p.stock, p.stock_minimum)
+        // "Stock bajo" (hallazgo 7 nov 2026): faltaba este caso -- el
+        // selector de Inventario ofrece esta opción y handleExport() en la
+        // página sí la filtraba al exportar a Excel, pero esta tabla no
+        // tenía la rama y por eso la opción no hacía nada en pantalla.
+        // Mismo umbral fijo (< 10) que ya usaba handleExport.
+        if (stockFilter === 'low')     return p.stock > 0 && p.stock < 10
         return true
       })
     }

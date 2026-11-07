@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Package, Boxes,
+  Package, Boxes, Wallet,
   Settings2, Search, Download, Tag,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -38,6 +38,8 @@ type ProductStock = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number | null | undefined) => n == null ? '—' : n.toLocaleString('es-CO', { maximumFractionDigits: 2 })
+
+const fmtMoneyCOP = (n: number) => '$' + n.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
 const fmtDateTime = (s: string) =>
   new Date(s).toLocaleString('es-CO', {
@@ -749,6 +751,18 @@ export default function InventarioPage() {
     if (!activeCompanyId) router.replace('/select-company')
   }, [activeCompanyId, router])
 
+  // Costo y valor de venta de TODO el catálogo (sin filtros -- mismo cálculo
+  // que las tarjetas del Tablero), en tarjetas pequeñas junto al título. Se
+  // calculan aquí (no dentro de ProductosTab) para que se vean sin importar
+  // qué pestaña esté activa.
+  const { data: productsForHeader = [] } = useProducts(activeCompanyId ?? undefined)
+  const costoInventario = productsForHeader.reduce(
+    (sum, p) => sum + Number(p.stock ?? 0) * Number(p.precio_compra ?? 0), 0
+  )
+  const valorInventario = productsForHeader.reduce(
+    (sum, p) => sum + Number(p.stock ?? 0) * Number(p.price ?? 0), 0
+  )
+
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'productos',   label: 'Productos',           icon: Package  },
     { id: 'movimientos', label: 'Movimientos de Stock', icon: Boxes    },
@@ -760,7 +774,7 @@ export default function InventarioPage() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-foreground tracking-tight">Inventario</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -769,6 +783,21 @@ export default function InventarioPage() {
           {!canEdit && (
             <p className="mt-1 text-xs font-medium text-amber-600">Tu usuario tiene acceso de solo lectura a este módulo.</p>
           )}
+        </div>
+
+        {/* Costo/valor total del inventario -- tarjetas pequeñas, no compiten
+            por espacio con la tabla de productos de abajo. */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-1.5">
+            <Boxes className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+            <span className="text-[11px] text-muted-foreground">Costo:</span>
+            <span className="text-xs font-semibold text-foreground tabular-nums">{fmtMoneyCOP(costoInventario)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-1.5">
+            <Wallet className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+            <span className="text-[11px] text-muted-foreground">Valor venta:</span>
+            <span className="text-xs font-semibold text-foreground tabular-nums">{fmtMoneyCOP(valorInventario)}</span>
+          </div>
         </div>
       </div>
 
