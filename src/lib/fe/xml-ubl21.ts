@@ -55,6 +55,35 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
   const docType  = DOC_TYPE_MAP[p.customer.doc_type ?? 'CC'] ?? { code: '13', name: 'Cédula de ciudadanía' }
   const isFinal  = !p.customer.doc_number  // consumidor final
 
+  // Fase G: antes esto SIEMPRE caía en 'CreditNote' para invoiceTypeCode
+  // '92' (Nota Débito) -- bug real, no solo de notas débito "pendientes":
+  // el XML de una nota débito habría salido con el tag raíz y el esquema
+  // UBL de una nota crédito. Corregido aquí, antes de que notas débito
+  // generen su primer XML real. Estas constantes se declaran ARRIBA de
+  // invoiceLines (no donde antes vivían, más abajo) porque invoiceLines ya
+  // las usa dentro de su propio template -- declararlas después causaba un
+  // ReferenceError en tiempo de ejecución (temporal dead zone de `const`).
+  const rootTag    = p.invoiceTypeCode === '01' ? 'Invoice'
+    : p.invoiceTypeCode === '91' ? 'CreditNote' : 'DebitNote'
+  const nsInvoice  = p.invoiceTypeCode === '01'
+    ? 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2'
+    : p.invoiceTypeCode === '91'
+    ? 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'
+    : 'urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2'
+  // El esquema UBL de CreditNote/DebitNote nombra sus líneas y su cantidad
+  // distinto al de Invoice (CreditNoteLine/CreditedQuantity,
+  // DebitNoteLine/DebitedQuantity) -- antes el código reusaba siempre
+  // InvoiceLine/InvoicedQuantity, lo que habría invalidado el XML de
+  // cualquier nota contra el XSD de la DIAN.
+  const lineTag    = p.invoiceTypeCode === '01' ? 'InvoiceLine'
+    : p.invoiceTypeCode === '91' ? 'CreditNoteLine' : 'DebitNoteLine'
+  const qtyTag     = p.invoiceTypeCode === '01' ? 'InvoicedQuantity'
+    : p.invoiceTypeCode === '91' ? 'CreditedQuantity' : 'DebitedQuantity'
+  // El Anexo Técnico llama "CUDE" (no "CUFE") al código de notas -- el
+  // esquema del UUID debe decirlo, aunque el valor del hash viaja en el
+  // mismo campo `cufe` de este tipo por compatibilidad.
+  const codeSchemeName = p.invoiceTypeCode === '01' ? 'CUFE-SHA384' : 'CUDE-SHA384'
+
   // Calcular IVA por tasa para TaxSubtotal
   const taxByRate = p.items.reduce<Record<number, { base: number; tax: number }>>((acc, item) => {
     const rate = item.tax_rate
@@ -113,32 +142,6 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
       ${p.referencedCUFE ? `<cbc:UUID schemeName="CUFE-SHA384">${p.referencedCUFE}</cbc:UUID>` : ''}
     </cac:InvoiceDocumentReference>
   </cac:BillingReference>` : ''
-
-  // Fase G: antes esto SIEMPRE caía en 'CreditNote' para invoiceTypeCode
-  // '92' (Nota Débito) -- bug real, no solo de notas débito "pendientes":
-  // el XML de una nota débito habría salido con el tag raíz y el esquema
-  // UBL de una nota crédito. Corregido aquí, antes de que notas débito
-  // generen su primer XML real.
-  const rootTag    = p.invoiceTypeCode === '01' ? 'Invoice'
-    : p.invoiceTypeCode === '91' ? 'CreditNote' : 'DebitNote'
-  const nsInvoice  = p.invoiceTypeCode === '01'
-    ? 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2'
-    : p.invoiceTypeCode === '91'
-    ? 'urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2'
-    : 'urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2'
-  // El esquema UBL de CreditNote/DebitNote nombra sus líneas y su cantidad
-  // distinto al de Invoice (CreditNoteLine/CreditedQuantity,
-  // DebitNoteLine/DebitedQuantity) -- antes el código reusaba siempre
-  // InvoiceLine/InvoicedQuantity, lo que habría invalidado el XML de
-  // cualquier nota contra el XSD de la DIAN.
-  const lineTag    = p.invoiceTypeCode === '01' ? 'InvoiceLine'
-    : p.invoiceTypeCode === '91' ? 'CreditNoteLine' : 'DebitNoteLine'
-  const qtyTag     = p.invoiceTypeCode === '01' ? 'InvoicedQuantity'
-    : p.invoiceTypeCode === '91' ? 'CreditedQuantity' : 'DebitedQuantity'
-  // El Anexo Técnico llama "CUDE" (no "CUFE") al código de notas -- el
-  // esquema del UUID debe decirlo, aunque el valor del hash viaja en el
-  // mismo campo `cufe` de este tipo por compatibilidad.
-  const codeSchemeName = p.invoiceTypeCode === '01' ? 'CUFE-SHA384' : 'CUDE-SHA384'
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <${rootTag} xmlns="${nsInvoice}"
