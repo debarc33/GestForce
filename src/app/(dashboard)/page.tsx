@@ -171,23 +171,27 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 8 nov 2026: tarjetas más compactas a pedido de Deisy -- antes con
+          p-5/ícono 9x9/valor text-2xl ocupaban demasiado espacio vertical,
+          sobre todo al agregarse las dos tarjetas de inventario (6 en total).
+          Mismo contenido, solo menos relleno y tipografía más chica. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="group relative rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-5 shadow-sm hover:shadow-md hover:border-[var(--glass-hover)] transition-all"
+            className="group relative rounded-xl border border-[var(--glass-border)] bg-[var(--glass)] p-3.5 shadow-sm hover:shadow-md hover:border-[var(--glass-hover)] transition-all"
           >
             <div className="flex items-start justify-between">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${stat.iconBg}`}>
-                <stat.icon className={`${stat.iconColor}`} style={{ height: 18, width: 18 }} />
+              <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${stat.iconBg}`}>
+                <stat.icon className={`${stat.iconColor}`} style={{ height: 14, width: 14 }} />
               </div>
-              <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
             </div>
-            <p className={`mt-4 font-bold text-foreground tracking-tight ${loadingStats ? 'text-2xl' : 'text-2xl'}`}>
+            <p className="mt-2.5 text-lg font-bold text-foreground tracking-tight">
               {stat.value}
             </p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-            <p className="text-[11px] text-muted-foreground">{stat.sub}</p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+            <p className="text-[10px] text-muted-foreground">{stat.sub}</p>
           </div>
         ))}
       </div>

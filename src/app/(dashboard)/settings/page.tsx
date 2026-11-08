@@ -332,6 +332,13 @@ export default function SettingsPage() {
     mutationFn: () => updateCompany(activeCompanyId!, companyForm),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', activeCompanyId] })
+      // 8 nov 2026: antes solo se invalidaba 'company', no 'fe-status' -- por
+      // eso, al guardar el Software-PIN o la Llave Técnica en esta sección,
+      // la fila PIN/Llave Técnica de abajo seguía mostrando el valor viejo
+      // ("No configurado" aunque ya se hubiera guardado) hasta recargar la
+      // página a mano. El dato SÍ quedaba bien guardado -- era solo la
+      // pantalla la que no se refrescaba sola.
+      queryClient.invalidateQueries({ queryKey: ['fe-status', activeCompanyId] })
       setEditingCompany(false)
       setEditingDian(false)
       setEditingFE(false)

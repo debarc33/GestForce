@@ -7,7 +7,7 @@ import {
   BookOpen, Users2, Settings, LayoutDashboard, Users, FileText, Receipt,
   Building2, LogOut, type LucideIcon,
 } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 
 interface Command {
@@ -108,6 +108,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         className="p-0 max-w-[580px] gap-0 overflow-hidden rounded-2xl border-[var(--glass-border-strong)] bg-card/85 shadow-[var(--shadow-pop)]"
         onKeyDown={handleKey}
       >
+        {/* 8 nov 2026: Radix exige un DialogTitle dentro de todo DialogContent
+            para lectores de pantalla -- este panel no necesita un título
+            visible (la caja de búsqueda ya cumple esa función), así que se
+            oculta visualmente con sr-only en vez de quitarlo. */}
+        <DialogTitle className="sr-only">Buscar o ejecutar comando</DialogTitle>
         {/* Search */}
         <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[var(--glass-border)]">
           <Search className="h-4 w-4 text-muted-foreground" />
