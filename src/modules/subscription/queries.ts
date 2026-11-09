@@ -108,3 +108,66 @@ export async function startInvoicePackCheckout(companyId: string): Promise<strin
   }
   return body.sessionUrl
 }
+
+// ─── Nueva oferta de Facturación Electrónica (Fase H, Fase 2 -- 9 nov 2026) ─
+// Catálogo de 8 ítems separables (servicios de gestión, paquetes de
+// facturas, planes ilimitados) -- ver claude/plan-accion-facturacion-dian.md.
+// Independiente del paquete viejo de $300.000 (usePlanPricing /
+// startInvoicePackCheckout arriba), que sigue intacto.
+
+export type FeCatalogItem = {
+  item_id: string
+  category: 'servicio_gestion' | 'paquete_facturas' | 'plan_ilimitado'
+  label: string
+  description: string | null
+  billing_type: 'unico' | 'anual' | 'mensual'
+  price: number
+  quantity: number | null
+  /** 9 nov 2026 (migración 039): si false, el ítem es solo informativo
+   *  (se ve el precio pero sin botón de pago -- venta presencial). */
+  self_checkout: boolean
+}
+
+/** Datos de contacto (migración 040) para el botón "Contáctanos" de los
+ *  ítems sin pago en línea. Editables desde Superadmin. */
+export type FeContactInfo = {
+  phone_1: string | null
+  phone_2: string | null
+  email: string | null
+}
+
+/** Ítems activos del catálogo nuevo de Facturación Electrónica, más los
+ *  datos de contacto, para mostrar en la pantalla de Suscripción del
+ *  cliente. */
+export function useFeServicesCatalog(companyId?: string | null) {
+  return useQuery<{ items: FeCatalogItem[]; contact: FeContactInfo | null }, Error>({
+    queryKey: ['fe_services_catalog', companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/company/subscription/fe-services?companyId=${companyId}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? 'Error al cargar el catálogo')
+      }
+      return res.json()
+    },
+    enabled: !!companyId,
+  })
+}
+
+/** Inicia el checkout de compra de un ítem puntual del catálogo nuevo
+ *  (identificado por itemId). Retorna la URL de la pasarela. */
+export async function startFeServiceCheckout(companyId: string, itemId: string): Promise<string> {
+  const res = await fetch('/api/company/subscription/fe-services/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyId, itemId }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(body?.error ?? 'Error al iniciar el pago')
+  }
+  if (!body?.sessionUrl) {
+    throw new Error('El proveedor de pago no devolvió una URL de checkout')
+  }
+  return body.sessionUrl
+}

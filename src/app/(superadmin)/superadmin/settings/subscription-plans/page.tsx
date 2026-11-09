@@ -28,6 +28,9 @@ type FeCatalogItem = {
   price: number
   quantity: number | null
   active: boolean
+  /** 9 nov 2026 (migración 039): si el cliente puede pagarlo él mismo
+   *  desde la plataforma, o si es solo informativo (venta presencial). */
+  self_checkout: boolean
   sort_order: number
 }
 
@@ -41,6 +44,14 @@ const FE_BILLING_LABELS: Record<FeCatalogItem['billing_type'], string> = {
   unico: 'pago único',
   anual: '/ año',
   mensual: '/ mes',
+}
+
+/** Datos de contacto (migración 040) que ve el cliente al tocar
+ *  "Contáctanos para contratar" en un ítem sin pago en línea. */
+type FeContactInfo = {
+  phone_1: string | null
+  phone_2: string | null
+  email: string | null
 }
 
 export default function SubscriptionPlansSettingsPage() {
@@ -58,9 +69,20 @@ export default function SubscriptionPlansSettingsPage() {
   const [feSaved, setFeSaved] = useState(false)
   const [feError, setFeError] = useState<string | null>(null)
 
+  // Datos de contacto (migración 040) para el botón "Contáctanos" que ve
+  // el cliente en los ítems sin pago en línea. Estado propio, mismo
+  // motivo que el catálogo: un error guardando esto no debe poder afectar
+  // el guardado de precios/planes ni viceversa.
+  const [feContact, setFeContact] = useState<FeContactInfo>({ phone_1: '', phone_2: '', email: '' })
+  const [feContactLoading, setFeContactLoading] = useState(true)
+  const [feContactSaving, setFeContactSaving] = useState(false)
+  const [feContactSaved, setFeContactSaved] = useState(false)
+  const [feContactError, setFeContactError] = useState<string | null>(null)
+
   useEffect(() => {
     fetchPricing()
     fetchFeCatalog()
+    fetchFeContact()
   }, [])
 
   async function fetchFeCatalog() {
@@ -77,7 +99,7 @@ export default function SubscriptionPlansSettingsPage() {
     }
   }
 
-  function updateFeItem(itemId: string, field: 'price' | 'active', value: number | boolean) {
+  function updateFeItem(itemId: string, field: 'price' | 'active' | 'self_checkout', value: number | boolean) {
     setFeCatalog((prev) => prev.map((it) => (it.item_id === itemId ? { ...it, [field]: value } : it)))
     setFeSaved(false)
   }
@@ -90,7 +112,9 @@ export default function SubscriptionPlansSettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: feCatalog.map((it) => ({ item_id: it.item_id, price: it.price, active: it.active })),
+          items: feCatalog.map((it) => ({
+            item_id: it.item_id, price: it.price, active: it.active, self_checkout: it.self_checkout,
+          })),
         }),
       })
       if (!res.ok) {
@@ -103,6 +127,47 @@ export default function SubscriptionPlansSettingsPage() {
       setFeError(e instanceof Error ? e.message : 'Error al guardar')
     } finally {
       setFeSaving(false)
+    }
+  }
+
+  async function fetchFeContact() {
+    try {
+      setFeContactLoading(true)
+      const res = await fetch('/api/superadmin/fe-services/contact')
+      if (!res.ok) throw new Error('No se pudieron cargar los datos de contacto')
+      const data = await res.json()
+      setFeContact(data.contact ?? { phone_1: '', phone_2: '', email: '' })
+    } catch (e) {
+      setFeContactError(e instanceof Error ? e.message : 'Error al cargar')
+    } finally {
+      setFeContactLoading(false)
+    }
+  }
+
+  function updateFeContact(field: keyof FeContactInfo, value: string) {
+    setFeContact((prev) => ({ ...prev, [field]: value }))
+    setFeContactSaved(false)
+  }
+
+  async function handleSaveFeContact() {
+    try {
+      setFeContactSaving(true)
+      setFeContactError(null)
+      const res = await fetch('/api/superadmin/fe-services/contact', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feContact),
+      })
+      if (!res.ok) {
+        const b = await res.json().catch(() => null)
+        throw new Error(b?.error ?? 'No se pudieron guardar los datos de contacto')
+      }
+      setFeContactSaved(true)
+      setTimeout(() => setFeContactSaved(false), 3000)
+    } catch (e) {
+      setFeContactError(e instanceof Error ? e.message : 'Error al guardar')
+    } finally {
+      setFeContactSaving(false)
     }
   }
 
@@ -336,7 +401,7 @@ export default function SubscriptionPlansSettingsPage() {
         <div>
           <h2 className="text-lg font-semibold text-foreground">Servicios de Facturación Electrónica (oferta nueva)</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Catálogo separado de la habilitación inicial, la gestión de certificado/resolución, los paquetes de facturas y los planes ilimitados. Aquí solo se fija el precio y si el ítem está activo -- la pantalla de compra para el cliente es una fase aparte, todavía no construida.
+            Catálogo separado de la habilitación inicial, la gestión de certificado/resolución, los paquetes de facturas y los planes ilimitados. &quot;Activo&quot; controla si el cliente ve el ítem y su precio en Suscripción. &quot;Pago en línea&quot; controla si además le aparece el botón de pago (Bold); apagado, el ítem queda solo informativo -- útil mientras la venta sea presencial.
           </p>
         </div>
 
@@ -361,13 +426,23 @@ export default function SubscriptionPlansSettingsPage() {
                   <div className="space-y-3">
                     {items.map((item) => (
                       <div key={item.item_id} className="flex flex-wrap items-center gap-3">
-                        <label className="flex items-center gap-2 w-10 shrink-0">
+                        <label className="flex items-center gap-1.5 shrink-0" title="Activo: el cliente lo ve en Suscripción">
                           <input
                             type="checkbox"
                             checked={item.active}
                             onChange={(e) => updateFeItem(item.item_id, 'active', e.target.checked)}
                             className="h-4 w-4 rounded border-[var(--glass-border)]"
                           />
+                          <span className="text-[10px] text-muted-foreground">Activo</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 shrink-0" title="Pago en línea: le aparece el botón de pago (Bold)">
+                          <input
+                            type="checkbox"
+                            checked={item.self_checkout}
+                            onChange={(e) => updateFeItem(item.item_id, 'self_checkout', e.target.checked)}
+                            className="h-4 w-4 rounded border-[var(--glass-border)]"
+                          />
+                          <span className="text-[10px] text-muted-foreground">Pago en línea</span>
                         </label>
                         <div className="min-w-[220px] flex-1">
                           <p className="text-sm font-medium text-foreground">
@@ -406,6 +481,81 @@ export default function SubscriptionPlansSettingsPage() {
                 {feSaving ? 'Guardando...' : 'Guardar catálogo'}
               </button>
               {feSaved && (
+                <span className="flex items-center gap-1 text-xs text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" /> Guardado
+                </span>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Datos de contacto del botón "Contáctanos" (migración 040) -- se
+          muestran al cliente cuando toca "Contáctanos para contratar" en
+          un ítem del catálogo de arriba que no tiene pago en línea.
+          Editable aquí porque pueden cambiar (ej. cuando exista un
+          WhatsApp único de QS Solutions Tech). */}
+      <div className="rounded-2xl glass-surface p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Datos de contacto (botón &quot;Contáctanos&quot;)</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Lo que ve el cliente al tocar &quot;Contáctanos para contratar&quot; en un ítem sin pago en línea. Por ahora son teléfonos y correo -- cuando exista un WhatsApp único de QS Solutions Tech se puede sumar aquí mismo.
+          </p>
+        </div>
+
+        {feContactError && (
+          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{feContactError}</p>
+        )}
+
+        {feContactLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Celular 1</label>
+                <input
+                  type="text"
+                  value={feContact.phone_1 ?? ''}
+                  onChange={(e) => updateFeContact('phone_1', e.target.value)}
+                  placeholder="3001234567"
+                  className="w-40 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Celular 2</label>
+                <input
+                  type="text"
+                  value={feContact.phone_2 ?? ''}
+                  onChange={(e) => updateFeContact('phone_2', e.target.value)}
+                  placeholder="3007654321"
+                  className="w-40 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1">Correo electrónico</label>
+                <input
+                  type="email"
+                  value={feContact.email ?? ''}
+                  onChange={(e) => updateFeContact('email', e.target.value)}
+                  placeholder="contacto@qssolutionstech.com"
+                  className="w-64 rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={handleSaveFeContact}
+                disabled={feContactSaving}
+                className="flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white transition-colors"
+              >
+                {feContactSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {feContactSaving ? 'Guardando...' : 'Guardar contacto'}
+              </button>
+              {feContactSaved && (
                 <span className="flex items-center gap-1 text-xs text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" /> Guardado
                 </span>

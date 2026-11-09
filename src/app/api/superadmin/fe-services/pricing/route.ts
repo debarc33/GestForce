@@ -24,6 +24,11 @@ type CatalogRow = {
   price: number
   quantity: number | null
   active: boolean
+  /** 9 nov 2026 (migración 039): si el cliente puede pagar este ítem él
+   *  mismo desde la plataforma (botón "Comprar" -> Bold), o si es solo
+   *  informativo (se ve el precio pero sin botón de pago -- venta
+   *  presencial, que es como opera Deisy hoy). */
+  self_checkout: boolean
   sort_order: number
 }
 
@@ -46,7 +51,7 @@ export async function GET() {
 
   const { data, error } = await admin
     .from('fe_services_catalog')
-    .select('item_id, category, label, description, billing_type, price, quantity, active, sort_order')
+    .select('item_id, category, label, description, billing_type, price, quantity, active, self_checkout, sort_order')
     .order('sort_order', { ascending: true })
 
   if (error) {
@@ -60,17 +65,18 @@ type CatalogItemInput = {
   item_id: string
   price: number
   active: boolean
+  self_checkout: boolean
 }
 
 /**
  * PUT /api/superadmin/fe-services/pricing
- * Body: { items: { item_id, price, active }[] }
- * Guarda precio y disponibilidad de cada ítem del catálogo. No permite
- * crear ni borrar ítems desde aquí (los 8 ya están sembrados por la
- * migración 037) ni cambiar category/billing_type/quantity -- eso es
- * estructura, no precio, y cambiarlo a mano podría desalinear el ítem con
- * lo que muestre la pantalla de compra del cliente el día que exista
- * (Fase 2).
+ * Body: { items: { item_id, price, active, self_checkout }[] }
+ * Guarda precio, disponibilidad y si el cliente puede pagarlo él mismo
+ * desde la plataforma (self_checkout, migración 039). No permite crear ni
+ * borrar ítems desde aquí (los 8 ya están sembrados por la migración 037)
+ * ni cambiar category/billing_type/quantity -- eso es estructura, no
+ * precio, y cambiarlo a mano podría desalinear el ítem con lo que muestre
+ * la pantalla de compra del cliente.
  */
 export async function PUT(request: Request) {
   const user = await requireSuperadmin()
@@ -92,6 +98,9 @@ export async function PUT(request: Request) {
     if (typeof item.active !== 'boolean') {
       return NextResponse.json({ error: `Valor de "activo" inválido para ${item.item_id}` }, { status: 400 })
     }
+    if (typeof item.self_checkout !== 'boolean') {
+      return NextResponse.json({ error: `Valor de "pago en línea" inválido para ${item.item_id}` }, { status: 400 })
+    }
   }
 
   const admin = createAdminClient()
@@ -99,7 +108,12 @@ export async function PUT(request: Request) {
   for (const item of body.items) {
     const { error } = await admin
       .from('fe_services_catalog')
-      .update({ price: item.price, active: item.active, updated_at: new Date().toISOString() })
+      .update({
+        price: item.price,
+        active: item.active,
+        self_checkout: item.self_checkout,
+        updated_at: new Date().toISOString(),
+      })
       .eq('item_id', item.item_id)
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

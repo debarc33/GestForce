@@ -418,3 +418,146 @@ export async function createInvoicePackCheckout(opts: {
 
   return { ok: true, sessionUrl: checkoutUrl, orderId: purchase.id }
 }
+
+/**
+ * Fase 2 de la nueva oferta de Facturación Electrónica (9 nov 2026, ver
+ * claude/plan-accion-facturacion-dian.md Fase H): checkout genérico para
+ * cualquier ítem del catálogo nuevo (fe_services_catalog, migración 037) --
+ * servicios de gestión, paquetes de facturas o planes ilimitados. Mismo
+ * patrón que createInvoicePackCheckout de arriba (que NO se toca y sigue
+ * cubriendo el paquete viejo de $300.000 mientras exista), generalizado
+ * para leer el ítem por `itemId` en vez de tener el paquete fijo
+ * hardcodeado.
+ *
+ * Para los ítems recurrentes (billing_type 'mensual'/'anual', hoy solo los
+ * planes "Ilimitado"): esta compra cubre un solo período (mes o año) desde
+ * hoy, sin renovación automática -- decisión explícita de Deisy (9 nov
+ * 2026) para empezar simple. `period_end` queda guardado en la compra para
+ * poder mostrar "vigente hasta" en pantalla.
+ */
+export async function createFeServiceCheckout(opts: {
+  companyId: string
+  itemId: string
+  successUrl: string
+  cancelUrl: string
+}): Promise<CheckoutResult> {
+  const { companyId, itemId, successUrl, cancelUrl } = opts
+
+  const admin = createAdminClient()
+  const { data: company, error: companyError } = await admin
+    .from('companies')
+    .select('id, name, email')
+    .eq('id', companyId)
+    .single()
+
+  if (companyError || !company) {
+    return { ok: false, status: 404, error: 'Company not found' }
+  }
+
+  const { data: item, error: itemError } = await admin
+    .from('fe_services_catalog')
+    .select('item_id, label, billing_type, price, quantity, active')
+    .eq('item_id', itemId)
+    .maybeSingle()
+
+  if (itemError || !item) {
+    return { ok: false, status: 404, error: 'Ítem no encontrado en el catálogo' }
+  }
+  if (!item.active) {
+    return { ok: false, status: 400, error: 'Este ítem no está disponible para compra en este momento' }
+  }
+
+  const provider = await getActivePaymentProvider()
+  if (!provider) {
+    return { ok: false, status: 500, error: 'No payment provider configured' }
+  }
+
+  let periodEnd: string | null = null
+  if (item.billing_type === 'mensual' || item.billing_type === 'anual') {
+    const end = new Date()
+    if (item.billing_type === 'mensual') end.setMonth(end.getMonth() + 1)
+    else end.setFullYear(end.getFullYear() + 1)
+    periodEnd = end.toISOString()
+  }
+
+  const { data: purchase, error: purchaseError } = await admin
+    .from('one_time_purchases')
+    .insert([
+      {
+        company_id: companyId,
+        kind: 'fe_service',
+        item_id: item.item_id,
+        quantity: item.quantity ?? 1,
+        amount: item.price,
+        currency: 'COP',
+        payment_status: 'pending',
+        provider: provider.name,
+        period_end: periodEnd,
+      },
+    ])
+    .select()
+    .single()
+
+  if (purchaseError || !purchase) {
+    return { ok: false, status: 500, error: 'Failed to create purchase order' }
+  }
+
+  let checkoutUrl = ''
+
+  if (provider.name === 'bold') {
+    const boldModule = await import('@/services/bold')
+
+    const boldTransaction = await boldModule.createBoldTransaction({
+      amount: item.price,
+      currency: 'COP',
+      description: `${item.label} - ${company.name}`,
+      reference: purchase.id,
+      customer: {
+        email: company.email || undefined,
+        name: company.name,
+      },
+      redirect_url: successUrl,
+      metadata: {
+        company_id: companyId,
+        purchase_id: purchase.id,
+        kind: 'fe_service',
+        item_id: item.item_id,
+      },
+    })
+
+    if (!boldTransaction) {
+      const detail = boldModule.lastBoldError
+
+      await admin
+        .from('one_time_purchases')
+        .update({
+          payment_status: 'failed',
+          provider_response: { error: detail || 'Failed to create Bold transaction' },
+        })
+        .eq('id', purchase.id)
+
+      return {
+        ok: false,
+        status: 500,
+        error: `Failed to create Bold transaction${detail ? ` -- ${detail}` : ' (sin detalle adicional)'}`,
+      }
+    }
+
+    checkoutUrl = boldTransaction.payment_url || ''
+
+    await admin
+      .from('one_time_purchases')
+      .update({ provider_id: boldTransaction.id })
+      .eq('id', purchase.id)
+  } else {
+    return {
+      ok: false,
+      status: 501,
+      error: `Compra no soportada todavía con el proveedor "${provider.name}"`,
+    }
+  }
+
+  void cancelUrl // reservado para cuando el proveedor soporte cancel_url explícito (igual que arriba)
+
+  return { ok: true, sessionUrl: checkoutUrl, orderId: purchase.id }
+}

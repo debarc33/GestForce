@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, CreditCard, AlertTriangle, AlertCircle, Check, ShieldCheck, Loader2, FileText } from 'lucide-react'
+import { CalendarDays, CreditCard, AlertTriangle, AlertCircle, Check, ShieldCheck, Loader2, FileText, Phone, Mail, X } from 'lucide-react'
 import { useCompany } from '@/modules/company/queries'
 import {
   PERIOD_LABELS, SUBSCRIPTION_STATUS_LABELS,
   type SubscriptionPeriod, type SubscriptionStatus,
 } from '@/modules/subscription/constants'
 import { DEFAULT_PLAN_ID, getPlan, type PlanId } from '@/modules/subscription/plans'
-import { useCompanyPayments, usePlanPricing, startSubscriptionCheckout, startInvoicePackCheckout } from '@/modules/subscription/queries'
+import {
+  useCompanyPayments, usePlanPricing, startSubscriptionCheckout,
+  useFeServicesCatalog, startFeServiceCheckout, type FeCatalogItem,
+} from '@/modules/subscription/queries'
 import { formatCOP, formatDate } from '@/lib/format-cop'
 
 const PERIODS = Object.keys(PERIOD_LABELS) as SubscriptionPeriod[]
@@ -28,20 +31,36 @@ const PAYMENT_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   refunded:  { label: 'Reembolsado', cls: 'bg-[var(--glass)] border-[var(--glass-border)] text-muted-foreground' },
 }
 
+// ─── Nueva oferta de Facturación Electrónica (Fase H, Fase 2 -- 9 nov 2026) ─
+const FE_CATEGORY_LABELS: Record<FeCatalogItem['category'], string> = {
+  servicio_gestion: 'Servicios de gestión DIAN',
+  paquete_facturas: 'Paquetes de facturas electrónicas',
+  plan_ilimitado: 'Facturación ilimitada',
+}
+const FE_CATEGORY_ORDER: FeCatalogItem['category'][] = ['servicio_gestion', 'paquete_facturas', 'plan_ilimitado']
+const FE_BILLING_SUFFIX: Record<FeCatalogItem['billing_type'], string> = {
+  unico: '',
+  mensual: '/mes',
+  anual: '/año',
+}
+
 export function SubscriptionSection({ companyId }: { companyId: string }) {
   const queryClient = useQueryClient()
   const { data: company, isLoading: loadingCompany } = useCompany(companyId)
   const { data: payments = [], isLoading: loadingPayments, error: paymentsError } = useCompanyPayments(companyId)
   const { data: pricing, isLoading: loadingPricing } = usePlanPricing(companyId)
   const livePlans = pricing?.plans ?? []
-  const liveInvoicePack = pricing?.invoicePack
+  const { data: feCatalogData } = useFeServicesCatalog(companyId)
+  const feItems = feCatalogData?.items ?? []
+  const feContact = feCatalogData?.contact ?? null
 
   const [selectedPeriod, setSelectedPeriod] = useState<SubscriptionPeriod | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(null)
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
-  const [buyingInvoicePack, setBuyingInvoicePack] = useState(false)
-  const [invoicePackError, setInvoicePackError] = useState<string | null>(null)
+  const [buyingFeItemId, setBuyingFeItemId] = useState<string | null>(null)
+  const [feItemError, setFeItemError] = useState<string | null>(null)
+  const [showFeContact, setShowFeContact] = useState(false)
   const [returnBanner, setReturnBanner] = useState<'success' | 'cancelled' | null>(null)
 
   // Banner al volver de la pasarela (?payment=success|cancelled).
@@ -78,15 +97,15 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
     }
   }
 
-  async function handleBuyInvoicePack() {
-    setBuyingInvoicePack(true)
-    setInvoicePackError(null)
+  async function handleBuyFeItem(itemId: string) {
+    setBuyingFeItemId(itemId)
+    setFeItemError(null)
     try {
-      const url = await startInvoicePackCheckout(companyId)
+      const url = await startFeServiceCheckout(companyId, itemId)
       window.location.href = url
     } catch (e) {
-      setInvoicePackError(e instanceof Error ? e.message : 'Error al iniciar el pago')
-      setBuyingInvoicePack(false)
+      setFeItemError(e instanceof Error ? e.message : 'Error al iniciar el pago')
+      setBuyingFeItemId(null)
     }
   }
 
@@ -242,28 +261,122 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
         </div>
       )}
 
-      {/* ── Compra de facturas electrónicas DIAN ─────────────────────── */}
-      {company?.show_invoice_pack_pricing && liveInvoicePack && (
-        <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Facturas electrónicas (DIAN)</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Incluye la habilitación de tu empresa como facturador electrónico ante la DIAN, la configuración de facturación electrónica dentro de GestForce, y {liveInvoicePack.quantity} facturas electrónicas. Compra única, no es parte de la suscripción.
-          </p>
-          <button
-            onClick={handleBuyInvoicePack}
-            disabled={buyingInvoicePack}
-            className="flex items-center justify-center gap-2 w-full rounded-lg border border-primary/40 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
-          >
-            {buyingInvoicePack ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-            {buyingInvoicePack
-              ? 'Redirigiendo...'
-              : `Comprar ${liveInvoicePack.quantity} facturas · ${formatCOP(liveInvoicePack.price)}`}
-          </button>
-          {invoicePackError && (
-            <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{invoicePackError}</p>
+      {/* ── Servicios de Facturación Electrónica (DIAN) ──────────────── */}
+      {/* 9 nov 2026: reemplaza el paquete viejo de 20 facturas x $300.000
+          (startInvoicePackCheckout) por el catálogo configurable desde
+          Superadmin (fe_services_catalog, migración 037/038). Cada
+          categoría es su propia tarjeta con un botón de compra por ítem;
+          solo se muestran los ítems activos. */}
+      {feItems.length > 0 && (
+        <div className="space-y-3">
+          {FE_CATEGORY_ORDER.filter(cat => feItems.some(i => i.category === cat)).map(category => (
+            <div key={category} className="rounded-xl border border-[var(--glass-border)] glass-surface p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">{FE_CATEGORY_LABELS[category]}</h3>
+              </div>
+              <div className="space-y-2">
+                {feItems.filter(i => i.category === category).map(item => (
+                  <div
+                    key={item.item_id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-[var(--glass-border)] px-3 py-2.5"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      )}
+                    </div>
+                    {item.self_checkout ? (
+                      <button
+                        onClick={() => handleBuyFeItem(item.item_id)}
+                        disabled={buyingFeItemId === item.item_id}
+                        className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                      >
+                        {buyingFeItemId === item.item_id
+                          ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          : <FileText className="h-3.5 w-3.5" />}
+                        {buyingFeItemId === item.item_id
+                          ? 'Redirigiendo...'
+                          : `${formatCOP(item.price)}${FE_BILLING_SUFFIX[item.billing_type]}`}
+                      </button>
+                    ) : (
+                      /* 9 nov 2026 (migración 039): venta presencial -- se
+                         muestra el precio de referencia y un botón que
+                         abre los datos de contacto (migración 040), en
+                         vez de un pago en línea, hasta que Deisy active
+                         el pago en línea de este ítem desde Superadmin. */
+                      <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+                        <span className="text-xs font-medium text-foreground">
+                          {formatCOP(item.price)}{FE_BILLING_SUFFIX[item.billing_type]}
+                        </span>
+                        <button
+                          onClick={() => setShowFeContact(true)}
+                          className="text-[10px] font-medium text-primary underline-offset-2 hover:underline"
+                        >
+                          Contáctanos para contratar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Panel de contacto (migración 040) -- compartido entre todos
+              los ítems sin pago en línea; se abre al tocar cualquier
+              "Contáctanos para contratar". Como superposición centrada
+              (no inline) para que se vea sin importar dónde esté el
+              scroll cuando se toca el botón. */}
+          {showFeContact && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+              onClick={() => setShowFeContact(false)}
+            >
+              <div
+                className="w-full max-w-sm rounded-xl border border-primary/30 bg-background p-5 space-y-3 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">Contáctanos para contratar</h3>
+                  <button
+                    onClick={() => setShowFeContact(false)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-[var(--glass-hover)] transition-colors"
+                    aria-label="Cerrar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {feContact && (feContact.phone_1 || feContact.phone_2 || feContact.email) ? (
+                  <div className="space-y-2 text-sm">
+                    {feContact.phone_1 && (
+                      <a href={`tel:${feContact.phone_1}`} className="flex items-center gap-2 text-foreground hover:text-primary">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {feContact.phone_1}
+                      </a>
+                    )}
+                    {feContact.phone_2 && (
+                      <a href={`tel:${feContact.phone_2}`} className="flex items-center gap-2 text-foreground hover:text-primary">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {feContact.phone_2}
+                      </a>
+                    )}
+                    {feContact.email && (
+                      <a href={`mailto:${feContact.email}`} className="flex items-center gap-2 text-foreground hover:text-primary">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" /> {feContact.email}
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Los datos de contacto aún no están configurados. Contacta a tu proveedor de GestForce directamente.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {feItemError && (
+            <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{feItemError}</p>
           )}
         </div>
       )}
