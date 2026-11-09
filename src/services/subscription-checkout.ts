@@ -561,3 +561,169 @@ export async function createFeServiceCheckout(opts: {
 
   return { ok: true, sessionUrl: checkoutUrl, orderId: purchase.id }
 }
+
+/**
+ * Fase 3 de la nueva oferta de Facturación Electrónica (9 nov 2026, ver
+ * claude/plan-accion-facturacion-dian.md Fase H): igual que
+ * createFeServiceCheckout, pero para VARIOS ítems del catálogo elegidos a
+ * la vez, pagados en un solo link de Bold (un solo cobro, un solo correo
+ * de Bold, un solo "vuelve a GestForce"). No crea una fila por ítem --
+ * crea UNA sola fila en one_time_purchases (kind: 'fe_service_cart',
+ * item_id NULL, amount = suma de los ítems) con el detalle de cada ítem
+ * guardado en la columna `items` (migración 041). El webhook de pagos no
+ * necesita ningún cambio: sigue marcando "completada" una sola fila por su
+ * id, sin importar si representa uno o varios ítems.
+ */
+export async function createFeServiceCartCheckout(opts: {
+  companyId: string
+  itemIds: string[]
+  successUrl: string
+  cancelUrl: string
+}): Promise<CheckoutResult> {
+  const { companyId, successUrl, cancelUrl } = opts
+  const itemIds = Array.from(new Set(opts.itemIds ?? []))
+
+  if (itemIds.length === 0) {
+    return { ok: false, status: 400, error: 'Debes seleccionar al menos un ítem' }
+  }
+
+  const admin = createAdminClient()
+  const { data: company, error: companyError } = await admin
+    .from('companies')
+    .select('id, name, email')
+    .eq('id', companyId)
+    .single()
+
+  if (companyError || !company) {
+    return { ok: false, status: 404, error: 'Company not found' }
+  }
+
+  const { data: catalogItems, error: itemsError } = await admin
+    .from('fe_services_catalog')
+    .select('item_id, label, billing_type, price, quantity, active, self_checkout')
+    .in('item_id', itemIds)
+
+  if (itemsError || !catalogItems || catalogItems.length !== itemIds.length) {
+    return { ok: false, status: 404, error: 'Uno o más ítems seleccionados no se encontraron en el catálogo' }
+  }
+  const unavailable = catalogItems.find((i) => !i.active || !i.self_checkout)
+  if (unavailable) {
+    return { ok: false, status: 400, error: `El ítem "${unavailable.label}" no está disponible para pago en línea en este momento` }
+  }
+
+  const provider = await getActivePaymentProvider()
+  if (!provider) {
+    return { ok: false, status: 500, error: 'No payment provider configured' }
+  }
+
+  const cartItems = catalogItems.map((item) => {
+    let periodEnd: string | null = null
+    if (item.billing_type === 'mensual' || item.billing_type === 'anual') {
+      const end = new Date()
+      if (item.billing_type === 'mensual') end.setMonth(end.getMonth() + 1)
+      else end.setFullYear(end.getFullYear() + 1)
+      periodEnd = end.toISOString()
+    }
+    return {
+      item_id: item.item_id,
+      label: item.label,
+      price: item.price,
+      quantity: item.quantity ?? 1,
+      billing_type: item.billing_type,
+      period_end: periodEnd,
+    }
+  })
+
+  const totalAmount = cartItems.reduce((sum, i) => sum + i.price, 0)
+
+  const { data: purchase, error: purchaseError } = await admin
+    .from('one_time_purchases')
+    .insert([
+      {
+        company_id: companyId,
+        kind: 'fe_service_cart',
+        quantity: cartItems.length,
+        amount: totalAmount,
+        currency: 'COP',
+        payment_status: 'pending',
+        provider: provider.name,
+        items: cartItems,
+      },
+    ])
+    .select()
+    .single()
+
+  if (purchaseError || !purchase) {
+    return { ok: false, status: 500, error: 'Failed to create purchase order' }
+  }
+
+  let checkoutUrl = ''
+
+  if (provider.name === 'bold') {
+    const boldModule = await import('@/services/bold')
+
+    // Descripción legible para la pantalla de pago de Bold -- si son
+    // muchos ítems, se recorta para no arriesgar un límite de longitud no
+    // documentado por Bold.
+    const joinedLabels = cartItems.map((i) => i.label).join(', ')
+    const description =
+      cartItems.length === 1
+        ? `${cartItems[0].label} - ${company.name}`
+        : joinedLabels.length <= 140
+          ? `Compra de ${cartItems.length} servicios FE: ${joinedLabels} - ${company.name}`
+          : `Compra de ${cartItems.length} servicios de Facturación Electrónica - ${company.name}`
+
+    const boldTransaction = await boldModule.createBoldTransaction({
+      amount: totalAmount,
+      currency: 'COP',
+      description,
+      reference: purchase.id,
+      customer: {
+        email: company.email || undefined,
+        name: company.name,
+      },
+      redirect_url: successUrl,
+      metadata: {
+        company_id: companyId,
+        purchase_id: purchase.id,
+        kind: 'fe_service_cart',
+        item_ids: itemIds.join(','),
+      },
+    })
+
+    if (!boldTransaction) {
+      const detail = boldModule.lastBoldError
+
+      await admin
+        .from('one_time_purchases')
+        .update({
+          payment_status: 'failed',
+          provider_response: { error: detail || 'Failed to create Bold transaction' },
+        })
+        .eq('id', purchase.id)
+
+      return {
+        ok: false,
+        status: 500,
+        error: `Failed to create Bold transaction${detail ? ` -- ${detail}` : ' (sin detalle adicional)'}`,
+      }
+    }
+
+    checkoutUrl = boldTransaction.payment_url || ''
+
+    await admin
+      .from('one_time_purchases')
+      .update({ provider_id: boldTransaction.id })
+      .eq('id', purchase.id)
+  } else {
+    return {
+      ok: false,
+      status: 501,
+      error: `Compra no soportada todavía con el proveedor "${provider.name}"`,
+    }
+  }
+
+  void cancelUrl
+
+  return { ok: true, sessionUrl: checkoutUrl, orderId: purchase.id }
+}

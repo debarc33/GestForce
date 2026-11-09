@@ -11,7 +11,7 @@ import {
 import { DEFAULT_PLAN_ID, getPlan, type PlanId } from '@/modules/subscription/plans'
 import {
   useCompanyPayments, usePlanPricing, startSubscriptionCheckout,
-  useFeServicesCatalog, startFeServiceCheckout, type FeCatalogItem,
+  useFeServicesCatalog, startFeServiceCheckout, startFeServiceCartCheckout, type FeCatalogItem,
 } from '@/modules/subscription/queries'
 import { formatCOP, formatDate } from '@/lib/format-cop'
 
@@ -61,6 +61,11 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
   const [buyingFeItemId, setBuyingFeItemId] = useState<string | null>(null)
   const [feItemError, setFeItemError] = useState<string | null>(null)
   const [showFeContact, setShowFeContact] = useState(false)
+  // Fase 3 (9 nov 2026): selección de varios ítems para pagarlos juntos en
+  // un solo link de Bold -- ver claude/plan-accion-facturacion-dian.md.
+  const [selectedFeItemIds, setSelectedFeItemIds] = useState<Set<string>>(new Set())
+  const [buyingCart, setBuyingCart] = useState(false)
+  const [cartError, setCartError] = useState<string | null>(null)
   const [returnBanner, setReturnBanner] = useState<'success' | 'cancelled' | null>(null)
 
   // Banner al volver de la pasarela (?payment=success|cancelled).
@@ -106,6 +111,27 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
     } catch (e) {
       setFeItemError(e instanceof Error ? e.message : 'Error al iniciar el pago')
       setBuyingFeItemId(null)
+    }
+  }
+
+  function toggleFeItemSelection(itemId: string) {
+    setSelectedFeItemIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(itemId)) next.delete(itemId)
+      else next.add(itemId)
+      return next
+    })
+  }
+
+  async function handleBuyCartItems() {
+    setBuyingCart(true)
+    setCartError(null)
+    try {
+      const url = await startFeServiceCartCheckout(companyId, Array.from(selectedFeItemIds))
+      window.location.href = url
+    } catch (e) {
+      setCartError(e instanceof Error ? e.message : 'Error al iniciar el pago')
+      setBuyingCart(false)
     }
   }
 
@@ -281,11 +307,25 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
                     key={item.item_id}
                     className="flex items-center justify-between gap-3 rounded-lg border border-[var(--glass-border)] px-3 py-2.5"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{item.label}</p>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      {/* Fase 3 (9 nov 2026): checkbox para elegir varios
+                          ítems y pagarlos juntos -- solo tiene sentido en
+                          ítems con pago en línea habilitado. */}
+                      {item.self_checkout && (
+                        <input
+                          type="checkbox"
+                          checked={selectedFeItemIds.has(item.item_id)}
+                          onChange={() => toggleFeItemSelection(item.item_id)}
+                          className="mt-1 h-4 w-4 shrink-0 rounded border-[var(--glass-border)] accent-primary"
+                          aria-label={`Seleccionar ${item.label}`}
+                        />
                       )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">{item.label}</p>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                      </div>
                     </div>
                     {item.self_checkout ? (
                       <button
@@ -323,6 +363,46 @@ export function SubscriptionSection({ companyId }: { companyId: string }) {
               </div>
             </div>
           ))}
+
+          {/* Fase 3 (9 nov 2026): barra de selección múltiple -- aparece
+              solo cuando hay al menos un ítem marcado, y permite pagarlos
+              todos juntos en un solo link de Bold en vez de uno por uno.
+              La compra individual de arriba sigue intacta para quien solo
+              quiera un ítem. */}
+          {selectedFeItemIds.size > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+              <p className="text-sm text-foreground">
+                {selectedFeItemIds.size} {selectedFeItemIds.size === 1 ? 'ítem seleccionado' : 'ítems seleccionados'} ·{' '}
+                <span className="font-semibold">
+                  {formatCOP(
+                    feItems
+                      .filter((i) => selectedFeItemIds.has(i.item_id))
+                      .reduce((sum, i) => sum + i.price, 0)
+                  )}
+                </span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFeItemIds(new Set())}
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Quitar selección
+                </button>
+                <button
+                  onClick={handleBuyCartItems}
+                  disabled={buyingCart}
+                  className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                >
+                  {buyingCart ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                  {buyingCart ? 'Redirigiendo...' : 'Pagar seleccionados'}
+                </button>
+              </div>
+            </div>
+          )}
+          {cartError && (
+            <p className="text-xs text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{cartError}</p>
+          )}
 
           {/* Panel de contacto (migración 040) -- compartido entre todos
               los ítems sin pago en línea; se abre al tocar cualquier

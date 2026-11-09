@@ -171,3 +171,22 @@ export async function startFeServiceCheckout(companyId: string, itemId: string):
   }
   return body.sessionUrl
 }
+
+/** Fase 3 (9 nov 2026): inicia el checkout de VARIOS ítems del catálogo
+ *  elegidos a la vez, pagados en un solo link de Bold. Retorna la URL de
+ *  la pasarela. */
+export async function startFeServiceCartCheckout(companyId: string, itemIds: string[]): Promise<string> {
+  const res = await fetch('/api/company/subscription/fe-services/cart-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ companyId, itemIds }),
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(body?.error ?? 'Error al iniciar el pago')
+  }
+  if (!body?.sessionUrl) {
+    throw new Error('El proveedor de pago no devolvió una URL de checkout')
+  }
+  return body.sessionUrl
+}
