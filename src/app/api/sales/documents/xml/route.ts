@@ -6,6 +6,8 @@ import { requireCompanyMember } from '@/lib/auth/require-company-member'
 import { calculateCUFE, getColombiaTime } from '@/lib/fe/cufe'
 import { calculateCUDE } from '@/lib/fe/cude'
 import { generateXMLUBL21 } from '@/lib/fe/xml-ubl21'
+import { decryptCertPassword } from '@/lib/fe/certificate'
+import { signInvoiceXML } from '@/lib/fe/xades'
 
 export const runtime = 'nodejs'
 
@@ -56,6 +58,39 @@ export async function POST(req: NextRequest) {
     console.error('Error generando XML DIAN:', e)
     const message = e instanceof Error ? e.message : 'Error generando el XML'
     return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
+/**
+ * Fase D.2 de claude/plan-accion-facturacion-dian.md: firma el XML con el
+ * certificado .p12 de la empresa (XAdES-EPES, src/lib/fe/xades.ts), si ya
+ * tiene uno cargado (company_certificates, migración 035). Si todavía no
+ * hay certificado, o si la firma falla por cualquier razón, se devuelve
+ * el XML SIN firmar en vez de romper la generación completa -- queda
+ * señalado vía fe_xml_signed (migración 043) para que no se confunda con
+ * un XML ya firmado.
+ */
+async function signIfPossible(
+  admin: AdminClient, companyId: string, xml: string
+): Promise<{ xml: string; signed: boolean }> {
+  const { data: certRow } = await admin
+    .from('company_certificates')
+    .select('pfx_data_base64, pfx_password_encrypted_base64')
+    .eq('company_id', companyId)
+    .maybeSingle()
+
+  if (!certRow?.pfx_data_base64 || !certRow?.pfx_password_encrypted_base64) {
+    return { xml, signed: false }
+  }
+
+  try {
+    const pfxBuffer = Buffer.from(certRow.pfx_data_base64, 'base64')
+    const password = decryptCertPassword(Buffer.from(certRow.pfx_password_encrypted_base64, 'base64'))
+    const signedXml = signInvoiceXML(xml, pfxBuffer, password)
+    return { xml: signedXml, signed: true }
+  } catch (e) {
+    console.error('Error firmando XML (se guarda sin firmar):', e)
+    return { xml, signed: false }
   }
 }
 
@@ -172,14 +207,16 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
     notes:    invoice.notes,
   })
 
+  const { xml: finalXml, signed } = await signIfPossible(admin, invoice.company_id, xml)
+
   const fe_generated_at = new Date().toISOString()
 
   await admin
     .from('invoices')
-    .update({ cufe, xml_ubl: xml, fe_generated_at })
+    .update({ cufe, xml_ubl: finalXml, fe_generated_at, fe_xml_signed: signed })
     .eq('id', invoiceId)
 
-  return NextResponse.json({ cufe, xml, fe_generated_at })
+  return NextResponse.json({ cufe, xml: finalXml, fe_generated_at, signed })
 }
 
 async function handleNote(admin: AdminClient, noteId: string) {
@@ -306,14 +343,16 @@ async function handleNote(admin: AdminClient, noteId: string) {
     notes:    note.notes,
   })
 
+  const { xml: finalXml, signed } = await signIfPossible(admin, note.company_id, xml)
+
   const fe_generated_at = new Date().toISOString()
 
   await admin
     .from('credit_debit_notes')
-    .update({ cude, xml_ubl: xml, fe_generated_at })
+    .update({ cude, xml_ubl: finalXml, fe_generated_at, fe_xml_signed: signed })
     .eq('id', noteId)
 
-  return NextResponse.json({ cufe: cude, xml, fe_generated_at })
+  return NextResponse.json({ cufe: cude, xml: finalXml, fe_generated_at, signed })
 }
 
 // invoice_items / credit_debit_note_items no guardan el nombre del producto,

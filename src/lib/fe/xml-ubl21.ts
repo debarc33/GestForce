@@ -2,8 +2,16 @@
  * Generador de XML UBL 2.1 para Facturación Electrónica DIAN Colombia
  * Según Anexo Técnico DIAN versión 1.9 — Esquema UBL 2.1
  *
- * Genera el XML base (sin firma digital) listo para enviar al PT o descargar.
- * La firma digital (XAdES-BES) la aplica el Proveedor Tecnológico.
+ * Genera el XML base SIN firma digital. GestForce opera bajo el modo
+ * "Desarrollo propio" (no hay Proveedor Tecnológico intermediario) -- la
+ * firma XAdES-EPES se aplica después, del lado del servidor, con
+ * src/lib/fe/xades.ts (Fase D.2 del plan de facturación electrónica),
+ * usando el certificado .p12 propio de cada empresa.
+ *
+ * Por eso ext:UBLExtensions siempre trae DOS <ext:UBLExtension> vacíos:
+ * el primero queda reservado (sin uso por ahora), y el segundo es donde
+ * xades.ts inserta la firma -- buscarlo por posición, no por contenido,
+ * ya que ambos nacen idénticos y vacíos.
  */
 
 import type { DocCompany, DocCustomer, DocItem } from '@/modules/sales/components/document-viewer'
@@ -151,6 +159,9 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
   <ext:UBLExtensions>
+    <ext:UBLExtension>
+      <ext:ExtensionContent/>
+    </ext:UBLExtension>
     <ext:UBLExtension>
       <ext:ExtensionContent/>
     </ext:UBLExtension>
