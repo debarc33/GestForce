@@ -203,6 +203,7 @@ export default function SettingsPage() {
         dian_to_number:       company.dian_to_number       ?? undefined,
         dian_validity_from:   company.dian_validity_from   ?? '',
         dian_validity_to:     company.dian_validity_to     ?? '',
+        fe_test_set_id:       company.fe_test_set_id       ?? '',
         fe_software_id:       company.fe_software_id       ?? '',
         fe_software_pin:      company.fe_software_pin      ?? '',
         fe_api_url:           company.fe_api_url           ?? '',
@@ -630,6 +631,14 @@ export default function SettingsPage() {
               <div><label className={lbl}>Vigencia hasta</label>
                 <input type="date" value={companyForm.dian_validity_to ?? ''} onChange={cf('dian_validity_to')} className={fieldCls} /></div>
             </div>
+            <div>
+              <label className={lbl}>Identificador del set de pruebas (TestSetId — DIAN)</label>
+              <input value={companyForm.fe_test_set_id ?? ''} onChange={cf('fe_test_set_id')}
+                className={fieldCls} placeholder="Ej. a7c0170f-4a2c-4f9c-bbd8-e6d07a..." />
+              <p className="text-xs text-muted-foreground mt-1">
+                El código que la DIAN entrega al registrar el modo de operación &quot;Desarrollo propio&quot;. Por ahora solo queda guardado aquí de referencia — el envío automático del set de pruebas al servicio web de la DIAN todavía no está construido.
+              </p>
+            </div>
             {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
           </div>
         ) : (
@@ -646,6 +655,7 @@ export default function SettingsPage() {
                 )}
                 {company.dian_validity_from && <div><p className="text-xs text-muted-foreground">Vigencia desde</p><p className="text-foreground">{new Date(company.dian_validity_from + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
                 {company.dian_validity_to && <div><p className="text-xs text-muted-foreground">Vigencia hasta</p><p className="text-foreground">{new Date(company.dian_validity_to + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>}
+                {company.fe_test_set_id && <div className="col-span-2"><p className="text-xs text-muted-foreground">Set de pruebas (TestSetId)</p><p className="font-mono text-foreground break-all">{company.fe_test_set_id}</p></div>}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-3">No hay resolución configurada. Haz clic en Editar para agregarla.</p>

@@ -32,6 +32,12 @@ export type CompanyProfile = {
   dian_to_number:       number | null   // fin rango autorizado
   dian_validity_from:   string | null   // vigencia desde (YYYY-MM-DD)
   dian_validity_to:     string | null   // vigencia hasta (YYYY-MM-DD)
+  // Identificador del set de pruebas (TestSetId) que entrega la DIAN al
+  // registrar el modo de operación "Desarrollo propio" -- ver migración
+  // 042 y claude/plan-accion-facturacion-dian.md. Por ahora es solo de
+  // referencia/almacenamiento; el envío real al servicio web de la DIAN
+  // (Fase E) todavía no está construido.
+  fe_test_set_id:       string | null
   // ── Facturación Electrónica ───────────────────────────────────────
   fe_software_id:    string | null
   fe_software_pin:   string | null
@@ -155,7 +161,7 @@ export function useCompany(companyId?: string | null) {
           invoice_footer, quote_terms,
           print_paper_size, print_show_logo, print_auto_dian_footer, print_legal_lines,
           dian_resolution, dian_resolution_date, dian_prefix, dian_from_number,
-          dian_to_number, dian_validity_from, dian_validity_to,
+          dian_to_number, dian_validity_from, dian_validity_to, fe_test_set_id,
           fe_software_id, fe_api_url, fe_test_mode,
           fe_cert_filename, fe_cert_valid_from, fe_cert_valid_to, fe_cert_uploaded_at,
           buyer_threshold, ica_rate, smlv, transport_allowance, costing_method,
@@ -237,6 +243,7 @@ export async function updateCompany(id: string, data: CompanyProfileUpdate) {
       dian_to_number:       data.dian_to_number       ?? null,
       dian_validity_from:   data.dian_validity_from   ?? null,
       dian_validity_to:     data.dian_validity_to     ?? null,
+      fe_test_set_id:       data.fe_test_set_id       ?? null,
       fe_software_id:       data.fe_software_id       ?? null,
       fe_api_url:           data.fe_api_url           ?? null,
       fe_test_mode:         data.fe_test_mode         ?? true,
