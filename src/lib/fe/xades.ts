@@ -104,8 +104,8 @@ function extractKeyAndCert(pfxBuffer: Buffer, password: string): CertInfo {
 
   // Orden de los campos del emisor tal como forge los expone (ver
   // advertencia de exactitud en el encabezado del archivo).
-  const issuerName = certObj.issuer.attributes
-    .map((a: { shortName?: string; name?: string; value: string }) => `${a.shortName || a.name}=${a.value}`)
+  const issuerName = (certObj.issuer.attributes as Array<{ shortName?: string; name?: string; value: unknown }>)
+    .map((a) => `${a.shortName || a.name}=${a.value}`)
     .join(',')
   const serialDec = BigInt('0x' + certObj.serialNumber).toString(10)
 

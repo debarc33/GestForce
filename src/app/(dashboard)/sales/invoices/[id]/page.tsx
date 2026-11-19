@@ -136,6 +136,12 @@ export default function EditInvoicePage() {
     // (botón "XML DIAN"); aquí solo se leen para mostrarlos.
     cufe:            invoice.cufe             ?? null,
     fe_generated_at: invoice.fe_generated_at  ?? null,
+    // Fase E: estado del envío a la DIAN -- habilita/rotula el botón
+    // "Enviar a la DIAN" en el visor.
+    fe_xml_signed:   invoice.fe_xml_signed    ?? null,
+    fe_track_id:     invoice.fe_track_id      ?? null,
+    fe_dian_status:  invoice.fe_dian_status   ?? null,
+    fe_sent_at:      invoice.fe_sent_at       ?? null,
     company:    company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
     customer:   invoice.customer ? {
       name:       invoice.customer.name,
@@ -539,6 +545,11 @@ export default function EditInvoicePage() {
             // el visor de la factura, arriba.
             cude:                viewingNote.cude             ?? null,
             fe_generated_at:     viewingNote.fe_generated_at  ?? null,
+            // Fase E: estado del envío a la DIAN -- mismo patrón que la factura, arriba.
+            fe_xml_signed:       viewingNote.fe_xml_signed    ?? null,
+            fe_track_id:         viewingNote.fe_track_id      ?? null,
+            fe_dian_status:      viewingNote.fe_dian_status   ?? null,
+            fe_sent_at:          viewingNote.fe_sent_at       ?? null,
             company: company ? { ...company, dian_resolution: company.dian_resolution ?? null } : null,
             customer: invoice.customer ? {
               name:       invoice.customer.name,

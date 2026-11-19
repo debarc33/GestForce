@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { Printer, Mail, X, FileCode2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Printer, Mail, X, FileCode2, Send } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { downloadXML } from '@/lib/fe/xml-ubl21'
 import { buildQrContent, buildQrMatrix, buildQrRects, buildVerificationUrl, isoToColombiaTime } from '@/lib/fe/qr'
@@ -97,6 +98,13 @@ export interface DocData {
   /** Momento en que se calculó el CUFE/CUDE (invoices.fe_generated_at o
    *  credit_debit_notes.fe_generated_at). */
   fe_generated_at?: string | null
+  /** Fase E (claude/plan-accion-facturacion-dian.md, migración 044): si el
+   *  XML ya se firmó (Fase D.2) y, si ya se intentó, el resultado del envío
+   *  a la DIAN. Habilita/deshabilita y rotula el botón "Enviar a la DIAN". */
+  fe_xml_signed?:  boolean | null
+  fe_track_id?:    string | null
+  fe_dian_status?: string | null
+  fe_sent_at?:     string | null
 }
 
 interface Props {
@@ -108,8 +116,10 @@ interface Props {
 
 export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const printRef  = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
   const [xmlBusy, setXmlBusy] = useState(false)
   const [emailBusy, setEmailBusy] = useState(false)
+  const [dianBusy, setDianBusy] = useState(false)
 
   const companyName = doc.company?.name ?? 'GestForce'
   const isTicket    = doc.document_type === 'ticket'
@@ -270,6 +280,42 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
       window.alert(message)
     } finally {
       setXmlBusy(false)
+    }
+  }
+
+  // Fase E (claude/plan-accion-facturacion-dian.md): transmite el XML ya
+  // firmado (fe_xml_signed, Fase D.2) al servicio web de la DIAN --
+  // SendTestSetAsync (Habilitación) o SendBillSync (Producción) según el
+  // ambiente de la empresa, resuelto del lado del servidor. Mismo patrón
+  // que handleDownloadXML/handleEmail: llamada directa, sin estado
+  // intermedio en el visor -- el resultado se refleja al invalidar las
+  // queries de React Query, que vuelven a traer fe_dian_status/fe_track_id
+  // ya actualizados desde la base de datos.
+  const handleSendDian = async () => {
+    if (!doc.id) return
+    setDianBusy(true)
+    try {
+      const res = await fetch('/api/sales/documents/send-dian', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isNote ? { noteId: doc.id } : { invoiceId: doc.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo enviar el documento a la DIAN')
+      const STATUS_LABELS: Record<string, string> = {
+        enviado:   'Enviado -- en Habilitación la DIAN responde de forma asíncrona, consulta el estado más tarde.',
+        aceptado:  'Aceptado por la DIAN.',
+        rechazado: 'Rechazado por la DIAN -- revisa fe_dian_response para el detalle.',
+        error:     'No se pudo completar el envío (falló antes de llegar a una respuesta de la DIAN).',
+      }
+      window.alert(STATUS_LABELS[data.status] ?? `Resultado: ${data.status ?? 'desconocido'}`)
+      queryClient.invalidateQueries({ queryKey: ['invoice', doc.id] })
+      queryClient.invalidateQueries({ queryKey: ['credit_debit_notes'] })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'No se pudo enviar el documento a la DIAN'
+      window.alert(message)
+    } finally {
+      setDianBusy(false)
     }
   }
 
@@ -647,6 +693,14 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-50 transition-colors border border-green-300 disabled:opacity-40">
                 <FileCode2 className="h-3.5 w-3.5" />
                 {xmlBusy ? 'Generando...' : 'XML DIAN'}
+              </button>
+            )}
+            {canGenerateXml && doc.fe_xml_signed && (
+              <button onClick={handleSendDian} disabled={dianBusy}
+                title={doc.fe_dian_status ? `Último resultado: ${doc.fe_dian_status}` : undefined}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 transition-colors border border-indigo-300 disabled:opacity-40">
+                <Send className="h-3.5 w-3.5" />
+                {dianBusy ? 'Enviando...' : doc.fe_dian_status ? `DIAN: ${doc.fe_dian_status}` : 'Enviar a la DIAN'}
               </button>
             )}
             <button onClick={handlePrint}

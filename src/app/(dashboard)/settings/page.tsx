@@ -670,7 +670,7 @@ export default function SettingsPage() {
         <SettingsAccordion title="Facturación Electrónica">
           <SectionHeader
             title="Facturación Electrónica"
-            sub="Credenciales de tu Proveedor Tecnológico (PT) autorizado por la DIAN para emitir facturas electrónicas."
+            sub="Credenciales de facturación electrónica (desarrollo propio) autorizado por la DIAN para emitir facturas."
             editing={editingFE}
             onEdit={() => setEditingFE(true)}
             onSave={() => companyMut.mutate()}
@@ -696,9 +696,9 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              <div><label className={lbl}>URL API del Proveedor Tecnológico</label>
+              <div><label className={lbl}>URL del servicio web de la DIAN</label>
                 <input value={companyForm.fe_api_url ?? ''} onChange={cf('fe_api_url')}
-                  className={fieldCls} placeholder="https://api.tupt.co/v1" /></div>
+                  className={fieldCls} placeholder="https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc" /></div>
               {/* Seguridad (Fase A, 4 nov 2026): autoComplete="off"/"new-password" --
                   sin esto Chrome detecta "campo de texto + campo de contraseña uno
                   al lado del otro" como un formulario de login y autocompleta los
@@ -725,9 +725,8 @@ export default function SettingsPage() {
                   traen al navegador, por eso estos dos campos siempre aparecen
                   vacios al editar -- dejarlos vacios conserva el valor guardado. */}
               <p className="text-xs text-muted-foreground rounded-lg bg-[var(--glass)] border border-[var(--glass-border)]/50 px-3 py-2">
-                El CUFE y el XML se generan en el servidor al hacer clic en &quot;XML DIAN&quot;
-                dentro de una factura — las credenciales nunca viajan al navegador.
-                Para notas crédito/débito esta función todavía se está construyendo.
+                El CUFE/CUDE y el XML se generan en el servidor al hacer clic en &quot;XML DIAN&quot;
+                dentro de una factura o nota — las credenciales nunca viajan al navegador.
               </p>
               {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
             </div>
@@ -735,7 +734,7 @@ export default function SettingsPage() {
             <div className="rounded-xl border border-[var(--glass-border)] glass-surface p-5">
               {feConfigured ? (
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <div><p className="text-xs text-muted-foreground">URL del PT</p><p className="text-foreground truncate">{company?.fe_api_url ?? '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">URL del servicio DIAN</p><p className="text-foreground truncate">{company?.fe_api_url ?? '—'}</p></div>
                   <div><p className="text-xs text-muted-foreground">ID de Software</p><p className="font-mono text-foreground">{company?.fe_software_id ?? '—'}</p></div>
                   {/* Hallazgo 7 nov 2026: el PIN (para CUDE de notas crédito/débito) es
                       un secreto aparte de la Llave Técnica (para CUFE de facturas) --
@@ -750,7 +749,7 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-3">
-                  Configura las credenciales de tu PT para habilitar la Facturación Electrónica DIAN.
+                  Configura tus credenciales de facturación electrónica para habilitarte ante la DIAN.
                 </p>
               )}
             </div>

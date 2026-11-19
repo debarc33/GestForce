@@ -183,7 +183,7 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
   ${p.dueDate ? `<cac:InvoicePeriod><cbc:EndDate>${p.dueDate}</cbc:EndDate></cac:InvoicePeriod>` : ''}
   ${billingReference}
 
-  <!-- Proveedor Tecnológico -->
+  <!-- Identificación del software (Software ID) -->
   <cac:AdditionalDocumentReference>
     <cbc:ID>${esc(p.softwareId)}</cbc:ID>
     <cbc:DocumentTypeCode>18</cbc:DocumentTypeCode>

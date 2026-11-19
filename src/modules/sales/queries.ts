@@ -53,6 +53,11 @@ export type InvoiceWithCustomer = {
   // aquí para mostrarlas sin tener que volver a llamar al servidor.
   cufe: string | null
   fe_generated_at: string | null
+  // ── Fase E (transmisión DIAN, migración 044_fe_dian_transmission.sql) ──
+  fe_xml_signed?:  boolean | null
+  fe_track_id?:    string | null
+  fe_dian_status?: string | null
+  fe_sent_at?:     string | null
 }
 
 export type ReceiptWithDetails = {
@@ -663,6 +668,11 @@ export type CreditDebitNote = {
   cude?:            string | null
   xml_ubl?:         string | null
   fe_generated_at?: string | null
+  // ── Fase E (transmisión DIAN, migración 044_fe_dian_transmission.sql) ──
+  fe_xml_signed?:  boolean | null
+  fe_track_id?:    string | null
+  fe_dian_status?: string | null
+  fe_sent_at?:     string | null
 }
 
 export type CreditDebitNoteItem = {
