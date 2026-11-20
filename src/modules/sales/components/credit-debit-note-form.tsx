@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Minus, X, Copy, AlertCircle, Loader2 } from 'lucide-react'
+import { Plus, Minus, X, Copy, AlertCircle, Loader2, Search } from 'lucide-react'
 import { createCreditDebitNote, type CreditDebitNoteItem } from '../queries'
 import type { InvoiceWithCustomer } from '../queries'
+import { useProducts } from '@/modules/products/queries'
 
 // ─── Razones por tipo ──────────────────────────────────────────────────────
 
@@ -77,6 +78,33 @@ export function CreditDebitNoteForm({ invoice, invoiceItems, noteType, companyId
   const [notes, setNotes]         = useState('')
   const [items, setItems]         = useState<NoteItem[]>([])
   const [error, setError]         = useState<string | null>(null)
+  const [search, setSearch]             = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  const { data: products = [] } = useProducts(companyId)
+
+  // Mismo patrón de búsqueda de "Nueva cotización" -- antes esto no existía:
+  // "Agregar ítem" solo creaba una fila con un campo de texto libre (sin
+  // relación al catálogo), por eso escribir una palabra no mostraba nada.
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return []
+    const q = search.trim().toLowerCase()
+    return products
+      .filter(p => p.name.toLowerCase().includes(q) || (p.sku ?? '').toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [products, search])
+
+  const addProductFromCatalog = (product: typeof products[0]) => {
+    const price   = Number(product.price)
+    const taxRate = product.is_taxable ? (product.tax_rate ?? 0.19) : 0
+    setItems(prev => [...prev, recalc({
+      product_id: product.id, product_name: product.name, sku: product.sku ?? undefined,
+      quantity: 1, unit_price: price, discount: 0, tax_rate: taxRate,
+      subtotal: 0, tax: 0, total: 0,
+    })])
+    setSearch('')
+    setShowDropdown(false)
+  }
 
   const totals = useMemo(() => ({
     subtotal: items.reduce((s, i) => s + i.subtotal, 0),
@@ -194,9 +222,43 @@ export function CreditDebitNoteForm({ invoice, invoiceItems, noteType, companyId
             </div>
           </div>
 
+          {/* Buscar producto del catálogo para agregarlo directamente */}
+          <div className="relative mb-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => { setSearch(e.target.value); setShowDropdown(true) }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              placeholder="Buscar producto por nombre o referencia para agregar..."
+              className="w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm placeholder:text-zinc-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors"
+            />
+            {showDropdown && searchResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-0.5 z-30 rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden max-h-64 overflow-y-auto">
+                {searchResults.map(product => (
+                  <button key={product.id}
+                    onMouseDown={() => addProductFromCatalog(product)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-zinc-900 truncate">{product.name}</p>
+                      {product.sku && <p className="text-xs font-mono text-zinc-400">{product.sku}</p>}
+                    </div>
+                    <span className="text-sm font-semibold text-zinc-700 ml-3 shrink-0">{fmt(Number(product.price))}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {showDropdown && search.trim() && searchResults.length === 0 && (
+              <div className="absolute left-0 right-0 top-full mt-0.5 z-30 rounded-xl border border-zinc-200 bg-white shadow-xl px-4 py-3 text-sm text-zinc-400">
+                Sin resultados para "{search}"
+              </div>
+            )}
+          </div>
+
           {items.length === 0 ? (
             <div className="rounded-lg border border-dashed border-zinc-200 py-8 text-center text-sm text-zinc-400">
-              Usa "Copiar de factura" o agrega ítems manualmente
+              Busca un producto arriba, usa "Copiar de factura", o agrega ítems manualmente
             </div>
           ) : (
             <div className="rounded-lg border border-zinc-200 overflow-hidden">
