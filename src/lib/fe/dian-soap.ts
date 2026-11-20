@@ -47,6 +47,7 @@ export const WSSE_NS = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-
 export const DIAN_NS = 'http://wcf.dian.colombia'
 const THUMBPRINT_VALUETYPE = 'http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1'
 const B64_ENCODINGTYPE = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary'
+const X509V3_VALUETYPE = 'http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3'
 
 function isoNoMillis(d: Date): string {
   return d.toISOString().replace(/\.\d{3}Z$/, 'Z')
@@ -71,11 +72,27 @@ export function buildOperationBody(operation: string, fields: Record<string, str
   return `<${operation} xmlns="${DIAN_NS}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${inner}</${operation}>`
 }
 
-/** Sobre SOAP sin firmar, con los headers de WS-Addressing y el Timestamp. */
-function buildUnsignedEnvelope(toUrl: string, action: string, bodyInnerXml: string): string {
+/**
+ * Sobre SOAP sin firmar, con los headers de WS-Addressing, el Timestamp y
+ * el BinarySecurityToken (el certificado en sí, codificado en base64).
+ *
+ * Hallazgo de la prueba en vivo del 20 nov 2026: la DIAN nunca pide
+ * registrar el certificado de antemano (solo Software ID + PIN), así que
+ * el único modo de que puedan verificar la firma es que el certificado
+ * viaje DENTRO del mensaje -- antes de este fix no se incluía (solo se
+ * mandaba su huella SHA-1 en el KeyInfo de la firma, sin el token en sí),
+ * y la DIAN respondía "An error occurred when verifying security for the
+ * message" porque no tenía con qué comprobar esa huella. El KeyInfo
+ * sigue referenciando el token por huella (ThumbprintSHA1, tal como
+ * exige la política real `WSHttpBinding_IWcfDianCustomerServices_policy`)
+ * -- lo que cambia es que ahora el token sí está presente en el mensaje
+ * para que esa huella se pueda resolver.
+ */
+function buildUnsignedEnvelope(toUrl: string, action: string, bodyInnerXml: string, certDerBuf: Buffer): string {
   const messageId = `urn:uuid:${randomUUID()}`
   const now = new Date()
   const expires = new Date(now.getTime() + 5 * 60 * 1000) // 5 min (igual al default de WCF)
+  const certB64 = certDerBuf.toString('base64')
 
   return `<soap12:Envelope xmlns:soap12="${SOAP12_NS}" xmlns:wsa="${WSA_NS}">` +
     `<soap12:Header>` +
@@ -88,6 +105,7 @@ function buildUnsignedEnvelope(toUrl: string, action: string, bodyInnerXml: stri
     `<wsu:Created>${isoNoMillis(now)}</wsu:Created>` +
     `<wsu:Expires>${isoNoMillis(expires)}</wsu:Expires>` +
     `</wsu:Timestamp>` +
+    `<wsse:BinarySecurityToken xmlns:wsu="${WSU_NS}" wsu:Id="_cert1" EncodingType="${B64_ENCODINGTYPE}" ValueType="${X509V3_VALUETYPE}">${certB64}</wsse:BinarySecurityToken>` +
     `</wsse:Security>` +
     `</soap12:Header>` +
     `<soap12:Body>${bodyInnerXml}</soap12:Body>` +
@@ -138,6 +156,6 @@ export function buildSignedSoapEnvelope(params: {
 }): string {
   const action = `${DIAN_NS}/IWcfDianCustomerServices/${params.operation}`
   const bodyXml = buildOperationBody(params.operation, params.fields)
-  const unsignedXml = buildUnsignedEnvelope(params.toUrl, action, bodyXml)
+  const unsignedXml = buildUnsignedEnvelope(params.toUrl, action, bodyXml, params.certDerBuf)
   return signEnvelope(unsignedXml, params.certDerBuf, params.keyPem)
 }
