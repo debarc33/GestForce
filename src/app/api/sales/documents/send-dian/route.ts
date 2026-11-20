@@ -161,10 +161,21 @@ function interpretSendResult(
   return { status: dianResponse.isValid ? 'aceptado' : 'rechazado', responseJson: dianResponse }
 }
 
+// statusCode "66" ("TrackId no existe en los registros de la DIAN") significa que la
+// DIAN todavia no indexo el trackId -- es una condicion transitoria de "aun no disponible",
+// NO un rechazo real por contenido. Un rechazo real trae isValid:false con un
+// errorMessage/statusDescription que explica el problema del documento. Hay que separar
+// ambos casos; de lo contrario se le muestra "Rechazado" al usuario cuando en realidad
+// solo hay que esperar y volver a consultar.
+const TRACK_ID_NOT_FOUND_STATUS_CODE = '66'
+
 function interpretStatusResult(
   r: { ok: boolean; result?: DianResponse; fault?: { code: string | null; reason: string | null } },
 ): { status: string; responseJson: unknown } {
   if (!r.ok) return { status: 'error', responseJson: r.fault }
   const dianResponse = r.result as DianResponse
+  if (dianResponse.statusCode === TRACK_ID_NOT_FOUND_STATUS_CODE) {
+    return { status: 'pendiente', responseJson: dianResponse }
+  }
   return { status: dianResponse.isValid ? 'aceptado' : 'rechazado', responseJson: dianResponse }
 }

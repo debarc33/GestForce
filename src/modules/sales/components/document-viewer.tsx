@@ -338,6 +338,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
       const STATUS_LABELS: Record<string, string> = {
         aceptado:  'Aceptado por la DIAN.',
         rechazado: 'Rechazado por la DIAN -- revisa el detalle guardado para mas informacion.',
+        pendiente: 'La DIAN aun no tiene registrado este envio (trackId no indexado todavia) -- intenta consultar de nuevo en unos minutos.',
         error:     'No se pudo consultar el estado (error de conexion con la DIAN).',
       }
       window.alert(STATUS_LABELS[data.status] ?? `Resultado: ${data.status ?? 'desconocido'}`)
