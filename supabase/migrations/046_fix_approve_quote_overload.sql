@@ -1,0 +1,24 @@
+-- 046_fix_approve_quote_overload.sql
+--
+-- Hallazgo (20 nov 2026): la migracion 045 cambio la firma de approve_quote,
+-- agregando 3 parametros nuevos (p_payment_form, p_credit_days,
+-- p_payment_method_id). En PostgreSQL, "CREATE OR REPLACE FUNCTION" solo
+-- reemplaza una funcion existente si la lista de parametros (cantidad y
+-- tipos) es IDENTICA. Como la cantidad de parametros cambio, Postgres no
+-- reemplazo la funcion anterior: creo una segunda funcion "approve_quote"
+-- distinta (sobrecarga), dejando las DOS versiones coexistiendo:
+--
+--   approve_quote(uuid, text)                                 <- version vieja (migracion 033)
+--   approve_quote(uuid, text, text, integer, uuid)             <- version nueva (migracion 045)
+--
+-- Al llamar approve_quote con solo (p_quote_id, p_document_type), Postgres
+-- no puede decidir cual de las dos usar (ambas aplican, porque la nueva
+-- tiene esos 3 parametros nuevos con DEFAULT) -> error "Could not choose
+-- the best candidate function...". Esto es lo que se vio al aprobar una
+-- cotizacion.
+--
+-- Esta migracion elimina explicitamente la version vieja para que solo
+-- quede una funcion approve_quote (la nueva), que ya cubre el caso de
+-- llamarla con solo 2 argumentos gracias a sus propios DEFAULT.
+
+DROP FUNCTION IF EXISTS public.approve_quote(uuid, text);
