@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Printer, Mail, X, FileCode2, Send } from 'lucide-react'
+import { Printer, Mail, X, FileCode2, Send, RefreshCw } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { downloadXML } from '@/lib/fe/xml-ubl21'
 import { buildQrContent, buildQrMatrix, buildQrRects, buildVerificationUrl, isoToColombiaTime } from '@/lib/fe/qr'
@@ -120,6 +120,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
   const [xmlBusy, setXmlBusy] = useState(false)
   const [emailBusy, setEmailBusy] = useState(false)
   const [dianBusy, setDianBusy] = useState(false)
+  const [statusBusy, setStatusBusy] = useState(false)
 
   const companyName = doc.company?.name ?? 'GestForce'
   const isTicket    = doc.document_type === 'ticket'
@@ -316,6 +317,37 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
       window.alert(message)
     } finally {
       setDianBusy(false)
+    }
+  }
+
+  // Consulta el resultado de un envio asincrono anterior (Habilitacion):
+  // GetStatus con el fe_track_id ya guardado. Mismo patron que
+  // handleSendDian -- llamada directa, invalida las queries para que
+  // fe_dian_status se refleje sin recargar a mano.
+  const handleCheckStatus = async () => {
+    if (!doc.id) return
+    setStatusBusy(true)
+    try {
+      const res = await fetch('/api/sales/documents/send-dian', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(isNote ? { noteId: doc.id, checkStatus: true } : { invoiceId: doc.id, checkStatus: true }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? 'No se pudo consultar el estado')
+      const STATUS_LABELS: Record<string, string> = {
+        aceptado:  'Aceptado por la DIAN.',
+        rechazado: 'Rechazado por la DIAN -- revisa el detalle guardado para mas informacion.',
+        error:     'No se pudo consultar el estado (error de conexion con la DIAN).',
+      }
+      window.alert(STATUS_LABELS[data.status] ?? `Resultado: ${data.status ?? 'desconocido'}`)
+      queryClient.invalidateQueries({ queryKey: ['invoice', doc.id] })
+      queryClient.invalidateQueries({ queryKey: ['credit_debit_notes'] })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'No se pudo consultar el estado'
+      window.alert(message)
+    } finally {
+      setStatusBusy(false)
     }
   }
 
@@ -701,6 +733,14 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-50 transition-colors border border-indigo-300 disabled:opacity-40">
                 <Send className="h-3.5 w-3.5" />
                 {dianBusy ? 'Enviando...' : doc.fe_dian_status ? `DIAN: ${doc.fe_dian_status}` : 'Enviar a la DIAN'}
+              </button>
+            )}
+            {canGenerateXml && doc.fe_track_id && (
+              <button onClick={handleCheckStatus} disabled={statusBusy}
+                title="Consulta el resultado de un envío asíncrono (Habilitación) contra la DIAN"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors border border-amber-300 disabled:opacity-40">
+                <RefreshCw className="h-3.5 w-3.5" />
+                {statusBusy ? 'Consultando...' : 'Consultar estado'}
               </button>
             )}
             <button onClick={handlePrint}

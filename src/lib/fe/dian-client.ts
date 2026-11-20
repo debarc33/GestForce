@@ -214,6 +214,19 @@ async function callDianOperation<T>(params: {
   return { ok: true, result: params.parseResult(resultNode), rawResponseXml: responseXml, requestXml }
 }
 
+/**
+ * El campo `fileName` del contrato es el nombre del ARCHIVO COMPRIMIDO
+ * que se sube (debe terminar en .zip) -- el XML real va adentro del zip
+ * con su propio nombre terminado en .xml (ver zip.ts). Antes de este fix
+ * se usaba el mismo nombre (.xml) para los dos, y la DIAN rechazaba el
+ * envío con "MIMEType del archivo inválido (text/xml)" -- hallazgo de la
+ * prueba en vivo del 20 nov 2026, primer envío real contra el ambiente de
+ * Habilitación de la clienta.
+ */
+function toZipFileName(xmlFileName: string): string {
+  return xmlFileName.replace(/\.xml$/i, '.zip')
+}
+
 /** Habilitación: envía una factura del set de pruebas. Asíncrono -- usar el `zipKey` devuelto con getStatus/getStatusZip. */
 export async function sendTestSetAsync(params: {
   apiUrl: string; pfxBuffer: Buffer; pfxPassword: string
@@ -223,7 +236,7 @@ export async function sendTestSetAsync(params: {
     apiUrl: params.apiUrl,
     operation: 'SendTestSetAsync',
     fields: {
-      fileName: params.fileName,
+      fileName: toZipFileName(params.fileName),
       contentFile: zipXmlToBase64(params.fileName, params.signedXml),
       testSetId: params.testSetId,
     },
@@ -244,7 +257,7 @@ export async function sendBillSync(params: {
     apiUrl: params.apiUrl,
     operation: 'SendBillSync',
     fields: {
-      fileName: params.fileName,
+      fileName: toZipFileName(params.fileName),
       contentFile: zipXmlToBase64(params.fileName, params.signedXml),
     },
     pfxBuffer: params.pfxBuffer,

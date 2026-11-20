@@ -146,7 +146,17 @@ function interpretSendResult(
   isHabilitacion: boolean,
 ): { status: string; responseJson: unknown } {
   if (!r.ok) return { status: 'error', responseJson: r.fault }
-  if (isHabilitacion) return { status: 'enviado', responseJson: r.result } // async: falta consultar GetStatus
+  if (isHabilitacion) {
+    // Hallazgo de la prueba en vivo del 20 nov 2026: antes se asumía
+    // "enviado" con que no hubiera Fault SOAP, pero la DIAN puede
+    // rechazar de inmediato (p. ej. MIMEType inválido) dentro de
+    // errorMessageList sin que eso sea un Fault SOAP -- hay que revisar
+    // ese campo para no mostrar "enviado" cuando en realidad fue un
+    // rechazo inmediato.
+    const upload = r.result as UploadDocumentResponse
+    const rejected = upload.errorMessageList?.some((m) => m.success === false)
+    return { status: rejected ? 'rechazado' : 'enviado', responseJson: upload } // si no rechazó de inmediato, sigue pendiente -- falta consultar GetStatus
+  }
   const dianResponse = r.result as DianResponse
   return { status: dianResponse.isValid ? 'aceptado' : 'rechazado', responseJson: dianResponse }
 }
