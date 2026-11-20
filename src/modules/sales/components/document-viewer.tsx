@@ -709,10 +709,14 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-2 border-blue-100">
         <DialogTitle className="sr-only">{docTypeLabel}</DialogTitle>
-        {/* Toolbar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 bg-white rounded-t-2xl">
+        {/* Toolbar -- flex-wrap para que los botones pasen a una segunda
+            línea en vez de desbordar y forzar scroll lateral en el modal
+            (ya pasaba con muchos botones de Facturación Electrónica
+            activos a la vez: correo, XML, Enviar a la DIAN, Consultar
+            estado, Imprimir). Hallazgo de uso en vivo, 20 nov 2026. */}
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-y-2 px-4 py-2.5 border-b border-zinc-100 bg-white rounded-t-2xl">
           <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">{docTypeLabel}</span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
             {doc.customer?.email && (
               <button onClick={handleEmail} disabled={emailBusy}
                 className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-primary hover:bg-blue-50 transition-colors border border-blue-200 disabled:opacity-40">
