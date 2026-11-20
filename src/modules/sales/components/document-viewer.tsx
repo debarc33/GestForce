@@ -708,7 +708,7 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-2 border-blue-100">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-2 border-blue-100">
         <DialogTitle className="sr-only">{docTypeLabel}</DialogTitle>
         {/* Toolbar -- flex-wrap para que los botones pasen a una segunda
             línea en vez de desbordar y forzar scroll lateral en el modal
