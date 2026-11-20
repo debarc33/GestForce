@@ -196,7 +196,7 @@ export default function EditInvoicePage() {
               text-zinc-400">
               {isTicket ? 'Ticket de Venta' : 'Factura de Venta'}
             </p>
-            <h1 className="text-xl font-semibold text-zinc-900 font-mono leading-none">{invoice.invoice_number}</h1>
+            <h1 className="text-xl font-semibold text-foreground font-mono leading-none">{invoice.invoice_number}</h1>
           </div>
           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.cls}`}>
             {statusCfg.label}
