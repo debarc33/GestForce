@@ -88,8 +88,13 @@ export async function POST(req: NextRequest) {
         apiUrl: company.fe_api_url, pfxBuffer, pfxPassword, trackId: doc.fe_track_id,
       })
       const { status, responseJson } = interpretStatusResult(statusResult)
+      // Importante: NO tocar fe_sent_at aqui -- esta es solo una CONSULTA de un envio
+      // anterior, no un envio nuevo. fe_sent_at debe reflejar la hora real del envio
+      // original (mas abajo, en la rama de "Envio nuevo"); sobreescribirla en cada
+      // consulta de estado borraba ese dato y hacia imposible saber cuanto tiempo
+      // llevaba realmente pendiente un documento.
       await admin.from(table).update({
-        fe_dian_status: status, fe_dian_response: responseJson, fe_sent_at: new Date().toISOString(),
+        fe_dian_status: status, fe_dian_response: responseJson,
       }).eq('id', docId)
       return NextResponse.json({ status, response: responseJson })
     }
