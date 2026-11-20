@@ -1,16 +1,24 @@
 /**
- * Construye un archivo .zip mínimo (un solo archivo, método "stored" --
- * sin comprimir) sin depender de ninguna librería externa. La DIAN exige
- * que el XML firmado vaya empaquetado en un .zip antes de transmitirlo
- * (confirmado por varias implementaciones de referencia -- el WSDL
- * oficial solo dice `contentFile: base64Binary`, pero no exige compresión
- * dentro del .zip, así que "stored" es válido y evita sumar una
- * dependencia nueva solo para esto).
+ * Construye un archivo .zip mínimo (un solo archivo) sin depender de
+ * ninguna librería externa.
+ *
+ * Hallazgo de la prueba en vivo del 20 nov 2026: la primera versión
+ * usaba método "stored" (sin comprimir) -- válido según el estándar ZIP
+ * y verificado contra `unzip`/Python `zipfile`, pero la DIAN rechazaba
+ * el envío con "MIMEType del archivo inválido (text/xml)" incluso ya con
+ * el nombre de archivo corregido (.zip). La hipótesis más probable: al
+ * no comprimir, el XML queda en texto plano dentro del .zip, y el
+ * validador de la DIAN -- en vez de confirmar primero la firma "PK" del
+ * zip -- parece inspeccionar el contenido y encuentra el texto
+ * `<?xml ...` legible ahí mismo, concluyendo "text/xml" en vez de
+ * reconocerlo como zip. Se cambió a compresión DEFLATE real (método 8)
+ * para que el XML no quede legible en claro dentro del paquete.
  *
  * Verificado contra `unzip` y el módulo `zipfile` de Python -- ambos
  * abren correctamente el resultado y recuperan el contenido exacto.
  */
 import { createHash } from 'node:crypto'
+import { deflateRawSync } from 'node:zlib'
 
 // Tabla CRC-32 estándar (polinomio 0xEDB88320), calculada una sola vez.
 const CRC32_TABLE = (() => {
@@ -39,38 +47,39 @@ function dosDateTime(date: Date): { dosTime: number; dosDate: number } {
   return { dosTime, dosDate }
 }
 
-/** Construye un .zip con un solo archivo adentro (sin comprimir). */
+/** Construye un .zip con un solo archivo adentro, comprimido con DEFLATE (método 8). */
 export function buildZip(fileName: string, content: string | Buffer): Buffer {
   const data = Buffer.isBuffer(content) ? content : Buffer.from(content, 'utf8')
+  const compressed = deflateRawSync(data)
   const nameBuf = Buffer.from(fileName, 'utf8')
-  const crc = crc32(data)
+  const crc = crc32(data) // el CRC-32 siempre es sobre los datos SIN comprimir
   const { dosTime, dosDate } = dosDateTime(new Date())
 
   const localHeader = Buffer.alloc(30)
   localHeader.writeUInt32LE(0x04034b50, 0)
   localHeader.writeUInt16LE(20, 4)
   localHeader.writeUInt16LE(0, 6)
-  localHeader.writeUInt16LE(0, 8) // método = 0 (stored, sin comprimir)
+  localHeader.writeUInt16LE(8, 8) // método = 8 (deflate)
   localHeader.writeUInt16LE(dosTime, 10)
   localHeader.writeUInt16LE(dosDate, 12)
   localHeader.writeUInt32LE(crc, 14)
-  localHeader.writeUInt32LE(data.length, 18)
+  localHeader.writeUInt32LE(compressed.length, 18)
   localHeader.writeUInt32LE(data.length, 22)
   localHeader.writeUInt16LE(nameBuf.length, 26)
   localHeader.writeUInt16LE(0, 28)
 
-  const localEntry = Buffer.concat([localHeader, nameBuf, data])
+  const localEntry = Buffer.concat([localHeader, nameBuf, compressed])
 
   const centralHeader = Buffer.alloc(46)
   centralHeader.writeUInt32LE(0x02014b50, 0)
   centralHeader.writeUInt16LE(20, 4)
   centralHeader.writeUInt16LE(20, 6)
   centralHeader.writeUInt16LE(0, 8)
-  centralHeader.writeUInt16LE(0, 10)
+  centralHeader.writeUInt16LE(8, 10) // método = 8 (deflate)
   centralHeader.writeUInt16LE(dosTime, 12)
   centralHeader.writeUInt16LE(dosDate, 14)
   centralHeader.writeUInt32LE(crc, 16)
-  centralHeader.writeUInt32LE(data.length, 20)
+  centralHeader.writeUInt32LE(compressed.length, 20)
   centralHeader.writeUInt32LE(data.length, 24)
   centralHeader.writeUInt16LE(nameBuf.length, 28)
   centralHeader.writeUInt16LE(0, 30)
