@@ -180,6 +180,7 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
     issueDate:       invoice.issue_date,
     issueTime:       horFac,
     dueDate:         invoice.due_date ?? null,
+    paymentForm:     invoice.payment_form ?? 'contado',
     tipAmb,
     softwareId:      company.fe_software_id,
     invoiceTypeCode: '01',

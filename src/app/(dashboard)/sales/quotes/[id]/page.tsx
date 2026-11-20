@@ -7,7 +7,8 @@ import { ArrowLeft, Plus, Minus, X, Search, AlertCircle, Loader2, FileText, Prin
 import { useProducts } from '@/modules/products/queries'
 import { useCustomers } from '@/modules/customers/queries'
 import { useCompanyStore } from '@/store/useCompanyStore'
-import { useQuote, useQuoteItems, updateQuoteWithItems, approveQuote, useInvoiceByQuoteId } from '@/modules/sales/queries'
+import { useQuote, useQuoteItems, updateQuoteWithItems, approveQuote, useInvoiceByQuoteId, usePaymentMethods } from '@/modules/sales/queries'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { DocumentViewer, type DocData } from '@/modules/sales/components/document-viewer'
 import { useCompany } from '@/modules/company/queries'
 import { CustomerSearch } from '@/components/ui/customer-search'
@@ -67,11 +68,22 @@ export default function EditQuotePage() {
   const [search, setSearch]           = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
 
+  // Forma de pago (hallazgo 20 nov 2026, comparado contra Siigo) -- se pide
+  // justo antes de facturar/generar el tiquet, en vez de asumir siempre
+  // "de contado" sin preguntar como se hacía hasta ahora.
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [pendingDocType, setPendingDocType]     = useState<'invoice' | 'ticket'>('invoice')
+  const [paymentForm, setPaymentForm]           = useState<'contado' | 'credito'>('contado')
+  const [creditDays, setCreditDays]             = useState(30)
+  const [paymentMethodId, setPaymentMethodId]   = useState('')
+  const [paymentError, setPaymentError]         = useState<string | null>(null)
+
   const { data: quote,      isLoading: loadingQuote  } = useQuote(id)
   const { data: quoteItems = [], isLoading: loadingItems } = useQuoteItems(id)
   const { data: products   = [] } = useProducts(activeCompanyId ?? undefined)
   const { data: customers  = [] } = useCustomers(activeCompanyId ?? undefined)
   const { data: company           } = useCompany(activeCompanyId)
+  const { data: paymentMethods = [] } = usePaymentMethods(activeCompanyId ?? undefined)
   const { data: relatedInvoice    } = useInvoiceByQuoteId(quote?.status === 'approved' ? quote?.id : undefined)
 
   useEffect(() => {
@@ -171,14 +183,28 @@ export default function EditQuotePage() {
   }
 
   const approveMut = useMutation({
-    mutationFn: (documentType: 'invoice' | 'ticket') => approveQuote(id, documentType),
+    mutationFn: () => approveQuote(
+      id, pendingDocType, paymentForm,
+      paymentForm === 'credito' ? creditDays : undefined,
+      paymentForm === 'contado' ? (paymentMethodId || undefined) : undefined,
+    ),
     onSuccess: (invoiceId) => {
+      setPaymentModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['quotes',   activeCompanyId] })
       queryClient.invalidateQueries({ queryKey: ['invoices', activeCompanyId] })
       router.push(`/sales/invoices/${invoiceId}`)
     },
-    onError: (e: Error) => setError(e.message),
+    onError: (e: Error) => setPaymentError(e.message),
   })
+
+  const openPaymentModal = (documentType: 'invoice' | 'ticket') => {
+    setPendingDocType(documentType)
+    setPaymentForm('contado')
+    setCreditDays(30)
+    setPaymentMethodId(paymentMethods[0]?.id ?? '')
+    setPaymentError(null)
+    setPaymentModalOpen(true)
+  }
 
   // DocData para el visor
   const docData: DocData | null = quote ? {
@@ -249,7 +275,7 @@ export default function EditQuotePage() {
           </button>
           <div>
             <p className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase leading-none mb-0.5">Cotización</p>
-            <h1 className="text-xl font-semibold text-zinc-900 font-mono leading-none">{quote.quote_number}</h1>
+            <h1 className="text-xl font-semibold text-foreground font-mono leading-none">{quote.quote_number}</h1>
           </div>
           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.cls}`}>
             {statusCfg.label}
@@ -260,14 +286,14 @@ export default function EditQuotePage() {
           {quote?.status === 'approved' && (
             <>
               <button
-                onClick={() => canEdit ? approveMut.mutate('ticket') : alertNoEditAccess()}
+                onClick={() => canEdit ? openPaymentModal('ticket') : alertNoEditAccess()}
                 disabled={approveMut.isPending}
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-sm">
                 {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
                 Ticket POS
               </button>
               <button
-                onClick={() => canEdit ? approveMut.mutate('invoice') : alertNoEditAccess()}
+                onClick={() => canEdit ? openPaymentModal('invoice') : alertNoEditAccess()}
                 disabled={approveMut.isPending}
                 className="flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 transition-colors">
                 {approveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileCheck className="h-3.5 w-3.5" />}
@@ -534,6 +560,70 @@ export default function EditQuotePage() {
           autoPrint={autoPrint}
         />
       )}
+
+      {/* Forma de pago -- se pregunta antes de facturar/generar el tiquet */}
+      <Dialog open={paymentModalOpen} onOpenChange={(v) => !v && !approveMut.isPending && setPaymentModalOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Forma de pago</DialogTitle>
+          <div className="space-y-3 pt-1">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setPaymentForm('contado')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  paymentForm === 'contado' ? 'border-primary bg-blue-50 text-primary' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>
+                Contado
+              </button>
+              <button type="button" onClick={() => setPaymentForm('credito')}
+                className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                  paymentForm === 'credito' ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50'}`}>
+                Crédito
+              </button>
+            </div>
+
+            {paymentForm === 'contado' ? (
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Medio de pago</label>
+                {paymentMethods.length === 0 ? (
+                  <p className="text-xs text-zinc-400 rounded-lg border border-dashed border-zinc-200 px-3 py-2">
+                    No tienes medios de pago configurados todavía (Ajustes → Medios de pago). La factura se marcará como pagada igual.
+                  </p>
+                ) : (
+                  <select value={paymentMethodId} onChange={e => setPaymentMethodId(e.target.value)} className={inputCls}>
+                    <option value="">Sin especificar</option>
+                    {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1">Plazo (días)</label>
+                <input type="number" min={1} value={creditDays}
+                  onChange={e => setCreditDays(Math.max(1, Number(e.target.value)))}
+                  className={inputCls} />
+              </div>
+            )}
+
+            {paymentError && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 shrink-0" /><span>{paymentError}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" onClick={() => setPaymentModalOpen(false)} disabled={approveMut.isPending}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition-colors">
+                Cancelar
+              </button>
+              <button type="button"
+                onClick={() => { setPaymentError(null); approveMut.mutate() }}
+                disabled={approveMut.isPending}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors">
+                {approveMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

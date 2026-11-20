@@ -38,6 +38,10 @@ export type InvoiceWithCustomer = {
   dian_status: 'not_applicable' | 'pending' | 'accepted' | 'rejected'
   status: 'draft' | 'issued' | 'cancelled'
   payment_status: 'unpaid' | 'partial' | 'paid'
+  // Forma de pago (hallazgo 20 nov 2026, comparado contra Siigo -- antes no
+  // existia en absoluto, ver migración 045_invoice_payment_form.sql)
+  payment_form?:  'contado' | 'credito'
+  credit_days?:   number | null
   notes: string | null
   issued_at: string | null
   created_at: string
@@ -181,11 +185,20 @@ export async function updateQuoteStatus(
   if (error) throw new Error(error.message)
 }
 
-export async function approveQuote(quoteId: string, documentType: 'invoice' | 'ticket' = 'invoice') {
+export async function approveQuote(
+  quoteId: string,
+  documentType: 'invoice' | 'ticket' = 'invoice',
+  paymentForm: 'contado' | 'credito' = 'contado',
+  creditDays?: number | null,
+  paymentMethodId?: string | null,
+) {
   const supabase = createClient()
   const { data, error } = await supabase.rpc('approve_quote', {
     p_quote_id: quoteId,
     p_document_type: documentType,
+    p_payment_form: paymentForm,
+    p_credit_days: paymentForm === 'credito' ? (creditDays ?? 30) : null,
+    p_payment_method_id: paymentForm === 'contado' ? (paymentMethodId ?? null) : null,
   })
   if (error) throw new Error(error.message)
   return data as string

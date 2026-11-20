@@ -25,6 +25,9 @@ export interface XMLInvoiceParams {
   issueDate:     string   // YYYY-MM-DD
   issueTime:     string   // HH:mm:ss-05:00
   dueDate?:      string | null
+  /** 'contado' | 'credito' -- forma de pago (hallazgo 20 nov 2026: antes no
+   *  existia este campo en absoluto, el XML nunca declaraba forma de pago). */
+  paymentForm?:  'contado' | 'credito' | null
   tipAmb:        '1' | '2'   // 1=producción, 2=habilitación
   softwareId:    string
   /** 01=Factura Venta, 91=Nota Crédito, 92=Nota Débito */
@@ -57,6 +60,15 @@ const DOC_TYPE_MAP: Record<string, { code: string; name: string }> = {
   TI:  { code: '12', name: 'Tarjeta de identidad' },
 }
 
+/**
+ * Forma de pago (hallazgo 20 nov 2026, comparado contra Siigo): antes este
+ * bloque <cac:PaymentMeans>/<cac:PaymentTerms> no existia en absoluto -- la
+ * DIAN nunca recibia si la venta era de contado o a credito. Codigos
+ * 1=Contado, 2=Credito, convencion estandar usada por el software de
+ * facturacion electronica en Colombia -- pendiente de verificar contra un
+ * XML real validado por la DIAN si se presenta algun problema de
+ * validacion especifico de este bloque.
+ */
 export function generateXMLUBL21(p: XMLInvoiceParams): string {
   const nitOFE   = (p.company.nit ?? '').replace(/[^0-9]/g, '')
   const numAdq   = (p.customer.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
@@ -242,6 +254,18 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
       ${p.customer.email ? `<cac:Contact><cbc:ElectronicMail>${esc(p.customer.email)}</cbc:ElectronicMail></cac:Contact>` : ''}
     </cac:Party>
   </cac:AccountingCustomerParty>
+
+  ${p.invoiceTypeCode === '01' ? `<!-- Forma de pago -->
+  <cac:PaymentMeans>
+    <cbc:ID>1</cbc:ID>
+    <cbc:PaymentMeansCode>${p.paymentForm === 'credito' ? '1' : '10'}</cbc:PaymentMeansCode>
+    ${p.dueDate ? `<cbc:PaymentDueDate>${p.dueDate}</cbc:PaymentDueDate>` : ''}
+  </cac:PaymentMeans>
+  <cac:PaymentTerms>
+    <cbc:ID>1</cbc:ID>
+    <cbc:PaymentMeansID>${p.paymentForm === 'credito' ? '2' : '1'}</cbc:PaymentMeansID>
+    <cbc:Amount currencyID="COP">${fmt2(p.total)}</cbc:Amount>
+  </cac:PaymentTerms>` : ''}
 
   <!-- Totales de impuesto -->
   <cac:TaxTotal>
