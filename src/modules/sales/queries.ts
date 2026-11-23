@@ -396,6 +396,12 @@ export type QuoteCustomer = {
   phone: string | null
   address: string | null
   city: string | null
+  // Configuracion de pago del cliente (hallazgo 23 nov 2026: existia desde
+  // antes en la ficha del cliente, pero el modal de "Forma de pago" al
+  // facturar nunca la leia -- siempre arrancaba en contado/30 dias sin
+  // importar lo que tuviera configurado el cliente).
+  payment_type: string | null
+  credit_days: number | null
 }
 
 export function useQuote(id?: string) {
@@ -410,7 +416,7 @@ export function useQuote(id?: string) {
       if (data.customer_id) {
         const { data: c } = await supabase
           .from('customers')
-          .select('id, name, email, doc_type, doc_number, phone, address, city')
+          .select('id, name, email, doc_type, doc_number, phone, address, city, payment_type, credit_days')
           .eq('id', data.customer_id).single()
         customer = c ?? null
       }
@@ -524,7 +530,7 @@ export function useInvoice(id?: string) {
       if (data.customer_id) {
         const { data: c } = await supabase
           .from('customers')
-          .select('id, name, email, doc_type, doc_number, phone, address, city')
+          .select('id, name, email, doc_type, doc_number, phone, address, city, payment_type, credit_days')
           .eq('id', data.customer_id).single()
         customer = c ?? null
       }

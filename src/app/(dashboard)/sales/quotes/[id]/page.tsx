@@ -198,9 +198,15 @@ export default function EditQuotePage() {
   })
 
   const openPaymentModal = (documentType: 'invoice' | 'ticket') => {
+    // Arrancar con la forma de pago configurada en la ficha del cliente
+    // (hallazgo 23 nov 2026: antes siempre arrancaba en contado/30 dias sin
+    // importar lo que el cliente tuviera configurado). Sigue siendo
+    // editable en el modal por si esta venta puntual es distinta.
+    const customerPaymentType = quote?.customer?.payment_type === 'credito' ? 'credito' : 'contado'
+    const customerCreditDays  = quote?.customer?.credit_days ?? 30
     setPendingDocType(documentType)
-    setPaymentForm('contado')
-    setCreditDays(30)
+    setPaymentForm(customerPaymentType)
+    setCreditDays(customerCreditDays)
     setPaymentMethodId(paymentMethods[0]?.id ?? '')
     setPaymentError(null)
     setPaymentModalOpen(true)
@@ -351,6 +357,18 @@ export default function EditQuotePage() {
                 </p>
               ) : null
             })()}
+            {/* Forma de pago configurada en la ficha del cliente -- informativo,
+                se usa como valor inicial al facturar (ver openPaymentModal). */}
+            {quote.customer && (
+              <p className="mt-0.5 text-[11px] text-zinc-400">
+                Forma de pago del cliente:{' '}
+                <span className="font-medium text-zinc-500">
+                  {quote.customer.payment_type === 'credito'
+                    ? `Crédito a ${quote.customer.credit_days ?? 30} días`
+                    : 'Contado'}
+                </span>
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-zinc-500 mb-1">Fecha emisión</label>
