@@ -288,8 +288,17 @@ export default function EditQuotePage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Generar venta — solo si aprobada */}
-          {quote?.status === 'approved' && (
+          {/* Generar venta -- facturar/tiquetar una cotizacion en borrador o
+              enviada. Hallazgo 23 nov 2026: esta condicion decia
+              "quote?.status === 'approved'", pero approveQuote() (la RPC que
+              disparan estos botones) es la MISMA funcion que pone el estado
+              en 'approved' al crear la factura -- es decir, con esa
+              condicion los botones nunca podian aparecer en una cotizacion
+              real (nunca llega a 'approved' sin haber pasado ya por aqui),
+              y la unica forma de aprobar terminaba siendo el check rapido de
+              la lista de cotizaciones, que no pasa por este modal de forma
+              de pago en absoluto. */}
+          {(quote?.status === 'draft' || quote?.status === 'sent') && (
             <>
               <button
                 onClick={() => canEdit ? openPaymentModal('ticket') : alertNoEditAccess()}
