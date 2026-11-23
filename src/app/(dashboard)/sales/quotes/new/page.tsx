@@ -17,6 +17,18 @@ const fmt = (n: number) =>
   '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 
 const today = () => new Date().toISOString().split('T')[0]
+// Fecha de vencimiento por defecto de una cotizacion nueva: un mes
+// despues de la fecha de emision, pero sigue siendo editable en el
+// formulario (pedido de Deisy, 23 nov 2026). Se usa setDate(0) para el
+// caso en que el mes de emision tenga mas dias que el mes siguiente
+// (ej. 31 de enero -> 28/29 de febrero, no 3 de marzo).
+const addOneMonth = (dateStr: string) => {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDate()
+  d.setMonth(d.getMonth() + 1)
+  if (d.getDate() !== day) d.setDate(0)
+  return d.toISOString().split('T')[0]
+}
 
 const TAX_OPTIONS = [
   { label: '0 %',  value: 0 },
@@ -43,7 +55,7 @@ export default function NewQuotePage() {
   const [items, setItems]         = useState<SaleItemValues[]>([])
   const [customerId, setCustomerId] = useState('')
   const [issueDate, setIssueDate] = useState(today())
-  const [expiryDate, setExpiryDate] = useState('')
+  const [expiryDate, setExpiryDate] = useState(addOneMonth(today()))
   const [notes, setNotes]         = useState('')
   const [error, setError]         = useState<string | null>(null)
   const [search, setSearch]       = useState('')
