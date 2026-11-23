@@ -457,7 +457,15 @@ function PurchasesPageInner() {
                       return (
                         <tr key={row.id} className="hover:bg-[var(--glass)] transition-colors">
                           <td className="px-4 py-3 font-medium text-foreground">{row.supplier}</td>
-                          <td className="px-4 py-3 font-mono text-sm text-primary">{row.invoice_number}</td>
+                          <td className="px-4 py-3 font-mono text-sm">
+                            <button
+                              onClick={() => router.push(`/purchases/invoices/${row.id}`)}
+                              className="text-primary hover:text-primary/80 hover:underline transition-colors"
+                              title="Ver factura y registrar pago"
+                            >
+                              {row.invoice_number}
+                            </button>
+                          </td>
                           <td className="px-4 py-3 text-sm text-muted-foreground">{fmtDate(row.issue_date)}</td>
                           <td className="px-4 py-3 text-sm text-muted-foreground">{fmtDate(row.due_date)}</td>
                           <td className="px-4 py-3 text-right tabular-nums text-foreground">{fmtMoney(row.total)}</td>
@@ -488,7 +496,12 @@ function PurchasesPageInner() {
                     return (
                       <div key={row.id} className="p-4">
                         <div className="flex items-start justify-between gap-2">
-                          <span className="font-mono text-sm text-primary">{row.invoice_number}</span>
+                          <button
+                            onClick={() => router.push(`/purchases/invoices/${row.id}`)}
+                            className="font-mono text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                          >
+                            {row.invoice_number}
+                          </button>
                           <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${band.cls}`}>
                             {band.label}
                           </span>
