@@ -276,6 +276,13 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? 'No se pudo generar el XML')
       downloadXML(data.xml, doc.number.replace(/[^a-zA-Z0-9-]/g, '_'))
+      // Limpieza 23 nov 2026: a diferencia de handleSendDian/handleCheckStatus,
+      // esta funcion nunca invalidaba las queries despues de generar el XML --
+      // el servidor si guarda fe_xml_signed/cufe/cude/xml_ubl (Fase C/G), pero
+      // el visor seguia mostrando los datos viejos (por ejemplo, el boton
+      // "Enviar a la DIAN" no aparecia) hasta recargar la pagina a mano.
+      queryClient.invalidateQueries({ queryKey: ['invoice', doc.id] })
+      queryClient.invalidateQueries({ queryKey: ['credit_debit_notes'] })
     } catch (e) {
       const message = e instanceof Error ? e.message : 'No se pudo generar el XML'
       window.alert(message)
