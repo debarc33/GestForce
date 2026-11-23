@@ -21,6 +21,10 @@ const STATUS_CFG: Record<string, { label: string; cls: string }> = {
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+// Un saldo negativo significa que el cliente pago mas de lo que ahora vale
+// la factura/recibo (por una nota credito aplicada despues del pago) -- se
+// muestra como saldo a favor del cliente en vez de ocultarlo como $0.
+const fmtSaldo = (n: number) => n < 0 ? `A favor ${fmt(Math.abs(n))}` : fmt(n)
 const today = () => new Date().toISOString().split('T')[0]
 const inputCls = 'w-full rounded-lg border border-[var(--glass-border)] bg-[var(--glass)] px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-colors'
 
@@ -111,7 +115,7 @@ function ReceiptDialog({
       <tbody>
         <tr><td>Total factura</td><td class="right">${fmt(receipt.total_amount)}</td></tr>
         <tr><td>Total pagado</td><td class="right" style="color:#16a34a">${fmt(receipt.amount_paid)}</td></tr>
-        <tr class="total"><td>Saldo pendiente</td><td class="right" style="color:${receipt.balance > 0 ? '#dc2626' : '#16a34a'}">${fmt(receipt.balance)}</td></tr>
+        <tr class="total"><td>${receipt.balance < 0 ? 'Saldo a favor del cliente' : 'Saldo pendiente'}</td><td class="right" style="color:${receipt.balance > 0 ? '#dc2626' : receipt.balance < 0 ? '#7c3aed' : '#16a34a'}">${fmtSaldo(receipt.balance)}</td></tr>
       </tbody>
     </table>
     ${payments.length > 0 ? `
@@ -146,7 +150,7 @@ function ReceiptDialog({
       `Recibo: ${receipt.receipt_number}\n` +
       `Total factura: ${fmt(receipt.total_amount)}\n` +
       `Total pagado: ${fmt(receipt.amount_paid)}\n` +
-      `Saldo pendiente: ${fmt(receipt.balance)}\n\n` +
+      `${receipt.balance < 0 ? 'Saldo a favor del cliente' : 'Saldo pendiente'}: ${fmtSaldo(receipt.balance)}\n\n` +
       `Saludos cordiales,`
     )
     window.open(`mailto:${email}?subject=${subject}&body=${body}`)
@@ -231,9 +235,11 @@ function ReceiptDialog({
                 <td className="px-3 py-2 text-right font-medium text-green-600">{fmt(receipt.amount_paid)}</td>
               </tr>
               <tr className="border-t border-[var(--glass-border)] bg-[var(--glass-strong)]">
-                <td className="px-3 py-2 font-semibold text-foreground">Saldo pendiente</td>
-                <td className={`px-3 py-2 text-right font-bold ${receipt.balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                  {fmt(receipt.balance)}
+                <td className="px-3 py-2 font-semibold text-foreground">{receipt.balance < 0 ? 'Saldo a favor del cliente' : 'Saldo pendiente'}</td>
+                <td className={`px-3 py-2 text-right font-bold ${
+                  receipt.balance > 0 ? 'text-red-600' : receipt.balance < 0 ? 'text-violet-600' : 'text-green-600'
+                }`}>
+                  {fmtSaldo(receipt.balance)}
                 </td>
               </tr>
             </tbody>
@@ -422,8 +428,12 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
       accessorKey: 'balance',
       header: 'Saldo',
       cell: ({ row }) => (
-        <span className={row.original.balance > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
-          {fmt(row.original.balance)}
+        <span className={
+          row.original.balance > 0 ? 'text-red-600 font-medium' :
+          row.original.balance < 0 ? 'text-violet-600 font-medium' :
+          'text-muted-foreground'
+        }>
+          {fmtSaldo(row.original.balance)}
         </span>
       ),
     },
@@ -514,7 +524,11 @@ export function ReceiptsTable({ receipts, companyId, globalFilter = '', statusFi
                 <div className="mt-2 flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Total <span className="font-medium text-foreground">{fmt(r.total_amount)}</span></span>
                   <span className="font-medium text-green-600">Pagado {fmt(r.amount_paid)}</span>
-                  <span className={r.balance > 0 ? 'font-medium text-red-600' : 'text-muted-foreground'}>Saldo {fmt(r.balance)}</span>
+                  <span className={
+                    r.balance > 0 ? 'font-medium text-red-600' :
+                    r.balance < 0 ? 'font-medium text-violet-600' :
+                    'text-muted-foreground'
+                  }>{r.balance < 0 ? 'A favor' : 'Saldo'} {fmtSaldo(r.balance)}</span>
                 </div>
               </div>
             )

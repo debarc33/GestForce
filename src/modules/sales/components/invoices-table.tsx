@@ -23,6 +23,7 @@ const PAY_CFG: Record<string, { label: string; cls: string }> = {
 }
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
+const fmtSaldo = (n: number) => n < 0 ? `A favor ${fmt(Math.abs(n))}` : fmt(n)
 
 interface Props {
   invoices: InvoiceWithCustomer[]
@@ -132,7 +133,11 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
     {
       accessorKey: 'balance_due',
       header: 'Saldo',
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{fmt(row.original.balance_due)}</span>,
+      cell: ({ row }) => (
+        <span className={row.original.balance_due < 0 ? 'text-violet-600 text-sm font-medium' : 'text-muted-foreground text-sm'}>
+          {fmtSaldo(row.original.balance_due)}
+        </span>
+      ),
     },
   ]
 
@@ -234,8 +239,10 @@ export function InvoicesTable({ invoices, companyId: _companyId, onSelectionChan
                       </span>
                       <div className="text-right">
                         <p className="text-sm font-medium text-foreground">{fmt(inv.total)}</p>
-                        {inv.balance_due > 0 && (
-                          <p className="text-xs text-muted-foreground">Saldo {fmt(inv.balance_due)}</p>
+                        {inv.balance_due !== 0 && (
+                          <p className={`text-xs ${inv.balance_due < 0 ? 'text-violet-600 font-medium' : 'text-muted-foreground'}`}>
+                            {inv.balance_due < 0 ? 'A favor' : 'Saldo'} {fmtSaldo(inv.balance_due)}
+                          </p>
                         )}
                       </div>
                     </div>
