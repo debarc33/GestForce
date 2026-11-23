@@ -18,7 +18,7 @@ export type QuoteWithCustomer = {
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired'
   notes: string | null
   created_at: string
-  customer: { id: string; name: string; email: string | null } | null
+  customer: { id: string; name: string; email: string | null; payment_type: string | null; credit_days: number | null } | null
 }
 
 export type InvoiceWithCustomer = {
@@ -105,10 +105,22 @@ export type ReceiptPayment = {
 async function fetchCustomerMap(
   supabase: ReturnType<typeof createClient>,
   customerIds: string[]
-): Promise<Record<string, { id: string; name: string; email: string | null }>> {
+): Promise<Record<string, {
+  id: string; name: string; email: string | null
+  // Forma de pago configurada en la ficha del cliente (hallazgo 23 nov
+  // 2026): las listas (quotes/invoices) tambien la necesitan, no solo el
+  // detalle de la cotizacion -- ver quotes-table.tsx (aprobar desde la lista).
+  payment_type: string | null; credit_days: number | null
+}>> {
   if (customerIds.length === 0) return {}
-  const { data } = await supabase.from('customers').select('id, name, email').in('id', customerIds)
-  return Object.fromEntries((data ?? []).map((c) => [c.id, { ...c, email: c.email ?? null }]))
+  const { data } = await supabase
+    .from('customers')
+    .select('id, name, email, payment_type, credit_days')
+    .in('id', customerIds)
+  return Object.fromEntries((data ?? []).map((c) => [c.id, {
+    ...c, email: c.email ?? null,
+    payment_type: c.payment_type ?? null, credit_days: c.credit_days ?? null,
+  }]))
 }
 
 // ─── COTIZACIONES ─────────────────────────────────────────────────────────

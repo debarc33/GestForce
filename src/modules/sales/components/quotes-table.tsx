@@ -83,8 +83,10 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
   }
 
   const approveMut = useMutation({
-    mutationFn: ({ id, documentType }: { id: string; documentType: 'invoice' | 'ticket' }) =>
-      approveQuote(id, documentType),
+    mutationFn: ({ id, documentType, paymentForm, creditDays }: {
+      id: string; documentType: 'invoice' | 'ticket'
+      paymentForm: 'contado' | 'credito'; creditDays: number
+    }) => approveQuote(id, documentType, paymentForm, creditDays),
     onSuccess: invalidate,
     onError: (e: Error) => setActionError(e.message),
   })
@@ -154,12 +156,32 @@ export function QuotesTable({ quotes, companyId, onSelectionChange, globalFilter
           <div className="flex items-center gap-1 rounded-lg glass-surface px-2 py-1">
             <span className="text-xs text-muted-foreground mr-1">Aprobar como:</span>
             <button
-              onClick={() => { if (!canEdit) return alertNoEditAccess(); approveMut.mutate({ id, documentType: 'invoice' }); setApprovingId(null) }}
+              onClick={() => {
+                if (!canEdit) return alertNoEditAccess()
+                // Forma de pago configurada en la ficha del cliente (hallazgo
+                // 23 nov 2026): este boton rapido de la lista no tiene un
+                // modal propio como el de la pantalla de la cotizacion, asi
+                // que usa directamente lo que el cliente tenga configurado.
+                approveMut.mutate({
+                  id, documentType: 'invoice',
+                  paymentForm:  q.customer?.payment_type === 'credito' ? 'credito' : 'contado',
+                  creditDays:   q.customer?.credit_days ?? 30,
+                })
+                setApprovingId(null)
+              }}
               className="rounded px-2 py-0.5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
               Factura
             </button>
             <button
-              onClick={() => { if (!canEdit) return alertNoEditAccess(); approveMut.mutate({ id, documentType: 'ticket' }); setApprovingId(null) }}
+              onClick={() => {
+                if (!canEdit) return alertNoEditAccess()
+                approveMut.mutate({
+                  id, documentType: 'ticket',
+                  paymentForm:  q.customer?.payment_type === 'credito' ? 'credito' : 'contado',
+                  creditDays:   q.customer?.credit_days ?? 30,
+                })
+                setApprovingId(null)
+              }}
               className="rounded px-2 py-0.5 text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors">
               Ticket
             </button>
