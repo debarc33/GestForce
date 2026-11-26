@@ -6,6 +6,7 @@ import { Printer, Mail, X, FileCode2, Send, RefreshCw } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { downloadXML } from '@/lib/fe/xml-ubl21'
 import { buildQrContent, buildQrMatrix, buildQrRects, buildVerificationUrl, isoToColombiaTime } from '@/lib/fe/qr'
+import { valorEnLetras } from '@/lib/fe/numero-a-letras'
 
 const fmt = (n: number) => '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 0 })
 const fmtDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
@@ -29,6 +30,11 @@ export interface DocCompany {
   dian_from_number?: number | null
   dian_to_number?: number | null
   dian_validity_to?: string | null
+  /** Código CIIU de actividad económica -- hallazgo 26 nov 2026 (comparando
+   *  contra Siigo): ya viaja en el XML (TaxLevelCode) pero no se mostraba
+   *  en el documento impreso. Se muestra solo el código (no hay en
+   *  GestForce una tabla de descripciones CIIU para traducirlo a texto). */
+  ciiu_code?: string | null
   // Formatos de impresión
   logo_url?: string | null
   invoice_footer?: string | null
@@ -72,6 +78,10 @@ export interface DocData {
   issue_date: string
   expiry_date?: string | null
   due_date?: string | null
+  /** 'contado' | 'credito' -- solo facturas. Hallazgo 26 nov 2026
+   *  (comparando contra Siigo): sin este dato el documento impreso no
+   *  podía mostrar el detalle de cuota de la venta a crédito. */
+  payment_form?: 'contado' | 'credito' | null
   status: string
   subtotal: number
   tax: number
@@ -654,6 +664,29 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
           </div>
         </div>
 
+        {/* Valor en letras -- hallazgo 26 nov 2026 (comparado contra Siigo).
+            No aplica a cotizaciones (no son un documento legal/tributario,
+            solo un estimado). */}
+        {doc.type !== 'quote' && (
+          <p className="text-[10px] text-zinc-500 italic">
+            Valor en Letras: {valorEnLetras(doc.total)}
+          </p>
+        )}
+
+        {/* Forma de pago a crédito (cuota) -- solo facturas a crédito,
+            mismo hallazgo: Siigo muestra "Medio de pago: Pago a crédito -
+            Cuota No. 001 vence el ... por $X" y GestForce no mostraba nada
+            de esto, solo "Forma de pago: Crédito" en otra parte de la UI
+            (no en el documento imprimible). */}
+        {doc.type === 'invoice' && doc.payment_form === 'credito' && (
+          <p className="text-[10px] text-zinc-600">
+            Forma de pago: Crédito
+            {doc.due_date && (
+              <> — Medio de pago: Pago a crédito - Cuota No. 001 vence el {fmtDate(doc.due_date)} por {fmt(doc.total)}</>
+            )}
+          </p>
+        )}
+
         {/* Footer legal */}
         <div className="border-t border-zinc-100 pt-3 space-y-1">
           {/* Resolución DIAN (auto-generada) */}
@@ -676,6 +709,24 @@ export function DocumentViewer({ open, onClose, doc, autoPrint }: Props) {
           {doc.type === 'invoice' && !isTaxResp && (
             <p className="text-[10px] text-zinc-500 italic text-center">
               No somos responsables de IVA — Régimen No Responsable
+            </p>
+          )}
+          {/* Actividad Económica (CIIU) -- hallazgo 26 nov 2026: el código ya
+              viaja en el XML, pero nunca se mostraba en el documento impreso
+              (a diferencia de Siigo, que sí muestra esta línea). */}
+          {doc.type === 'invoice' && doc.company?.ciiu_code && (
+            <p className="text-[10px] text-zinc-500 text-center">
+              Actividad Económica: {doc.company.ciiu_code}
+            </p>
+          )}
+          {/* Cláusula de letra de cambio -- hallazgo 26 nov 2026 (comparado
+              contra Siigo): solo aplica a facturas de venta a crédito, por
+              el artículo 5 de la Ley 1231 de 2008 (que convierte la factura
+              en título valor exigible). GestForce no la mostraba. */}
+          {doc.type === 'invoice' && doc.payment_form === 'credito' && (
+            <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
+              A esta factura de venta aplican las normas relativas a la letra de cambio
+              (artículo 5 Ley 1231 de 2008).
             </p>
           )}
           {/* Líneas legales configuradas */}

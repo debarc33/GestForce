@@ -2,11 +2,21 @@
  * Firma digital XAdES-EPES de facturas electrónicas DIAN -- Fase D.2 del
  * plan de facturación electrónica (ver claude/plan-accion-facturacion-dian.md).
  *
- * Toma el XML UBL 2.1 SIN firma que genera xml-ubl21.ts (con dos
- * <ext:ExtensionContent/> vacíos -- el segundo es donde esta función
- * inserta la firma) y el certificado .p12/.pfx de la empresa (ya
+ * Toma el XML UBL 2.1 SIN firma que genera xml-ubl21.ts y el certificado
+ * .p12/.pfx de la empresa (ya
  * descifrado en memoria por el llamador, ver src/lib/fe/certificate.ts),
  * y devuelve el XML firmado.
+ *
+ * Nota 26 nov 2026: hasta ahora xml-ubl21.ts generaba DOS
+ * <ext:ExtensionContent/> vacíos y esta función insertaba la firma en el
+ * segundo (por posición, ya que ambos nacían idénticos). Desde que
+ * xml-ubl21.ts agrega el bloque obligatorio sts:DianExtensions (hallazgo
+ * de la comparación contra una factura real aceptada por la DIAN, ver
+ * claude/plan-accion-facturacion-dian.md), el PRIMER <ext:ExtensionContent>
+ * ya nunca llega vacío -- solo el segundo sigue siendo un
+ * <ext:ExtensionContent/> autocerrado, y ahí sigue yendo la firma, ahora
+ * localizado por ser el único que queda vacío (ver
+ * secondExtensionContentPattern() más abajo).
  *
  * Importante sobre el certificado: esta función SOLO corre del lado del
  * servidor (requiere node:crypto y node-forge). Nunca debe llamarse desde
@@ -179,9 +189,19 @@ function findExtensionContents(doc: Document): Element[] {
   return out
 }
 
-/** Regex que ubica el SEGUNDO <ext:ExtensionContent/> (vacío) del template. */
+/**
+ * Regex que ubica el <ext:ExtensionContent/> vacío (autocerrado) donde va
+ * la firma. Hasta el 26 nov 2026 exigía encontrar DOS autocerrados (ambos
+ * slots nacían vacíos) y capturaba el segundo; desde que xml-ubl21.ts
+ * llena el primer slot con sts:DianExtensions, ese primero deja de ser
+ * autocerrado y queda un único <ext:ExtensionContent/> vacío en todo el
+ * documento -- es ese el que esta regex debe encontrar. Se mantienen los
+ * mismos 3 grupos de captura (antes/tag/después) que usan skeleton1/
+ * skeleton2/el reemplazo final más abajo, para no tener que tocar esas
+ * tres llamadas a .replace().
+ */
 function secondExtensionContentPattern(): RegExp {
-  return /^([\s\S]*<ext:ExtensionContent\/>[\s\S]*?)(<ext:ExtensionContent\/>)([\s\S]*)$/
+  return /^([\s\S]*)(<ext:ExtensionContent\/>)([\s\S]*)$/
 }
 
 function buildSignedPropertiesXml(id: string, signingTimeISO: string, cert: CertInfo): string {
@@ -229,8 +249,9 @@ export function getColombiaISODateTime(): string {
  * XAdES-EPES, usando el certificado .p12/.pfx y contraseña dados (ya
  * descifrada en memoria por el llamador -- ver certificate.ts).
  *
- * El XML de entrada debe tener exactamente dos <ext:ExtensionContent/>
- * vacíos (ver xml-ubl21.ts) -- la firma se inserta en el segundo.
+ * El XML de entrada debe tener dos <ext:ExtensionContent> (ver
+ * xml-ubl21.ts): el primero ya lleno con sts:DianExtensions, el segundo
+ * todavía vacío/autocerrado -- la firma se inserta en ese segundo.
  */
 export function signInvoiceXML(
   xmlNoSignature: string,
@@ -246,7 +267,7 @@ export function signInvoiceXML(
 
   const pattern = secondExtensionContentPattern()
   if (!pattern.test(xmlNoSignature)) {
-    throw new Error('El XML debe tener dos <ext:ExtensionContent/> vacíos -- el segundo es donde va la firma.')
+    throw new Error('El XML debe tener un <ext:ExtensionContent/> vacío (el segundo slot) -- ahí va la firma.')
   }
 
   // Paso 1: digest de todo el documento SIN firma. Es equivalente a

@@ -8,13 +8,48 @@
  * src/lib/fe/xades.ts (Fase D.2 del plan de facturación electrónica),
  * usando el certificado .p12 propio de cada empresa.
  *
- * Por eso ext:UBLExtensions siempre trae DOS <ext:UBLExtension> vacíos:
- * el primero queda reservado (sin uso por ahora), y el segundo es donde
- * xades.ts inserta la firma -- buscarlo por posición, no por contenido,
- * ya que ambos nacen idénticos y vacíos.
+ * Por eso ext:UBLExtensions siempre trae DOS <ext:UBLExtension>: el
+ * segundo es donde xades.ts inserta la firma (buscarlo por posición, no
+ * por contenido). El primero, antes vacío, ahora lleva el bloque
+ * obligatorio `sts:DianExtensions` (hallazgo 26 nov 2026, comparando
+ * contra una factura real aceptada por la DIAN -- ver
+ * claude/plan-accion-facturacion-dian.md): sin este bloque la DIAN no
+ * tiene forma de validar la resolución de numeración, el origen del
+ * documento ni el software que lo generó, aunque el resto del XML esté
+ * bien formado.
+ *
+ * Fuentes usadas para la estructura exacta de sts:DianExtensions (no hay
+ * una copia en texto plano fácilmente citable del Anexo Técnico oficial):
+ *  - XSD "DIAN_UBL_Structures.xsd" (targetNamespace
+ *    "dian:gov:co:facturaelectronica:Structures-2-1"), que define el
+ *    orden exacto: InvoiceControl? / InvoiceSource / SoftwareProvider /
+ *    SoftwareSecurityCode / AuthorizationProvider / QRCode.
+ *  - Dos implementaciones independientes (generador_factura_electronica_2020
+ *    y el módulo Odoo l10n_co_e-invoice) que coinciden en esa misma
+ *    estructura y en los atributos schemeAgencyID="195"/schemeID/schemeName
+ *    de ProviderID y AuthorizationProviderID.
+ *  - Anexo Técnico DIAN "Mecanismos del Sistema Técnico de Control
+ *    Fiscal... CUFE, UUID, QR y Software Security Code": el
+ *    SoftwareSecurityCode es SHA384(IdSoftware + PIN), sin separador --
+ *    ver calculateSoftwareSecurityCode() en cufe.ts.
+ *
+ * InvoiceControl (resolución/prefijo/rango/vigencia) es el único
+ * sub-bloque opcional dentro de DianExtensions según ese XSD -- por eso,
+ * si a la empresa todavía le falta configurar la Resolución DIAN en
+ * Configuración → Fiscal, se omite entero en vez de emitir un XML
+ * inválido con campos vacíos (mismo criterio que ya usaba el pie de
+ * página del documento impreso).
  */
 
 import type { DocCompany, DocCustomer, DocItem } from '@/modules/sales/components/document-viewer'
+import { buildVerificationUrl } from './qr'
+
+/** NIT de la propia DIAN (800.197.268-4), usado como AuthorizationProviderID
+ *  -- la entidad que autoriza la numeración es siempre la DIAN misma, sin
+ *  importar la empresa emisora. Dato público, confirmado contra dos
+ *  implementaciones independientes (ver comentario de archivo). */
+const DIAN_NIT    = '800197268'
+const DIAN_NIT_DV = '4'
 
 export interface XMLInvoiceParams {
   invoiceNumber: string
@@ -30,13 +65,28 @@ export interface XMLInvoiceParams {
   paymentForm?:  'contado' | 'credito' | null
   tipAmb:        '1' | '2'   // 1=producción, 2=habilitación
   softwareId:    string
+  /** Código de Seguridad del Software ya calculado (SHA384 de ID+PIN) --
+   *  se recibe ya calculado porque el hash se hace con Web Crypto (async)
+   *  y esta función es síncrona; ver calculateSoftwareSecurityCode() en
+   *  cufe.ts y su uso en route.ts. */
+  softwareSecurityCode: string
   /** 01=Factura Venta, 91=Nota Crédito, 92=Nota Débito */
   invoiceTypeCode: '01' | '91' | '92'
   /** Número de factura referenciada (para NC/ND) */
   referencedInvoice?: string | null
   /** CUFE de la factura referenciada */
   referencedCUFE?:    string | null
-  company:   DocCompany & { nit: string; ciiu_code?: string | null; dian_prefix?: string | null }
+  company:   DocCompany & {
+    nit: string; ciiu_code?: string | null; dian_prefix?: string | null
+    /** Campos de la Resolución de Facturación DIAN (Configuración → Fiscal).
+     *  Si falta alguno, se omite sts:InvoiceControl entero (ver comentario
+     *  de archivo) -- no se envía un bloque a medias. */
+    dian_resolution?:      string | null
+    dian_from_number?:     number | null
+    dian_to_number?:       number | null
+    dian_validity_from?:   string | null
+    dian_validity_to?:     string | null
+  }
   customer:  DocCustomer & { doc_number?: string | null; doc_type?: string | null }
   items:     DocItem[]
   subtotal:  number
@@ -163,16 +213,69 @@ export function generateXMLUBL21(p: XMLInvoiceParams): string {
     </cac:InvoiceDocumentReference>
   </cac:BillingReference>` : ''
 
+  // Dígito de verificación (DV) del NIT propio, si el usuario lo escribió
+  // con guion en Configuración (ej. "900123456-7", el placeholder que ya
+  // usa esa pantalla) -- se usa solo como atributo schemeID de
+  // sts:ProviderID, nunca se recalcula con el algoritmo módulo 11 para no
+  // arriesgar un valor distinto al que la empresa ya tiene registrado ante
+  // la DIAN. Si no hay guion, se omite el atributo (no es obligatorio en
+  // el esquema).
+  const nitDV = (p.company.nit ?? '').includes('-')
+    ? (p.company.nit ?? '').split('-').pop()!.replace(/[^0-9]/g, '')
+    : ''
+
+  // sts:DianExtensions -- ver comentario de cabecera del archivo. Solo
+  // InvoiceControl es condicional (requiere los 6 campos de la Resolución
+  // DIAN completos); el resto siempre va, porque solo depende de datos que
+  // ya son obligatorios para llegar hasta acá (NIT, Software ID, PIN).
+  const hasResolution = !!(
+    p.company.dian_resolution && p.company.dian_prefix &&
+    p.company.dian_from_number && p.company.dian_to_number &&
+    p.company.dian_validity_from && p.company.dian_validity_to
+  )
+
+  const invoiceControl = hasResolution ? `
+    <sts:InvoiceControl>
+      <sts:InvoiceAuthorization>${esc(p.company.dian_resolution)}</sts:InvoiceAuthorization>
+      <sts:AuthorizationPeriod>
+        <cbc:StartDate>${p.company.dian_validity_from}</cbc:StartDate>
+        <cbc:EndDate>${p.company.dian_validity_to}</cbc:EndDate>
+      </sts:AuthorizationPeriod>
+      <sts:AuthorizedInvoices>
+        <sts:Prefix>${esc(p.company.dian_prefix)}</sts:Prefix>
+        <sts:From>${p.company.dian_from_number}</sts:From>
+        <sts:To>${p.company.dian_to_number}</sts:To>
+      </sts:AuthorizedInvoices>
+    </sts:InvoiceControl>` : ''
+
+  const dianExtensions = `
+      <sts:DianExtensions>${invoiceControl}
+        <sts:InvoiceSource>
+          <cbc:IdentificationCode>CO</cbc:IdentificationCode>
+        </sts:InvoiceSource>
+        <sts:SoftwareProvider>
+          <sts:ProviderID schemeAgencyID="195"${nitDV ? ` schemeID="${nitDV}"` : ''} schemeName="31">${nitOFE}</sts:ProviderID>
+          <sts:SoftwareID schemeAgencyID="195">${esc(p.softwareId)}</sts:SoftwareID>
+        </sts:SoftwareProvider>
+        <sts:SoftwareSecurityCode schemeAgencyID="195">${p.softwareSecurityCode}</sts:SoftwareSecurityCode>
+        <sts:AuthorizationProvider>
+          <sts:AuthorizationProviderID schemeAgencyID="195" schemeID="${DIAN_NIT_DV}" schemeName="31">${DIAN_NIT}</sts:AuthorizationProviderID>
+        </sts:AuthorizationProvider>
+        <sts:QRCode>${esc(buildVerificationUrl(p.cufe, p.tipAmb === '2'))}</sts:QRCode>
+      </sts:DianExtensions>`
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <${rootTag} xmlns="${nsInvoice}"
   xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
   xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
   xmlns:ext="urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+  xmlns:sts="dian:gov:co:facturaelectronica:Structures-2-1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
   <ext:UBLExtensions>
     <ext:UBLExtension>
-      <ext:ExtensionContent/>
+      <ext:ExtensionContent>${dianExtensions}
+      </ext:ExtensionContent>
     </ext:UBLExtension>
     <ext:UBLExtension>
       <ext:ExtensionContent/>

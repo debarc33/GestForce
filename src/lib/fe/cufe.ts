@@ -67,6 +67,27 @@ export async function calculateCUFE(params: CUFEParams): Promise<string> {
   return hashArr.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+/**
+ * Código de Seguridad del Software (SoftwareSecurityCode) -- hallazgo 26
+ * nov 2026, comparando el XML de GestForce contra una factura real
+ * aceptada por la DIAN: este campo iba dentro del bloque obligatorio
+ * sts:DianExtensions (ver xml-ubl21.ts) y no existía en absoluto. Según el
+ * Anexo Técnico DIAN "Mecanismos del Sistema Técnico de Control Fiscal...
+ * CUFE, UUID, QR y Software Security Code": SHA384(IdSoftware + PIN),
+ * concatenados sin separador -- a diferencia del CUFE/CUDE, NO incluye el
+ * número del documento, el NIT ni la fecha: es el mismo valor para todas
+ * las facturas y notas de una empresa mientras no cambien su ID de
+ * Software o su Software-PIN, así que se calcula una sola vez por
+ * petición (no por línea/documento).
+ */
+export async function calculateSoftwareSecurityCode(softwareId: string, softwarePin: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data    = encoder.encode(softwareId + softwarePin)
+  const hashBuf = await crypto.subtle.digest('SHA-384', data)
+  const hashArr = Array.from(new Uint8Array(hashBuf))
+  return hashArr.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 /** Hora actual formateada para Colombia (UTC-5) */
 export function getColombiaTime(): string {
   const now = new Date()

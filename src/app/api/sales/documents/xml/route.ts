@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 import { requireCompanyMember } from '@/lib/auth/require-company-member'
-import { calculateCUFE, getColombiaTime } from '@/lib/fe/cufe'
+import { calculateCUFE, calculateSoftwareSecurityCode, getColombiaTime } from '@/lib/fe/cufe'
 import { calculateCUDE } from '@/lib/fe/cude'
 import { generateXMLUBL21 } from '@/lib/fe/xml-ubl21'
 import { decryptCertPassword } from '@/lib/fe/certificate'
@@ -133,6 +133,18 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
     )
   }
 
+  // Hallazgo 26 nov 2026: el bloque obligatorio sts:DianExtensions (ver
+  // xml-ubl21.ts) necesita el SoftwareSecurityCode, que se calcula con el
+  // Software-PIN -- antes solo las notas (CUDE) lo exigían. Si la empresa
+  // ya factura notas, ya debería tenerlo configurado; si no, se le avisa
+  // igual que ya se avisaba por la Llave Técnica.
+  if (!company.fe_software_pin) {
+    return NextResponse.json(
+      { error: 'Esta empresa no tiene configurado el Software-PIN en Configuración → Fiscal (lo exige el bloque de seguridad del XML ante la DIAN).' },
+      { status: 400 }
+    )
+  }
+
   const [{ data: customer }, { data: items }] = await Promise.all([
     invoice.customer_id
       ? admin.from('customers')
@@ -174,6 +186,10 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
     valImp3: icaAmount,
   })
 
+  // Mismo valor para todas las facturas/notas de esta empresa mientras no
+  // cambien ID de Software o PIN -- ver comentario de archivo en cufe.ts.
+  const softwareSecurityCode = await calculateSoftwareSecurityCode(company.fe_software_id, company.fe_software_pin)
+
   const xml = generateXMLUBL21({
     invoiceNumber:   invoice.invoice_number,
     cufe,
@@ -183,6 +199,7 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
     paymentForm:     invoice.payment_form ?? 'contado',
     tipAmb,
     softwareId:      company.fe_software_id,
+    softwareSecurityCode,
     invoiceTypeCode: '01',
     company: {
       name:       company.name,
@@ -194,6 +211,12 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
       phone:      company.phone,
       email:      company.email,
       ciiu_code:  company.ciiu_code,
+      dian_prefix:         company.dian_prefix,
+      dian_resolution:     company.dian_resolution,
+      dian_from_number:    company.dian_from_number,
+      dian_to_number:      company.dian_to_number,
+      dian_validity_from:  company.dian_validity_from,
+      dian_validity_to:    company.dian_validity_to,
     },
     customer: {
       name:       customer?.name ?? 'Consumidor Final',
@@ -309,6 +332,8 @@ async function handleNote(admin: AdminClient, noteId: string) {
     valImp3: icaAmount,
   })
 
+  const softwareSecurityCode = await calculateSoftwareSecurityCode(company.fe_software_id, company.fe_software_pin)
+
   const xml = generateXMLUBL21({
     invoiceNumber:      note.note_number,
     cufe:               cude,
@@ -317,6 +342,7 @@ async function handleNote(admin: AdminClient, noteId: string) {
     dueDate:            null,
     tipAmb,
     softwareId:         company.fe_software_id,
+    softwareSecurityCode,
     invoiceTypeCode:    note.type === 'credit' ? '91' : '92',
     referencedInvoice:  invoice?.invoice_number ?? null,
     referencedCUFE:     invoice?.cufe ?? null,
@@ -330,6 +356,12 @@ async function handleNote(admin: AdminClient, noteId: string) {
       phone:      company.phone,
       email:      company.email,
       ciiu_code:  company.ciiu_code,
+      dian_prefix:         company.dian_prefix,
+      dian_resolution:     company.dian_resolution,
+      dian_from_number:    company.dian_from_number,
+      dian_to_number:      company.dian_to_number,
+      dian_validity_from:  company.dian_validity_from,
+      dian_validity_to:    company.dian_validity_to,
     },
     customer: {
       name:       customer?.name ?? 'Consumidor Final',

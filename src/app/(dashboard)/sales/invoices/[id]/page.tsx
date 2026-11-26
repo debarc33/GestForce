@@ -125,6 +125,7 @@ export default function EditInvoicePage() {
     number:     invoice.invoice_number,
     issue_date: invoice.issue_date,
     due_date:   invoice.due_date,
+    payment_form: invoice.payment_form ?? 'contado',
     status:     invoice.status,
     subtotal:   Number(invoice.subtotal),
     tax:        Number(invoice.tax),
