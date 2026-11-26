@@ -636,7 +636,7 @@ export default function SettingsPage() {
               <input value={companyForm.fe_test_set_id ?? ''} onChange={cf('fe_test_set_id')}
                 className={fieldCls} placeholder="Ej. a7c0170f-4a2c-4f9c-bbd8-e6d07a..." />
               <p className="text-xs text-muted-foreground mt-1">
-                El código que la DIAN entrega al registrar el modo de operación &quot;Desarrollo propio&quot;. Por ahora solo queda guardado aquí de referencia — el envío automático del set de pruebas al servicio web de la DIAN todavía no está construido.
+                El código que la DIAN entrega al registrar el modo de operación &quot;Desarrollo propio&quot;. Se usa al enviar el set de pruebas (Habilitación) al servicio web de la DIAN desde el botón &quot;Enviar a la DIAN&quot; de cada factura.
               </p>
             </div>
             {companyError && <p className="text-xs text-[var(--danger)] bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-lg px-3 py-2">{companyError}</p>}
