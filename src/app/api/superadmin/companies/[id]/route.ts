@@ -28,7 +28,15 @@ export async function GET(
     .single()
 
   if (error || !company) return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 })
-  return NextResponse.json(company as SACompany)
+  // Seguridad (hallazgo Fase D.1, endurecido 26 nov 2026): fe_software_pin y
+  // fe_technical_key son secretos de facturacion electronica (se usan para
+  // calcular CUFE/CUDE/SoftwareSecurityCode) -- este panel de superadmin
+  // nunca los lee ni los muestra (no hay ningun campo en la UI para ellos),
+  // asi que no hay razon para que salgan en la respuesta JSON. Mismo
+  // criterio que ya se aplico del lado del cliente en modules/company/queries.ts
+  // (Fase A, 4 nov 2026) -- ver claude/informe-auditoria-facturacion-dian.md, Seccion 7.
+  const { fe_software_pin: _pin, fe_technical_key: _key, ...safeCompany } = company
+  return NextResponse.json(safeCompany as unknown as SACompany)
 }
 
 // ── PATCH /api/superadmin/companies/[id] ──────────────────────────────────────
@@ -51,5 +59,8 @@ export async function PATCH(
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data as SACompany)
+  // Mismo criterio de seguridad que en GET arriba -- no hay necesidad de que
+  // estos dos secretos viajen de vuelta al navegador tras actualizar.
+  const { fe_software_pin: _pin, fe_technical_key: _key, ...safeData } = data
+  return NextResponse.json(safeData as unknown as SACompany)
 }
