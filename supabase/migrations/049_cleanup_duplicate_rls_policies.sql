@@ -1,0 +1,38 @@
+-- 049_cleanup_duplicate_rls_policies.sql
+--
+-- Limpieza de higiene (sin cambio funcional) encontrada durante la
+-- auditoria de seguridad de la Fase I de Facturacion Electronica (19 nov
+-- 2026, ver claude/plan-accion-facturacion-dian.md -> "FASE I - Pruebas ->
+-- Seguridad"): las tablas `invoices` y `credit_debit_notes` tienen cada
+-- una un par de politicas RLS que hacen exactamente lo mismo, con el
+-- mismo criterio de aislamiento por empresa, probablemente residuo de una
+-- refactorizacion anterior que nunca se limpio:
+--
+--   - invoices: la politica vieja "rls_invoices" (ALL) convive con las 4
+--     politicas mas nuevas y especificas "inv_select"/"inv_insert"/
+--     "inv_update"/"inv_delete" (una por operacion). Deisy confirmo
+--     (consulta directa a pg_policies el 19 nov 2026) que las 5 usan el
+--     mismo criterio: company_id IN (company_users del usuario
+--     autenticado). Se elimina la redundante "rls_invoices" y se dejan
+--     las 4 especificas.
+--   - credit_debit_notes: "rls_credit_debit_notes" (ALL) y
+--     "company_members_notes" (ALL) hacen lo mismo, con el mismo
+--     criterio exacto, confirmado igual el 19 nov 2026. Se elimina la de
+--     nombre generico "rls_credit_debit_notes" y se deja
+--     "company_members_notes" (nombre mas descriptivo, consistente con el
+--     patron ya usado en otras tablas de la app).
+--
+-- No es una correccion de seguridad: ambas politicas en cada par ya
+-- hacian exactamente lo mismo (no habia ningun hueco ni ninguna politica
+-- mas permisiva que la otra), asi que borrar la redundante no cambia a
+-- quien se le permite ver o modificar que fila. Es pura limpieza para que
+-- quede una sola politica por operacion en cada tabla, mas facil de leer
+-- y mantener.
+--
+-- Seguro de re-ejecutar: usa DROP POLICY IF EXISTS, asi que si alguna de
+-- estas dos politicas ya no existiera (por ejemplo si esta migracion se
+-- corre dos veces, o si el nombre cambio por fuera de este archivo), no
+-- da error.
+
+DROP POLICY IF EXISTS rls_invoices ON public.invoices;
+DROP POLICY IF EXISTS rls_credit_debit_notes ON public.credit_debit_notes;
