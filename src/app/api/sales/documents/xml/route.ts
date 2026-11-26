@@ -168,7 +168,7 @@ async function handleInvoice(admin: AdminClient, invoiceId: string) {
   const icaRate   = Number(company.ica_rate ?? 0)
   const icaAmount = icaRate > 0 ? Number(invoice.subtotal) * icaRate : 0
 
-  const nitOFE = (company.nit ?? '').replace(/[^0-9]/g, '')
+  const nitOFE = (company.nit ?? '').split('-')[0].replace(/[^0-9]/g, '')
   const numAdq = (customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
   const horFac = getColombiaTime()
 
@@ -314,7 +314,7 @@ async function handleNote(admin: AdminClient, noteId: string) {
   const icaRate   = Number(company.ica_rate ?? 0)
   const icaAmount = icaRate > 0 ? Number(note.subtotal) * icaRate : 0
 
-  const nitOFE = (company.nit ?? '').replace(/[^0-9]/g, '')
+  const nitOFE = (company.nit ?? '').split('-')[0].replace(/[^0-9]/g, '')
   const numAdq = (customer?.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
   const hor    = getColombiaTime()
 

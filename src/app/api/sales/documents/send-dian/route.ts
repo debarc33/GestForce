@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Primero genera el XML firmado (botón "XML DIAN") antes de enviarlo.' }, { status: 400 })
     }
 
-    const nitOFE = (company.nit ?? '').replace(/[^0-9]/g, '')
+    const nitOFE = (company.nit ?? '').split('-')[0].replace(/[^0-9]/g, '')
     const docNumber = (noteId ? doc.note_number : doc.invoice_number) ?? docId
     // Convención de nombre de archivo: best-effort (NIT + número de
     // documento) -- no se pudo confirmar contra el Anexo Técnico oficial

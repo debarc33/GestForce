@@ -120,7 +120,7 @@ const DOC_TYPE_MAP: Record<string, { code: string; name: string }> = {
  * validacion especifico de este bloque.
  */
 export function generateXMLUBL21(p: XMLInvoiceParams): string {
-  const nitOFE   = (p.company.nit ?? '').replace(/[^0-9]/g, '')
+  const nitOFE   = (p.company.nit ?? '').split('-')[0].replace(/[^0-9]/g, '')
   const numAdq   = (p.customer.doc_number ?? '222222222222').replace(/[^0-9]/g, '')
   const docType  = DOC_TYPE_MAP[p.customer.doc_type ?? 'CC'] ?? { code: '13', name: 'Cédula de ciudadanía' }
   const isFinal  = !p.customer.doc_number  // consumidor final
